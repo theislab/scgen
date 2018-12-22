@@ -1,5 +1,5 @@
 models/
 results/
 data/
-.DS_Store
-**/*.ipynb_checkpoints/
+.*  # ignore all hidden files and folders
+!/.gitignore  # explicitly do not ignore .gitignore
