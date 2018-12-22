@@ -1,6 +1,4 @@
-models/
-results/
-data/
+
 # OS or Editor files and folders
 .DS_Store
 Thumbs.db
