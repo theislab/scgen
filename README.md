@@ -2,8 +2,17 @@
 
 <img align="center"  src="/sketch/sketch.png?raw=true">
 
-This repository includes a simple notebook explaining how the model works by predicting the stimulated CD4 T cells from Kang et al. (2017). This example also shows how to generate intermediary cells between two condition for CD14-Mono cells from the same data set.
+This repository includes python scripts and notebooks in code folder to reproduce figures from the paper based on the table bellow.
 
+figure       | notebook/script     
+---------------| ---------------
+| 2, s1, s2, s3, s7  | scgen_kang, cvae, st_gan, vec_arith_pca, vec_arith, scgen_sal_TA | 
+|        3          | scgen_hpoly, scgen_salmonella| 
+|        4          | cross_study| 
+|        5, s8      | cross_species|
+|        6, s9      | pancrease, bbknn, mnn, cca, scanorama|
+|        s6      |scgen_kang_multiple|
+|        s10        |mouse_atlas| 
 
-To run the notebook you need follwoing packages :
-tensorflow, scanpy, numpy, matplotlib, scipy.
+To run the notebooks and scripts you need follwoing packages :
+tensorflow (1.4), scanpy, numpy, matplotlib, scipy, wget.
