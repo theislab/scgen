@@ -2,7 +2,9 @@
 
 <img align="center"  src="/sketch/sketch.png?raw=true">
 
-This repository includes python scripts and notebooks in code folder to reproduce figures from the paper based on the table bellow.
+
+
+This repository includes python scripts and notebooks in code folder to reproduce figures from the paper [(bioRxiv, 2017)](https://www.biorxiv.org/content/10.1101/478503v2) according to the table bellow.
 
 figure       | notebook/script     
 ---------------| ---------------
@@ -18,3 +20,7 @@ To run the notebooks and scripts you need follwoing packages :
 
 
 tensorflow (1.4), scanpy, numpy, matplotlib, scipy, wget.
+
+Note: The Current contents of this repo will be moved to a new repository in near future. That repository will include codes for reproducing the results of the paper and the current one will only include the software.
+
+
