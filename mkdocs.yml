@@ -11,5 +11,5 @@ nav:
     - read_load: 'api/read_load.md'
     - plotting: 'api/plotting.md'
 theme: readthedocs
-repo_url: http://github.com/M0hammadL/scgen
+repo_url: http://github.com/theislab/scgen
 site_description: 'Documentation for ScGen, the generative model to predict single-cell perturbation response across cell types, studies and species.'
