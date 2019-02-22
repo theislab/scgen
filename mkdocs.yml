@@ -1,5 +1,5 @@
 site_name: scGen Documentation
-docs_dir: 'docs/sources/'
+#docs_dir: 'docs/sources/'
 nav:
   - Home: 'index.md'
   - Installation: 'installation.md'
