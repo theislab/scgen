@@ -1,7 +1,7 @@
 # scGen 
 [![PyPI version](https://badge.fury.io/py/scGen.svg)](https://badge.fury.io/py/scGen) [![Build Status](https://travis-ci.org/M0hammadL/scgen.svg?branch=master)](https://travis-ci.org/M0hammadL/scgen) [![Documentation Status](https://readthedocs.org/projects/scgen/badge/?version=latest)](https://scgen.readthedocs.io/en/latest/?badge=latest)
 
-![](sketch/sketch.png)
+![](./sketch/sketch.png)
 
 ## scGen is Single-cell Generator!
 scGen is a generative model to predict single-cell perturbation response accross cell types, studies and species.
