@@ -1,0 +1,7 @@
+site_name: scGen Documentation
+nav:
+    - Home: index.md
+    - Installation: installation.md
+theme: readthedocs
+repo_url: http://github.com/M0hammadL/scgen
+site_description: 'Documentation for ScGen, the generative model to predict single-cell perturbation response across cell types, studies and species.'

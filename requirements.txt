@@ -1,0 +1,9 @@
+scipy
+anndata
+numpy
+pandas
+tensorflow
+scanpy
+keras
+matplotlib
+get_version

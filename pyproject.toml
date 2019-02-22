@@ -1,0 +1,30 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "scgen"
+author = "Mohammad lotfollahi"
+author-email = "mohammad.lotfollahi@helmholtz-muenchen.de"
+home-page = "https://github.com/theislab/scgen"
+description-file = 'README.md'
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+]
+requires = [
+    "future-fstrings",
+    "get_version",
+    "anndata",
+    "tensorflow",
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "sklearn"
+]
+
+[tool.flit.metadata.requires-extra]
+test = [
+    "pytest",
+
+]
