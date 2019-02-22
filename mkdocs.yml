@@ -1,11 +1,11 @@
 site_name: scGen Documentation
-docs_dir: docs/sources/
+docs_dir: 'docs/sources/'
 nav:
   - Home: 'index.md'
   - Installation: 'installation.md'
   - API:
     - models:
-      - About scGen models: 'api/models/index.md'
+      - About: 'api/models/index.md'
       - VAE: 'api/models/vae.md'
       - utils: 'api/models/utils.md'
     - read_load: 'api/read_load.md'
