@@ -1,7 +1,15 @@
 site_name: scGen Documentation
+edit_uri: sources/
 nav:
-    - Home: index.md
-    - Installation: installation.md
+  - Home: 'index.md'
+  - Installation: 'installation.md'
+  - API:
+    - models:
+      - About scGen models: 'sources/api/models/index.md'
+      - VAE: 'sources/api/models/vae.md'
+      - utils: 'api/models/utils.md'
+    - read_load: 'api/read_load.md'
+    - plotting: 'api/plotting.md'
 theme: readthedocs
 repo_url: http://github.com/M0hammadL/scgen
 site_description: 'Documentation for ScGen, the generative model to predict single-cell perturbation response across cell types, studies and species.'
