@@ -1,3 +1,4 @@
+six
 scipy
 anndata
 numpy

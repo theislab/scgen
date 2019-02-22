@@ -1,12 +1,12 @@
 site_name: scGen Documentation
-edit_uri: sources/
+docs_dir: docs/sources/
 nav:
   - Home: 'index.md'
   - Installation: 'installation.md'
   - API:
     - models:
-      - About scGen models: 'sources/api/models/index.md'
-      - VAE: 'sources/api/models/vae.md'
+      - About scGen models: 'api/models/index.md'
+      - VAE: 'api/models/vae.md'
       - utils: 'api/models/utils.md'
     - read_load: 'api/read_load.md'
     - plotting: 'api/plotting.md'
