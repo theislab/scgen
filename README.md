@@ -1,4 +1,4 @@
-# scGen [![PyPI version](https://badge.fury.io/py/scgen.svg)](https://badge.fury.io/py/scgen) [![Build Status](https://travis-ci.org/M0hammadL/scgen.svg?branch=master)](https://travis-ci.org/M0hammadL/scgen) [![Documentation Status](https://readthedocs.org/projects/scgen/badge/?version=latest)](https://scgen.readthedocs.io/en/latest/?badge=latest)
+# scGen [![PyPI version](https://badge.fury.io/py/scgen.svg)](https://badge.fury.io/py/scgen) [![Build Status](https://travis-ci.org/Theislab/scgen.svg?branch=master)](https://travis-ci.org/M0hammadL/scgen) [![Documentation Status](https://readthedocs.org/projects/scgen/badge/?version=latest)](https://scgen.readthedocs.io/en/latest/?badge=latest)
 
 
 
@@ -34,7 +34,7 @@ your data and predict the perturbation for the cell type/species of interest.
 
 ``` python
 import scanpy as sc
-adata = sc.read(raw_data)
+adata = sc.read(data)
 sc.pp.normalize_per_cell(adata)
 sc.pp.log1p(adata)
 ```
