@@ -1,4 +1,4 @@
-# scGen [![PyPI version](https://badge.fury.io/py/scgen.svg)](https://badge.fury.io/py/scgen) [![Build Status](https://travis-ci.org/Theislab/scgen.svg?branch=master)](https://travis-ci.org/M0hammadL/scgen) [![Documentation Status](https://readthedocs.org/projects/scgen/badge/?version=latest)](https://scgen.readthedocs.io/en/latest/?badge=latest)
+# scGen [![PyPI version](https://badge.fury.io/py/scgen.svg)](https://badge.fury.io/py/scgen) [![Build Status](https://travis-ci.com/M0hammadL/scGen.svg?branch=master)](https://travis-ci.org/M0hammadL/scgen) [![Documentation Status](https://readthedocs.org/projects/scgen/badge/?version=latest)](https://scgen.readthedocs.io/en/latest/?badge=latest)
 
 
 
