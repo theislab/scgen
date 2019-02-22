@@ -1,15 +1,58 @@
 import numpy
 from matplotlib import pyplot
 from scipy import stats, sparse
-# TODO: Writing comments for each fucntions
 
 
-def reg_mean_plot(adata, condition_key, axis_keys,  path_to_save="./reg_mean.pdf", gene_list=None):
+def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf", gene_list=None, show=False):
+    """
+        Plots mean matching figure for a set of specific genes.
+
+        Parameters
+        ----------
+        adata: `~anndata.AnnData`
+            Annotated Data Matrix.
+
+        condition_key: basestring
+            Condition state to be used.
+
+        axis_keys: dict
+            dictionary of axes labels.
+
+        path_to_save: basestring
+            path to save the plot.
+
+        gene_list: list
+            list of gene names to be plotted.
+
+        show: bool
+            if `True`: will show to the plot after saving it.
+
+        Example
+        --------
+        ```python
+        import anndata
+        import scgen
+        import scanpy as sc
+        train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+        network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
+        network.train(train_data=train, n_epochs=0)
+        unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
+        condition = {"ctrl": "control", "stim": "stimulated"}
+        pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+        pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
+        CD4T = train[train.obs["cell_type"] == "CD4T"]
+        all_adata = CD4T.concatenate(pred_adata)
+        scgen.plotting.reg_mean_plot(all_adata, condition_key="condition", axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
+                                     gene_list=["ISG15", "CD3D"], path_to_save="tests/reg_mean.pdf", show=False)
+        network.sess.close()
+        ```
+
+        """
     if sparse.issparse(adata.X):
         adata.X = adata.X.A
     stim = adata[adata.obs[condition_key] == axis_keys["y"]]
     ctrl = adata[adata.obs[condition_key] == axis_keys["x"]]
-    if "y1"in axis_keys.keys():
+    if "y1" in axis_keys.keys():
         real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
     x = numpy.average(ctrl.X, axis=0)
     y = numpy.average(stim.X, axis=0)
@@ -18,7 +61,7 @@ def reg_mean_plot(adata, condition_key, axis_keys,  path_to_save="./reg_mean.pdf
     pyplot.plot(x, m * x + b, "-", color="green")
     pyplot.xlabel(axis_keys["x"], fontsize=12)
     pyplot.ylabel(axis_keys["y"], fontsize=12)
-    if "y1"in axis_keys.keys():
+    if "y1" in axis_keys.keys():
         y1 = numpy.average(real_stim.X, axis=0)
         _p2 = pyplot.scatter(x, y1, marker="*", c="blue", alpha=.5, label="x-y1")
     if gene_list is not None:
@@ -34,15 +77,60 @@ def reg_mean_plot(adata, condition_key, axis_keys,  path_to_save="./reg_mean.pdf
     pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     pyplot.title(f"", fontsize=12)
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
-    pyplot.show()
+    if show:
+        pyplot.show()
 
 
-def reg_var_plot(adata, condition_key, axis_keys,  path_to_save="./reg_var.pdf", gene_list=None):
+def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", gene_list=None, show=False):
+    """
+        Plots variance matching figure for a set of specific genes.
+
+        Parameters
+        ----------
+        adata: `~anndata.AnnData`
+            Annotated Data Matrix.
+
+        condition_key: basestring
+            Condition state to be used.
+
+        axis_keys: dict
+            dictionary of axes labels.
+
+        path_to_save: basestring
+            path to save the plot.
+
+        gene_list: list
+            list of gene names to be plotted.
+
+        show: bool
+            if `True`: will show to the plot after saving it.
+
+        Example
+        --------
+        ```python
+        import anndata
+        import scgen
+        import scanpy as sc
+        train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+        network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
+        network.train(train_data=train, n_epochs=0)
+        unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
+        condition = {"ctrl": "control", "stim": "stimulated"}
+        pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+        pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
+        CD4T = train[train.obs["cell_type"] == "CD4T"]
+        all_adata = CD4T.concatenate(pred_adata)
+        scgen.plotting.reg_var_plot(all_adata, condition_key="condition", axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
+                                    gene_list=["ISG15", "CD3D"], path_to_save="tests/reg_var4.pdf", show=False)
+        network.sess.close()
+        ```
+
+        """
     if sparse.issparse(adata.X):
         adata.X = adata.X.A
     stim = adata[adata.obs[condition_key] == axis_keys["y"]]
     ctrl = adata[adata.obs[condition_key] == axis_keys["x"]]
-    if "y1"in axis_keys.keys():
+    if "y1" in axis_keys.keys():
         real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
     x = numpy.var(ctrl.X, axis=0)
     y = numpy.var(stim.X, axis=0)
@@ -51,7 +139,7 @@ def reg_var_plot(adata, condition_key, axis_keys,  path_to_save="./reg_var.pdf",
     pyplot.plot(x, m * x + b, "-", color="green")
     pyplot.xlabel(axis_keys["x"], fontsize=12)
     pyplot.ylabel(axis_keys["y"], fontsize=12)
-    if "y1"in axis_keys.keys():
+    if "y1" in axis_keys.keys():
         y1 = numpy.var(real_stim.X, axis=0)
         _p2 = pyplot.scatter(x, y1, marker="*", c="blue", alpha=.5, label="x-y1")
     if gene_list is not None:
@@ -67,14 +155,58 @@ def reg_var_plot(adata, condition_key, axis_keys,  path_to_save="./reg_var.pdf",
     pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     pyplot.title(f"", fontsize=12)
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
-    pyplot.show()
+    if show:
+        pyplot.show()
 
 
-def binary_classifier(scg_object, adata, delta, condtion_key, conditions,  path_to_save):
+def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_to_save):
+    """
+        Builds a linear classifier based on the dot product between
+        the difference vector and the latent representation of each
+        cell and plots the dot product results between delta and latent
+        representation.
+
+        Parameters
+        ----------
+        scg_object:
+
+        adata: `~anndata.AnnData`
+            Annotated Data Matrix.
+
+        delta:
+
+        condition_key: basestring
+            Condition state to be used.
+
+        conditions: dict
+            dictionary of conditions.
+
+        path_to_save: basestring
+            path to save the plot.
+
+        Example
+        --------
+        ```python
+        import anndata
+        import scgen
+        import scanpy as sc
+        train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+        network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
+        network.train(train_data=train, n_epochs=0)
+        unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
+        condition = {"ctrl": "control", "stim": "stimulated"}
+        pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+        scgen.plotting.binary_classifier(network, train, delta, condtion_key="condition",
+                                         conditions={"ctrl": "control", "stim": "stimulated"},
+                                         path_to_save="tests/binary_classifier.pdf")
+        network.sess.close()
+        ```
+
+        """
     if sparse.issparse(adata.X):
         adata.X = adata.X.A
-    cd = adata[adata.obs[condtion_key] == conditions["ctrl"], :]
-    stim = adata[adata.obs[condtion_key] == conditions["stim"], :]
+    cd = adata[adata.obs[condition_key] == conditions["ctrl"], :]
+    stim = adata[adata.obs[condition_key] == conditions["stim"], :]
     all_latent_cd = scg_object.to_latent(cd.X)
     all_latent_stim = scg_object.to_latent(stim.X)
     dot_cd = numpy.zeros((len(all_latent_cd)))

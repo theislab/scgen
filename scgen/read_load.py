@@ -29,9 +29,12 @@ def load_file(filename, backup_url=None, **kwargs):#TODO : what if several fileS
 
         Example
         --------
-        >>> import scgen
-        >>> train_data_filename = "./data/train.h5ad"
-        >>> train_data = scgen.load_file(train_data_filename)
+        ```python
+        import scgen
+        train_data_filename = "./data/train.h5ad"
+        train_data = scgen.load_file(train_data_filename)
+        ```
+
     """
     numpy_ext = {'npy', 'npz'}
     pandas_ext = {'csv', 'h5'}
