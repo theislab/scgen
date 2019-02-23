@@ -53,7 +53,7 @@ def test_binary_classifier():
     unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
     condition = {"ctrl": "control", "stim": "stimulated"}
     pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
-    scgen.plotting.binary_classifier(network, train, delta, condtion_key="condition",
+    scgen.plotting.binary_classifier(network, train, delta, condition_key="condition",
                                      conditions={"ctrl": "control", "stim": "stimulated"},
                                      path_to_save="tests/binary_classifier.pdf")
     network.sess.close()
