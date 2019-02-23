@@ -53,12 +53,12 @@ pip install scgen
 ```
 or install the development version via pip: 
 ```bash
-pip install git+https://github.com/M0hammadL/scgen.git
+pip install git+https://github.com/theislab/scGen/scgen.git
 ```
 
 or you can clone this repository and run the following install command:
 ```bash
-git clone https://github.com/M0hammadL/scgen
+git clone https://github.com/theislab/scGen
 cd scgen
 python setup.py install
 ```
