@@ -56,11 +56,12 @@ or install the development version via pip:
 pip install git+https://github.com/theislab/scGen/scgen.git
 ```
 
-or you can clone this repository and run the following install command:
+or you can first install flit and clone this repository:
 ```bash
+pip install flit
 git clone https://github.com/theislab/scGen
 cd scgen
-python setup.py install
+flit install
 ```
 
 On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
