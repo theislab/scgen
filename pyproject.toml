@@ -19,9 +19,7 @@ requires = [
     "numpy",
     "scipy",
     "pandas",
-    "matplotlib",
-    "sklearn"
-]
+    "matplotlib"]
 
 [tool.flit.metadata.requires-extra]
 test = [
