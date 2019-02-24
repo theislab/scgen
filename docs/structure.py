@@ -19,6 +19,10 @@ from scgen import read_load
 from scgen.models import util
 
 PAGES = [
+    # {
+    #     'page': 'models/index.md',
+    #     'classes': [models.VAEArith],
+    # },
     {
         'page': 'models/vae.md',
         'classes': [models.VAEArith],

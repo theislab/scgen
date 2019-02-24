@@ -3,8 +3,7 @@ docs_dir: 'docs/sources/'
 nav:
   - Home: 'index.md'
   - Installation: 'installation.md'
-  - models:
-    - About: 'models/index.md'
+  - Models:
     - VAE: 'models/vae.md'
     - utils: 'models/utils.md'
   - read_load: 'read_load.md'
