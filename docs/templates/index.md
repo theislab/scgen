@@ -1,5 +1,5 @@
 # scGen 
-[![PyPI version](https://badge.fury.io/py/scGen.svg)](https://badge.fury.io/py/scGen) [![Build Status](https://travis-ci.org/M0hammadL/scgen.svg?branch=master)](https://travis-ci.org/M0hammadL/scgen) [![Documentation Status](https://readthedocs.org/projects/scgen/badge/?version=latest)](https://scgen.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/scgen.svg)](https://badge.fury.io/py/scgen) [![Build Status](https://travis-ci.com/theislab/scGen.svg?branch=master)](https://travis-ci.com/theislab/scGen) [![Documentation Status](https://readthedocs.org/projects/scgen/badge/?version=latest)](https://scgen.readthedocs.io/en/latest/?badge=latest)
 
 ![](./sketch/sketch.png)
 
