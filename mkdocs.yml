@@ -1,6 +1,6 @@
 site_name: scGen Documentation
 site_description: 'Documentation for ScGen, the generative model to predict single-cell perturbation response across cell types, studies and species.'
-docs_dir: sources
+docs_dir: docs/sources
 repo_url: http://github.com/theislab/scgen
 theme:
   name: null
