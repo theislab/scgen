@@ -20,7 +20,7 @@ from scgen.models import util
 
 PAGES = [
     {
-        'page': 'api/models/vae.md',
+        'page': 'models/vae.md',
         'classes': [models.VAEArith],
         'methods': [models.VAEArith.linear_interpolation,
                     models.VAEArith.predict,
@@ -30,15 +30,15 @@ PAGES = [
                     models.VAEArith.train]
     },
     {
-        'page': 'api/read_load.md',
+        'page': 'read_load.md',
         'all_module_functions': [read_load],
     },
     {
-        'page': 'api/models/utils.md',
+        'page': 'models/utils.md',
         'all_module_functions': [util],
     },
     {
-        'page': 'api/plotting.md',
+        'page': 'plotting.md',
         'all_module_functions': [plotting],
     },
 ]
