@@ -25,3 +25,5 @@ pages:
     - utils: 'models/utils.md'
     - read_load: 'read_load.md'
     - plotting: 'plotting.md'
+
+theme: readthedocs
