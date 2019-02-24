@@ -3,13 +3,12 @@ docs_dir: 'docs/sources/'
 nav:
   - Home: 'index.md'
   - Installation: 'installation.md'
-  - API:
-    - models:
-      - About: 'api/models/index.md'
-      - VAE: 'api/models/vae.md'
-      - utils: 'api/models/utils.md'
-    - read_load: 'api/read_load.md'
-    - plotting: 'api/plotting.md'
+  - models:
+    - About: 'models/index.md'
+    - VAE: 'models/vae.md'
+    - utils: 'models/utils.md'
+  - read_load: 'read_load.md'
+  - plotting: 'plotting.md'
 theme: readthedocs
 repo_url: http://github.com/theislab/scgen
 site_description: 'Documentation for ScGen, the generative model to predict single-cell perturbation response across cell types, studies and species.'
