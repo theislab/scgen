@@ -1,5 +1,5 @@
 site_name: scGen Documentation
-docs_dir: '/home/docs/checkouts/readthedocs.org/user_builds/scgen/checkouts/latest/docs/sources/'
+docs_dir: 'docs/sources/'
 nav:
   - Home: 'index.md'
   - Installation: 'installation.md'

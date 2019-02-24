@@ -7,28 +7,21 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
     """
         Plots mean matching figure for a set of specific genes.
 
-        Parameters
-        ----------
-        adata: `~anndata.AnnData`
-            Annotated Data Matrix.
+        # Parameters
+            adata: `~anndata.AnnData`
+                Annotated Data Matrix.
+            condition_key: basestring
+                Condition state to be used.
+            axis_keys: dict
+                dictionary of axes labels.
+            path_to_save: basestring
+                path to save the plot.
+            gene_list: list
+                list of gene names to be plotted.
+            show: bool
+                if `True`: will show to the plot after saving it.
 
-        condition_key: basestring
-            Condition state to be used.
-
-        axis_keys: dict
-            dictionary of axes labels.
-
-        path_to_save: basestring
-            path to save the plot.
-
-        gene_list: list
-            list of gene names to be plotted.
-
-        show: bool
-            if `True`: will show to the plot after saving it.
-
-        Example
-        --------
+        # Example
         ```python
         import anndata
         import scgen
@@ -85,28 +78,21 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
     """
         Plots variance matching figure for a set of specific genes.
 
-        Parameters
-        ----------
-        adata: `~anndata.AnnData`
-            Annotated Data Matrix.
+        # Parameters
+            adata: `~anndata.AnnData`
+                Annotated Data Matrix.
+            condition_key: basestring
+                Condition state to be used.
+            axis_keys: dict
+                dictionary of axes labels.
+            path_to_save: basestring
+                path to save the plot.
+            gene_list: list
+                list of gene names to be plotted.
+            show: bool
+                if `True`: will show to the plot after saving it.
 
-        condition_key: basestring
-            Condition state to be used.
-
-        axis_keys: dict
-            dictionary of axes labels.
-
-        path_to_save: basestring
-            path to save the plot.
-
-        gene_list: list
-            list of gene names to be plotted.
-
-        show: bool
-            if `True`: will show to the plot after saving it.
-
-        Example
-        --------
+        # Example
         ```python
         import anndata
         import scgen
@@ -166,26 +152,21 @@ def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_
         cell and plots the dot product results between delta and latent
         representation.
 
-        Parameters
-        ----------
-        scg_object:
+        # Parameters
+            scg_object: `~scgen.models.VAEArith`
+                one of scGen models object.
+            adata: `~anndata.AnnData`
+                Annotated Data Matrix.
+            delta: float
+                Difference between stimulated and control cells in latent space
+            condition_key: basestring
+                Condition state to be used.
+            conditions: dict
+                dictionary of conditions.
+            path_to_save: basestring
+                path to save the plot.
 
-        adata: `~anndata.AnnData`
-            Annotated Data Matrix.
-
-        delta:
-
-        condition_key: basestring
-            Condition state to be used.
-
-        conditions: dict
-            dictionary of conditions.
-
-        path_to_save: basestring
-            path to save the plot.
-
-        Example
-        --------
+        # Example
         ```python
         import anndata
         import scgen

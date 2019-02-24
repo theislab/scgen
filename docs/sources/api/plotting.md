@@ -9,28 +9,23 @@ scgen.plotting.reg_mean_plot(adata, condition_key, axis_keys, path_to_save='./re
 
 Plots mean matching figure for a set of specific genes.
 
-Parameters
-----------
-adata: `~anndata.AnnData`
-Annotated Data Matrix.
+__Parameters__
 
-condition_key: basestring
-Condition state to be used.
+- __adata__: `~anndata.AnnData`
+    Annotated Data Matrix.
+- __condition_key__: basestring
+    Condition state to be used.
+- __axis_keys__: dict
+    dictionary of axes labels.
+- __path_to_save__: basestring
+    path to save the plot.
+- __gene_list__: list
+    list of gene names to be plotted.
+- __show__: bool
+    if `True`: will show to the plot after saving it.
 
-axis_keys: dict
-dictionary of axes labels.
+__Example__
 
-path_to_save: basestring
-path to save the plot.
-
-gene_list: list
-list of gene names to be plotted.
-
-show: bool
-if `True`: will show to the plot after saving it.
-
-Example
---------
 ```python
 import anndata
 import scgen
@@ -63,28 +58,23 @@ scgen.plotting.reg_var_plot(adata, condition_key, axis_keys, path_to_save='./reg
 
 Plots variance matching figure for a set of specific genes.
 
-Parameters
-----------
-adata: `~anndata.AnnData`
-Annotated Data Matrix.
+__Parameters__
 
-condition_key: basestring
-Condition state to be used.
+- __adata__: `~anndata.AnnData`
+    Annotated Data Matrix.
+- __condition_key__: basestring
+    Condition state to be used.
+- __axis_keys__: dict
+    dictionary of axes labels.
+- __path_to_save__: basestring
+    path to save the plot.
+- __gene_list__: list
+    list of gene names to be plotted.
+- __show__: bool
+    if `True`: will show to the plot after saving it.
 
-axis_keys: dict
-dictionary of axes labels.
+__Example__
 
-path_to_save: basestring
-path to save the plot.
-
-gene_list: list
-list of gene names to be plotted.
-
-show: bool
-if `True`: will show to the plot after saving it.
-
-Example
---------
 ```python
 import anndata
 import scgen
@@ -120,26 +110,23 @@ the difference vector and the latent representation of each
 cell and plots the dot product results between delta and latent
 representation.
 
-Parameters
-----------
-scg_object:
+__Parameters__
 
-adata: `~anndata.AnnData`
-Annotated Data Matrix.
+- __scg_object__: `~scgen.models.VAEArith`
+    one of scGen models object.
+- __adata__: `~anndata.AnnData`
+    Annotated Data Matrix.
+- __delta__: float
+    Difference between stimulated and control cells in latent space
+- __condition_key__: basestring
+    Condition state to be used.
+- __conditions__: dict
+    dictionary of conditions.
+- __path_to_save__: basestring
+    path to save the plot.
 
-delta:
+__Example__
 
-condition_key: basestring
-Condition state to be used.
-
-conditions: dict
-dictionary of conditions.
-
-path_to_save: basestring
-path to save the plot.
-
-Example
---------
 ```python
 import anndata
 import scgen
