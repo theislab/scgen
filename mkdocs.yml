@@ -18,10 +18,10 @@ theme:
   sticky_navigation: true
   collapse_navigation: true
 nav:
-         - Home: 'index.md'
-         - Installation: 'installation.md'
-         - Models:
-         - VAE: 'models/vae.md'
-         - utils: 'models/utils.md'
-         - read_load: 'read_load.md'
-         - plotting: 'plotting.md'
+  - Home: 'index.md'
+  - Installation: 'installation.md'
+  - Models:
+    - VAE: 'models/vae.md'
+    - utils: 'models/utils.md'
+    - read_load: 'read_load.md'
+    - plotting: 'plotting.md'
