@@ -3,6 +3,7 @@ from random import shuffle
 import anndata
 import numpy as np
 from scipy import sparse
+from sklearn import preprocessing
 
 
 def data_remover(adata, remain_list, remove_list):
@@ -305,3 +306,26 @@ def batch_removal(network, adata):
         corrected.obs["batch"] = all_shared_ann.obs["batch"].tolist() + all_not_shared_ann.obs["batch"].tolist()
         corrected.var_names = adata.var_names.tolist()
         return corrected
+
+
+def label_encoder(adata):
+    """
+        Encode labels of Annotated `adata` matrix using sklearn.preprocessing.LabelEncoder class.
+        Parameters
+        ----------
+        adata: `~anndata.AnnData`
+            Annotated data matrix.
+        Returns
+        -------
+        labels: numpy nd-array
+            Array of encoded labels
+        Example
+        --------
+        >>> import scgen
+        >>> import scanpy as sc
+        >>> train_data = sc.read("./data/train.h5ad")
+        >>> train_labels, label_encoder = label_encoder(train_data)
+    """
+    le = preprocessing.LabelEncoder()
+    labels = le.fit_transform(adata.obs["condition"].tolist())
+    return labels.reshape(-1, 1), le
