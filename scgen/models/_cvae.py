@@ -5,7 +5,6 @@ from scipy import sparse
 
 from scgen.models.util import shuffle_data, label_encoder
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__file__)
 
 
@@ -33,20 +32,10 @@ class CVAE:
     """
 
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
-
-        # self.train_data = train_data
-        # self.train_labels, self.label_encoder = label_encoder(train_data)
-        # if shuffle:
-        #     self.train_data, self.train_labels = shuffle_data(self.train_data, self.train_labels)
-        #     self.orig_data = train_data
-        # self.use_validation = use_validation
-        # if self.use_validation:
-        #     self.valid_data = kwargs["validation_data"]
-        #     self.valid_labels, _ = label_encoder(self.valid_data)
         self.x_dim = x_dimension
         self.is_training = tensorflow.placeholder(tensorflow.bool, name='training_flag')
         self.z_dim = z_dimension
-        self.lr = kwargs.get("learning_rate", 0.001)
+        self.lr = kwargs.get("learning_rate", 0.01)
         self.alpha = kwargs.get("alpha", 0.1)
         self.beta = kwargs.get("beta", 1)
         self.dr_rate = kwargs.get("dropout_rate", 0.2)
@@ -82,11 +71,11 @@ class CVAE:
         """
         with tensorflow.variable_scope("encoder", reuse=tensorflow.AUTO_REUSE):
             xy = tensorflow.concat([self.x, self.y], axis=1)
-            h = tensorflow.layers.dense(inputs=xy, units=700, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.dense(inputs=xy, units=256, kernel_initializer=self.init_w, use_bias=False)
             h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
             h = tensorflow.nn.leaky_relu(h)
             h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
-            h = tensorflow.layers.dense(inputs=h, units=400, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.dense(inputs=h, units=128, kernel_initializer=self.init_w, use_bias=False)
             h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
             h = tensorflow.nn.leaky_relu(h)
             h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
@@ -110,16 +99,16 @@ class CVAE:
         """
         with tensorflow.variable_scope("decoder", reuse=tensorflow.AUTO_REUSE):
             xy = tensorflow.concat([self.z_mean, self.y], axis=1)
-            h_mmd = tensorflow.layers.dense(inputs=xy, units=400, kernel_initializer=self.init_w, use_bias=False)
-            h = tensorflow.layers.batch_normalization(h_mmd, axis=1, training=self.is_training, )
-            h = tensorflow.nn.leaky_relu(h)
-            h = tensorflow.layers.dense(inputs=h, units=700, kernel_initializer=self.init_w, use_bias=False)
-            tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
+            h = tensorflow.layers.dense(inputs=xy, units=128, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
+            h_mmd = tensorflow.nn.leaky_relu(h)
+            h = tensorflow.layers.dense(inputs=h_mmd, units=256, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
             h = tensorflow.nn.leaky_relu(h)
             h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
             h = tensorflow.layers.dense(inputs=h, units=self.x_dim, kernel_initializer=self.init_w, use_bias=True)
             h = tensorflow.nn.relu(h)
-            return h
+            return h, h_mmd
 
     def _sample_z(self):
         """
@@ -152,7 +141,7 @@ class CVAE:
         """
         self.mu, self.log_var = self._encoder()
         self.z_mean = self._sample_z()
-        self.x_hat = self._mmd_decoder()
+        self.x_hat, self.mmd_hl = self._mmd_decoder()
 
     @staticmethod
     def compute_kernel(x, y):
@@ -237,6 +226,27 @@ class CVAE:
         """
         latent = self.sess.run(self.z_mean, feed_dict={self.x: data, self.y: labels,
                                                        self.size: data.shape[0], self.is_training: False})
+        return latent
+
+    def to_mmd_layer(self, data, labels):
+        """
+                    Map `data` in to the pn layer after latent layer. This function will feed data
+                    in encoder part of C-VAE and compute the latent space coordinates
+                    for each sample in data.
+
+                    # Parameters
+                        data: `~anndata.AnnData`
+                            Annotated data matrix to be mapped to latent space. `data.X` has to be in shape [n_obs, n_vars].
+                        labels: numpy nd-array
+                            `numpy nd-array` of labels to be fed as CVAE's condition array.
+
+                    # Returns
+                        latent: numpy nd-array
+                            returns array containing latent space encoding of 'data'
+                """
+
+        latent = self.sess.run(self.mmd_hl,  feed_dict={self.x: data, self.y: labels,
+                                                        self.size: data.shape[0], self.is_training: False})
         return latent
 
     def _reconstruct(self, data, labels, use_data=False):
@@ -394,6 +404,7 @@ class CVAE:
                                                                  self.time_step: current_step,
                                                                  self.size: len(x_mb), self.is_training: True})
                 train_loss += current_loss_train
+            print(f"iteration {it}: {current_loss_train}")
             if use_validation:
                 valid_loss = 0
                 for lower in range(0, valid_data.shape[0], batch_size):
