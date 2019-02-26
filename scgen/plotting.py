@@ -72,6 +72,8 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
+    pyplot.close()
+
 
 
 def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", gene_list=None, show=False):
@@ -143,6 +145,8 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
+    pyplot.close()
+
 
 
 def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_to_save):
@@ -208,3 +212,4 @@ def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_
     ax = pyplot.gca()
     ax.grid(False)
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
+    pyplot.close()
