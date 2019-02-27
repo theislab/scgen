@@ -35,8 +35,8 @@ class CVAE:
         self.x_dim = x_dimension
         self.is_training = tensorflow.placeholder(tensorflow.bool, name='training_flag')
         self.z_dim = z_dimension
-        self.lr = kwargs.get("learning_rate", 0.01)
-        self.alpha = kwargs.get("alpha", 0.1)
+        self.lr = kwargs.get("learning_rate", 0.001)
+        self.alpha = kwargs.get("alpha", 0.01)
         self.beta = kwargs.get("beta", 1)
         self.dr_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./models/scgen")
@@ -71,11 +71,7 @@ class CVAE:
         """
         with tensorflow.variable_scope("encoder", reuse=tensorflow.AUTO_REUSE):
             xy = tensorflow.concat([self.x, self.y], axis=1)
-            h = tensorflow.layers.dense(inputs=xy, units=256, kernel_initializer=self.init_w, use_bias=False)
-            h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
-            h = tensorflow.nn.leaky_relu(h)
-            h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
-            h = tensorflow.layers.dense(inputs=h, units=128, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.dense(inputs=xy, units=64, kernel_initializer=self.init_w, use_bias=False)
             h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
             h = tensorflow.nn.leaky_relu(h)
             h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
@@ -99,12 +95,9 @@ class CVAE:
         """
         with tensorflow.variable_scope("decoder", reuse=tensorflow.AUTO_REUSE):
             xy = tensorflow.concat([self.z_mean, self.y], axis=1)
-            h = tensorflow.layers.dense(inputs=xy, units=128, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.dense(inputs=xy, units=64, kernel_initializer=self.init_w, use_bias=False)
             h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
             h_mmd = tensorflow.nn.leaky_relu(h)
-            h = tensorflow.layers.dense(inputs=h_mmd, units=256, kernel_initializer=self.init_w, use_bias=False)
-            h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
-            h = tensorflow.nn.leaky_relu(h)
             h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
             h = tensorflow.layers.dense(inputs=h, units=self.x_dim, kernel_initializer=self.init_w, use_bias=True)
             h = tensorflow.nn.relu(h)
