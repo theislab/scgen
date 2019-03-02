@@ -9,6 +9,7 @@ from keras.callbacks import EarlyStopping, CSVLogger
 from keras.layers import Dense, BatchNormalization, Dropout, Input, concatenate, LeakyReLU, ReLU, Lambda
 from keras.models import Model, load_model
 from scipy import sparse
+from sklearn.neighbors import NearestNeighbors
 
 from scgen.models.util import shuffle_data, label_encoder
 
@@ -48,6 +49,7 @@ class MMDCVAE:
         self.dr_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./")
         self.batch_mmd = kwargs.get("batch_mmd", True)
+        self.kernel_method = kwargs.get("kernel", "raphy")
         self.x = Input(shape=(self.x_dim,), name="data")
         self.y = Input(shape=(1,), name="labels")
         self.z = Input(shape=(self.z_dim,), name="latent_data")
@@ -189,7 +191,7 @@ class MMDCVAE:
         #                              name="dest_cvae")
 
     @staticmethod
-    def compute_kernel(x, y):
+    def compute_kernel(x, y, method='rbf', **kwargs):
         """
             Computes RBF kernel between x and y.
 
@@ -202,15 +204,53 @@ class MMDCVAE:
             # Returns
                 returns the computed RBF kernel between x and y
         """
-        x_size = K.shape(x)[0]
-        y_size = K.shape(y)[0]
-        dim = K.shape(x)[1]
-        tiled_x = K.tile(K.reshape(x, K.stack([x_size, 1, dim])), K.stack([1, y_size, 1]))
-        tiled_y = K.tile(K.reshape(y, K.stack([1, y_size, dim])), K.stack([x_size, 1, 1]))
-        return K.exp(-K.mean(K.square(tiled_x - tiled_y), axis=2) / K.cast(dim, tf.float32))
+        scales = kwargs.get("scales", None)
+        sample_size = kwargs.get("sample_size", 1000)
+        n_neighbors = kwargs.get("n_neighbors", 25)
+        if method == "rbf":
+            x_size = K.shape(x)[0]
+            y_size = K.shape(y)[0]
+            dim = K.shape(x)[1]
+            tiled_x = K.tile(K.reshape(x, K.stack([x_size, 1, dim])), K.stack([1, y_size, 1]))
+            tiled_y = K.tile(K.reshape(y, K.stack([1, y_size, dim])), K.stack([x_size, 1, 1]))
+            return K.exp(-K.mean(K.square(tiled_x - tiled_y), axis=2) / K.cast(dim, tf.float32))
+        elif method == 'raphy':  # TODO: must check how to feed sample to NearestNeighbors
+            if scales is None:
+                med = np.zeros(20)
+                for i in range(1, 20):
+                    sample_indices = K.cast(K.round(
+                        K.random_uniform_variable(low=0, high=K.cast(K.shape(x)[0] - 1, 'float32'),
+                                                  shape=(sample_size,))), 'int32')
+                    sample = K.gather(x, sample_indices)
+                    nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
+                    distances, indices = nbrs.kneighbors(sample)
+                    med[i] = np.median(distances[:, 1:n_neighbors])
+                med = np.median(med)
+                scales = [med / 2, med, med * 2]
+            scales = K.variable(value=np.asarray(scales))
+
+            squared_dist = K.expand_dims(MMDCVAE.squared_distance(x, y), 0)
+            scales = K.expand_dims(K.expand_dims(scales, -1), -1)
+            weights = K.eval(K.shape(scales)[0])
+            weights = K.variable(value=np.asarray(weights))
+            weights = K.expand_dims(K.expand_dims(weights, -1), -1)
+            return K.sum(weights * K.exp(-squared_dist / (K.pow(scales, 2))), 0)
+        elif method == "multi-scale-rbf":
+            sigmas = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 5, 10, 15, 20, 25, 30, 35, 100, 1e3, 1e4, 1e5, 1e6]
+
+            beta = 1. / (2. * (K.expand_dims(sigmas, 1)))
+            distances = MMDCVAE.squared_distance(x, y)
+            s = K.dot(beta, K.reshape(distances, (1, -1)))
+
+            return K.reshape(tf.reduce_sum(tf.exp(-s), 0), K.shape(distances)) / len(sigmas)
 
     @staticmethod
-    def compute_mmd(x, y):  # [batch_size, z_dim] [batch_size, z_dim]
+    def squared_distance(X, Y):  # returns the pairwise euclidean distance
+        r = K.expand_dims(X, axis=1)
+        return K.sum(K.square(r - Y), axis=-1)
+
+    @staticmethod
+    def compute_mmd(x, y, kernel_method):  # [batch_size, z_dim] [batch_size, z_dim]
         """
             Computes Maximum Mean Discrepancy(MMD) between x and y.
 
@@ -223,9 +263,9 @@ class MMDCVAE:
             # Returns
                 returns the computed MMD between x and y
         """
-        x_kernel = MMDCVAE.compute_kernel(x, x)
-        y_kernel = MMDCVAE.compute_kernel(y, y)
-        xy_kernel = MMDCVAE.compute_kernel(x, y)
+        x_kernel = MMDCVAE.compute_kernel(x, x, method=kernel_method)
+        y_kernel = MMDCVAE.compute_kernel(y, y, method=kernel_method)
+        xy_kernel = MMDCVAE.compute_kernel(x, y, method=kernel_method)
         return K.mean(x_kernel) + K.mean(y_kernel) - 2 * K.mean(xy_kernel)
 
     def _loss_function(self, data=np.zeros((10, 6998)), labels=np.zeros((10, 1))):
@@ -271,7 +311,7 @@ class MMDCVAE:
                 mmd_d = self._to_mmd_layer(model=self.cvae_model,
                                            data=dest_x,  # dest_x
                                            labels=dest_y)  # dest_y
-                mmd_loss = self.compute_mmd(mmd_s, mmd_d)
+                mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method)
                 return self.beta * mmd_loss
 
             self.cvae_optimizer = keras.optimizers.Adam(lr=self.lr)
@@ -284,6 +324,7 @@ class MMDCVAE:
                     kl_loss = 0.5 * K.mean(K.exp(log_var) + K.square(mu) - 1. - log_var, 1)
                     recon_loss = 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
                     return recon_loss + self.alpha * kl_loss
+
                 return loss
 
             def cvae_mmd_loss(data, labels, sample_size=1000):
@@ -317,8 +358,9 @@ class MMDCVAE:
                                                data=dest_x,  # dest_x
                                                labels=dest_y)  # dest_y
 
-                    mmd_loss = self.compute_mmd(mmd_s, mmd_d)
+                    mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method)
                     return self.beta * mmd_loss
+
                 return loss
 
             self.cvae_optimizer = keras.optimizers.Adam(lr=self.lr)
