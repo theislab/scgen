@@ -16,7 +16,7 @@ train = train[train.obs["cell_type"] == "CD4T"]
 train_labels = scgen.label_encoder(train)
 # train = train[~((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "stimulated"))]
 z_dim = 20
-network = scgen.MMDCVAE(x_dimension=train.X.shape[1], z_dimension=z_dim, alpha=0.1, batch_mmd=False)
+network = scgen.MMDCVAE(x_dimension=train.X.shape[1], z_dimension=z_dim, alpha=0.1, batch_mmd=True, kernel="multi-scale-rbf")
 # network.restore_model()
 network.train(train, n_epochs=100, verbose=1)
 # model = network.cvae_model
