@@ -345,7 +345,7 @@ class MMDCVAE:
                 latent: numpy nd-array
                     returns array containing latent space encoding of 'data'
         """
-        latent = self.encoder_model.predict(x=[data, labels])[2]
+        latent = self.encoder_model.predict([data, labels])[2]
         return latent
 
     def _to_mmd_layer(self, model, data, labels):
@@ -418,7 +418,7 @@ class MMDCVAE:
         rec_data = self.decoder_model.predict([latent, labels])
         return rec_data
 
-    def predict(self, data, labels):
+    def predict(self, data, labels, data_space='None'):
         """
             Predicts the cell type provided by the user in stimulated condition.
 
@@ -445,10 +445,24 @@ class MMDCVAE:
             ```
         """
         if sparse.issparse(data.X):
-            stim_pred = self._reconstruct(data.X.A, labels)
+            if data_space == 'latent':
+                stim_pred = self._reconstruct(data.X.A, labels, use_data=True)
+            elif data_space == 'mmd':
+                stim_pred = self._reconstruct_from_mmd(data.X.A)
+            else:
+                stim_pred = self._reconstruct(data.X.A, labels)
         else:
-            stim_pred = self._reconstruct(data.X, labels)
-        return stim_pred
+            if data_space == 'latent':
+                stim_pred = self._reconstruct(data.X, labels, use_data=True)
+            elif data_space == 'mmd':
+                stim_pred = self._reconstruct_from_mmd(data.X)
+            else:
+                stim_pred = self._reconstruct(data.X, labels)
+        return stim_pred[0]
+
+    def _reconstruct_from_mmd(self, data):
+        model = Model(inputs=self.decoder_model.layers[1], outputs=self.decoder_model.outputs)
+        return model.predict(data)
 
     def restore_model(self):
         """
