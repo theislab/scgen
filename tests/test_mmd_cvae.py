@@ -1,4 +1,6 @@
+import numpy as np
 import scanpy as sc
+
 import scgen
 
 # def get_layer_output_grad(model, inputs, outputs, layer=-1):
@@ -14,24 +16,45 @@ import scgen
 train = sc.read("../data/train.h5ad")
 train = train[train.obs["cell_type"] == "CD4T"]
 train_labels = scgen.label_encoder(train)
-# train = train[~((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "stimulated"))]
 z_dim = 20
-network = scgen.MMDCVAE(x_dimension=train.X.shape[1], z_dimension=z_dim, alpha=0.1, batch_mmd=True, kernel="multi-scale-rbf")
+network = scgen.MMDCVAE(x_dimension=train.X.shape[1], z_dimension=z_dim, alpha=0.001, beta=100, batch_mmd=True,
+                        kernel="multi-scale-rbf", train_with_fake_labels=False)
 # network.restore_model()
-network.train(train, n_epochs=100, verbose=1)
+network.train(train, n_epochs=1000, verbose=2)
 # model = network.cvae_model
 # print(get_layer_output_grad(model, train.X, train_labels, layer=0))
 
-labels, _ = scgen.label_encoder(train)
-latent = network.to_latent(train.X, labels=labels)
-adata = sc.AnnData(X=latent,
+true_labels, _ = scgen.label_encoder(train)
+fake_labels = np.zeros(shape=true_labels.shape)
+
+latent_with_true_labels = network.to_latent(train.X, labels=true_labels)
+adata = sc.AnnData(X=latent_with_true_labels,
                    obs={"condition": train.obs["condition"].tolist(), "cell_type": train.obs["cell_type"].tolist()})
 sc.pp.neighbors(adata)
 sc.tl.umap(adata)
-sc.pl.umap(adata, color=["condition", "cell_type"], save=f"train_{z_dim}")
-mmd = network.to_mmd_layer(network.cvae_model, train.X, labels=labels)
-adata_mmd = sc.AnnData(X=mmd,
+sc.pl.umap(adata, color=["condition", "cell_type"], save=f"latent_true_labels_{z_dim}")
+
+latent_with_fake_labels = network.to_latent(train.X, np.ones(shape=(train.shape[0], 1)))
+adata = sc.AnnData(X=latent_with_fake_labels,
+                   obs={"condition": train.obs["condition"].tolist(), "cell_type": train.obs["cell_type"].tolist()})
+sc.pp.neighbors(adata)
+sc.tl.umap(adata)
+sc.pl.umap(adata, color=["condition", "cell_type"], save=f"latent_fake_labels_{z_dim}")
+
+mmd_with_true_labels = network.to_mmd_layer(network.cvae_model, train.X,
+                                            encoder_labels=true_labels,
+                                            decoder_labels=true_labels)
+adata_mmd = sc.AnnData(X=mmd_with_true_labels,
                        obs={"condition": train.obs["condition"].tolist(), "cell_type": train.obs["cell_type"].tolist()})
 sc.pp.neighbors(adata_mmd)
 sc.tl.umap(adata_mmd)
-sc.pl.umap(adata_mmd, color=["condition", "cell_type"], save=f"true_labels_{z_dim}")
+sc.pl.umap(adata_mmd, color=["condition", "cell_type"], save=f"mmd_true_labels_{z_dim}")
+
+mmd_with_fake_labels = network.to_mmd_layer(network.cvae_model, train.X,
+                                            encoder_labels=true_labels,
+                                            decoder_labels=fake_labels)
+adata_mmd = sc.AnnData(X=mmd_with_fake_labels,
+                       obs={"condition": train.obs["condition"].tolist(), "cell_type": train.obs["cell_type"].tolist()})
+sc.pp.neighbors(adata_mmd)
+sc.tl.umap(adata_mmd)
+sc.pl.umap(adata_mmd, color=["condition", "cell_type"], save=f"mmd_true_labels_{z_dim}")

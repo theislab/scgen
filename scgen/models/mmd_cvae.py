@@ -50,6 +50,7 @@ class MMDCVAE:
         self.dr_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./")
         self.batch_mmd = kwargs.get("batch_mmd", True)
+        self.train_with_fake_labels = kwargs.get("train_with_fake_labels", False)
         self.kernel_method = kwargs.get("kernel", "multi-scale-rbf")
 
         self.x = Input(shape=(self.x_dim,), name="data")
@@ -153,17 +154,13 @@ class MMDCVAE:
                 Nothing will be returned.
         """
 
-        # normal flow
-        self.pseudo_labels = Input(shape=(1,), name="pseudo_labels")
-        if self.batch_mmd:
-            inputs = [self.x, self.y, self.pseudo_labels]
-        else:
-            inputs = [self.x, self.y, self.pseudo_labels]
+        self.decoder_labels = Input(shape=(1,), name="decoder_labels")
+        inputs = [self.x, self.y, self.decoder_labels]
         self.mu, self.log_var, self.encoder_model = self._encoder(*inputs[:2], name="encoder")
-        self.x_hat, self.mmd_hl, self.decoder_model = self._mmd_decoder(self.z, self.pseudo_labels,
+        self.x_hat, self.mmd_hl, self.decoder_model = self._mmd_decoder(self.z, self.decoder_labels,
                                                                         name="decoder")
         self.cvae_model = Model(inputs=inputs,
-                                outputs=self.decoder_model([self.encoder_model(inputs[:2])[2], self.pseudo_labels]),
+                                outputs=self.decoder_model([self.encoder_model(inputs[:2])[2], self.decoder_labels]),
                                 name="cvae")
 
     @staticmethod
@@ -372,7 +369,7 @@ class MMDCVAE:
         latent = mmd_model([data, labels, K.ones(shape=K.shape(labels))])
         return latent
 
-    def to_mmd_layer(self, model, data, labels):
+    def to_mmd_layer(self, model, data, encoder_labels, decoder_labels=None):
         """
             Map `data` in to the pn layer after latent layer. This function will feed data
             in encoder part of C-VAE and compute the latent space coordinates
@@ -388,9 +385,10 @@ class MMDCVAE:
                 latent: numpy nd-array
                     returns array containing latent space encoding of 'data'
         """
-
+        if decoder_labels is None:
+            decoder_labels = encoder_labels
         mmd_model = Model(inputs=model.inputs, outputs=model.output[1])
-        mmd_latent = mmd_model.predict([data, labels, np.ones(shape=labels.shape)])
+        mmd_latent = mmd_model.predict([data, encoder_labels, decoder_labels])
         return mmd_latent
 
     def _reconstruct(self, data, labels, use_data=False):
@@ -472,7 +470,7 @@ class MMDCVAE:
             network.restore_model()
             ```
         """
-        self.cvae_model = load_model(os.path.join(self.model_to_use, 'cvae.h5'), compile=False)
+        self.cvae_model = load_model(os.path.join(self.model_to_use, 'mmd_cvae.h5'), compile=False)
         self.encoder_model = load_model(os.path.join(self.model_to_use, 'encoder.h5'), compile=False)
         self.decoder_model = load_model(os.path.join(self.model_to_use, 'decoder.h5'), compile=False)
         self._loss_function()
@@ -540,18 +538,27 @@ class MMDCVAE:
             self.scales = [med / 2, med, med * 2]
         if shuffle:
             train_data, train_labels = shuffle_data(train_data, train_labels)
+
         if use_validation and valid_data is None:
             raise Exception("valid_data is None but use_validation is True.")
         if use_validation:
             valid_labels, _ = label_encoder(valid_data)
+
         callbacks = [
             # EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
             CSVLogger(filename="./results/csv_logger.log")
         ]
+
+        if self.train_with_fake_labels:
+            x = [train_data.X, train_labels, pseudo_labels]
+        else:
+            x = [train_data.X, train_labels, train_labels]
+        y = [train_data.X, np.zeros(shape=(train_data.shape[0], 128))]  # 2nd element does not matter! :)
+
         if use_validation:
             self.cvae_model.fit(
-                x=[train_data.X, train_labels, pseudo_labels],
-                y=[train_data.X, train_data.X],
+                x=x,
+                y=y,
                 epochs=n_epochs,
                 batch_size=batch_size,
                 validation_data=(valid_data.X, valid_data.X),
@@ -560,14 +567,14 @@ class MMDCVAE:
                 verbose=verbose)
         else:
             self.cvae_model.fit(
-                x=[train_data.X, train_labels, pseudo_labels],
-                y=[train_data.X, np.zeros(shape=(train_data.shape[0], 128))],  # 2nd element does not matter! :)
+                x=x,
+                y=y,
                 epochs=n_epochs,
                 batch_size=batch_size,
                 shuffle=shuffle,
                 callbacks=callbacks,
                 verbose=verbose)
-        self.cvae_model.save(os.path.join("cvae.h5"), overwrite=True)
+        self.cvae_model.save(os.path.join("mmd_cvae.h5"), overwrite=True)
         self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
         self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
         log.info(f"Model saved in file: {self.model_to_use}. Training finished")
