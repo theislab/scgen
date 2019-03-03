@@ -5,7 +5,7 @@ import keras
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
-from keras.callbacks import EarlyStopping, CSVLogger
+from keras.callbacks import CSVLogger
 from keras.layers import Dense, BatchNormalization, Dropout, Input, concatenate, LeakyReLU, ReLU, Lambda
 from keras.models import Model, load_model
 from scipy import sparse
@@ -42,23 +42,20 @@ class MMDCVAE:
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
         self.x_dim = x_dimension
         self.z_dim = z_dimension
+
         self.lr = kwargs.get("learning_rate", 0.001)
-        self.alpha = kwargs.get("alpha", 0.1)
-        self.beta = kwargs.get("beta", 1)
+        self.alpha = kwargs.get("alpha", 0.001)
+        self.beta = kwargs.get("beta", 100)
         self.conditions = kwargs.get("condition_list")
         self.dr_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./")
         self.batch_mmd = kwargs.get("batch_mmd", True)
-        self.kernel_method = kwargs.get("kernel", "raphy")
+        self.kernel_method = kwargs.get("kernel", "multi-scale-rbf")
+
         self.x = Input(shape=(self.x_dim,), name="data")
         self.y = Input(shape=(1,), name="labels")
         self.z = Input(shape=(self.z_dim,), name="latent_data")
-        self.source_x = Input(shape=(self.x_dim,), name="source_x")
-        self.source_y = Input(shape=(1,), name="source_y")
-        self.source_z = Input(shape=(self.z_dim,), name="source_z")
-        self.dest_x = Input(shape=(self.x_dim,), name="dest_x")
-        self.dest_y = Input(shape=(1,), name="dest_y")
-        self.dest_z = Input(shape=(self.z_dim,), name="dest_z")
+
         self.init_w = keras.initializers.glorot_normal()
         self._create_network()
         self._loss_function()
@@ -169,27 +166,6 @@ class MMDCVAE:
                                 outputs=self.decoder_model([self.encoder_model(inputs[:2])[2], self.pseudo_labels]),
                                 name="cvae")
 
-        # source flow
-        # source_inputs = [self.source_x, self.source_y]
-        # self.mu_s, self.log_var_s, self.source_encoder_model = self._encoder(*source_inputs, name="source_encoder")
-        # self.x_hat_s, self.mmd_s, self.source_decoder_model = self._mmd_decoder(
-        #     self.source_z,
-        #     self.source_y, name="source_decoder")
-        # self.source_cvae_model = Model(inputs=source_inputs,
-        #                                outputs=self.source_decoder_model(
-        #                                    [self.source_encoder_model(source_inputs)[2], self.source_y]),
-        #                                name="source_cvae")
-        #
-        # # destination flow
-        # dest_inputs = [self.dest_x, self.dest_y]
-        # self.mu_d, self.log_var_d, self.dest_encoder_model = self._encoder(*dest_inputs, name="dest_encoder")
-        # self.x_hat_d, self.mmd_d, self.dest_decoder_model = self._mmd_decoder(self.dest_z,
-        #                                                                       self.dest_y, name="dest_decoder")
-        # self.dest_cvae_model = Model(inputs=dest_inputs,
-        #                              outputs=self.dest_decoder_model(
-        #                                  [self.dest_encoder_model(dest_inputs)[2], self.dest_y]),
-        #                              name="dest_cvae")
-
     @staticmethod
     def compute_kernel(x, y, method='rbf', **kwargs):
         """
@@ -204,9 +180,7 @@ class MMDCVAE:
             # Returns
                 returns the computed RBF kernel between x and y
         """
-        scales = kwargs.get("scales", None)
-        sample_size = kwargs.get("sample_size", 1000)
-        n_neighbors = kwargs.get("n_neighbors", 25)
+        scales = kwargs.get("scales", [])
         if method == "rbf":
             x_size = K.shape(x)[0]
             y_size = K.shape(y)[0]
@@ -214,21 +188,8 @@ class MMDCVAE:
             tiled_x = K.tile(K.reshape(x, K.stack([x_size, 1, dim])), K.stack([1, y_size, 1]))
             tiled_y = K.tile(K.reshape(y, K.stack([1, y_size, dim])), K.stack([x_size, 1, 1]))
             return K.exp(-K.mean(K.square(tiled_x - tiled_y), axis=2) / K.cast(dim, tf.float32))
-        elif method == 'raphy':  # TODO: must check how to feed sample to NearestNeighbors
-            if scales is None:
-                med = np.zeros(20)
-                for i in range(1, 20):
-                    sample_indices = K.cast(K.round(
-                        K.random_uniform_variable(low=0, high=K.cast(K.shape(x)[0] - 1, 'float32'),
-                                                  shape=(sample_size,))), 'int32')
-                    sample = K.gather(x, sample_indices)
-                    nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
-                    distances, indices = nbrs.kneighbors(sample)
-                    med[i] = np.median(distances[:, 1:n_neighbors])
-                med = np.median(med)
-                scales = [med / 2, med, med * 2]
+        elif method == 'raphy':
             scales = K.variable(value=np.asarray(scales))
-
             squared_dist = K.expand_dims(MMDCVAE.squared_distance(x, y), 0)
             scales = K.expand_dims(K.expand_dims(scales, -1), -1)
             weights = K.eval(K.shape(scales)[0])
@@ -245,12 +206,12 @@ class MMDCVAE:
             return K.reshape(tf.reduce_sum(tf.exp(-s), 0), K.shape(distances)) / len(sigmas)
 
     @staticmethod
-    def squared_distance(X, Y):  # returns the pairwise euclidean distance
-        r = K.expand_dims(X, axis=1)
-        return K.sum(K.square(r - Y), axis=-1)
+    def squared_distance(x, y):  # returns the pairwise euclidean distance
+        r = K.expand_dims(x, axis=1)
+        return K.sum(K.square(r - y), axis=-1)
 
     @staticmethod
-    def compute_mmd(x, y, kernel_method):  # [batch_size, z_dim] [batch_size, z_dim]
+    def compute_mmd(x, y, kernel_method, **kwargs):  # [batch_size, z_dim] [batch_size, z_dim]
         """
             Computes Maximum Mean Discrepancy(MMD) between x and y.
 
@@ -263,9 +224,9 @@ class MMDCVAE:
             # Returns
                 returns the computed MMD between x and y
         """
-        x_kernel = MMDCVAE.compute_kernel(x, x, method=kernel_method)
-        y_kernel = MMDCVAE.compute_kernel(y, y, method=kernel_method)
-        xy_kernel = MMDCVAE.compute_kernel(x, y, method=kernel_method)
+        x_kernel = MMDCVAE.compute_kernel(x, x, method=kernel_method, **kwargs)
+        y_kernel = MMDCVAE.compute_kernel(y, y, method=kernel_method, **kwargs)
+        xy_kernel = MMDCVAE.compute_kernel(x, y, method=kernel_method, **kwargs)
         return K.mean(x_kernel) + K.mean(y_kernel) - 2 * K.mean(xy_kernel)
 
     def _loss_function(self, data=np.zeros((10, 6998)), labels=np.zeros((10, 1))):
@@ -283,15 +244,12 @@ class MMDCVAE:
         """
 
         def batch_loss():
-            def cvae_kl_re_loss(mu, log_var):
-                def loss(y_true, y_pred):
-                    kl_loss = 0.5 * K.mean(K.exp(log_var) + K.square(mu) - 1. - log_var, 1)
-                    recon_loss = 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
-                    return recon_loss + self.alpha * kl_loss
+            def kl_recon_loss(y_true, y_pred):
+                kl_loss = 0.5 * K.mean(K.exp(self.log_var) + K.square(self.mu) - 1. - self.log_var, 1)
+                recon_loss = 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
+                return recon_loss + self.alpha * kl_loss
 
-                return loss
-
-            def cvae_mmd_loss(y_true, y_pred):
+            def mmd_loss(y_true, y_pred):
                 data = self.cvae_model.inputs[0]
                 labels = self.cvae_model.inputs[1]
                 bool_mask = K.equal(labels, K.zeros(shape=K.shape(labels)))
@@ -316,7 +274,8 @@ class MMDCVAE:
 
             self.cvae_optimizer = keras.optimizers.Adam(lr=self.lr)
             self.cvae_model.compile(optimizer=self.cvae_optimizer,
-                                    loss=[cvae_kl_re_loss(self.mu, self.log_var), cvae_mmd_loss])
+                                    loss=[kl_recon_loss, mmd_loss],
+                                    metrics=[kl_recon_loss, mmd_loss])
 
         def non_batch_loss(data, labels):
             def cvae_kl_re_loss(mu, log_var):
@@ -358,7 +317,7 @@ class MMDCVAE:
                                                data=dest_x,  # dest_x
                                                labels=dest_y)  # dest_y
 
-                    mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method)
+                    mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method, scales=self.scales)
                     return self.beta * mmd_loss
 
                 return loss
@@ -564,9 +523,21 @@ class MMDCVAE:
         train_source = train_data[train_data.obs["condition"] == "control"]
         train_dest = train_data[train_data.obs["condition"] == "stimulated"]
         pseudo_labels = np.ones(shape=train_labels.shape)
+
         if not self.batch_mmd:
             self._loss_function(train_data.X.A, train_labels)
 
+        if self.kernel_method == "raphy":
+            med = np.zeros(20)
+            n_neighbors = 25
+            sample_size = 1000
+            for i in range(1, 20):
+                sample = train_dest[np.random.randint(train_dest.shape[0], size=sample_size), :]
+                nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
+                distances, dummy = nbrs.kneighbors(sample)
+                med[i] = np.median(distances[:, 1:n_neighbors])
+            med = np.median(med)
+            self.scales = [med / 2, med, med * 2]
         if shuffle:
             train_data, train_labels = shuffle_data(train_data, train_labels)
         if use_validation and valid_data is None:
@@ -574,7 +545,7 @@ class MMDCVAE:
         if use_validation:
             valid_labels, _ = label_encoder(valid_data)
         callbacks = [
-            EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
+            # EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
             CSVLogger(filename="./results/csv_logger.log")
         ]
         if use_validation:
@@ -590,7 +561,7 @@ class MMDCVAE:
         else:
             self.cvae_model.fit(
                 x=[train_data.X, train_labels, pseudo_labels],
-                y=[train_data.X, train_data.X],  # 2nd element does not matter! :)
+                y=[train_data.X, np.zeros(shape=(train_data.shape[0], 128))],  # 2nd element does not matter! :)
                 epochs=n_epochs,
                 batch_size=batch_size,
                 shuffle=shuffle,
