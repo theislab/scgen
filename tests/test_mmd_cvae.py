@@ -13,7 +13,7 @@ import scgen
 #     return output_grad
 
 
-train = sc.read("../data/train.h5ad")
+train = sc.read("../data/train.h5ad", backup_url="https://goo.gl/33HtVh")
 train = train[train.obs["cell_type"] == "CD4T"]
 train_labels = scgen.label_encoder(train)
 z_dim = 20
