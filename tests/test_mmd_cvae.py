@@ -24,26 +24,26 @@ CD4T = train[train.obs["cell_type"] == "CD4T"]
 CD4T_labels, _ = scgen.label_encoder(CD4T)
 z_dim = 50
 net_train_data = train[~((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "stimulated"))]
-network = scgen.MMDCVAE(x_dimension=CD4T.X.shape[1], z_dimension=z_dim, alpha=0.001, beta=100, batch_mmd=True,
+network = scgen.MMDCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=0.001, beta=100, batch_mmd=True,
                         kernel="multi-scale-rbf", train_with_fake_labels=False)
-# network.restore_model()
-network.train(net_train_data, n_epochs=500, batch_size=1024, verbose=2)
+network.restore_model()
+# network.train(net_train_data, n_epochs=500, batch_size=1024, verbose=2)
 print("network has been restored/trained!")
 # model = network.cvae_model
-# print(get_layer_output_grad(model, CD4T.X, CD4T_labels, layer=0))
+# print(get_layer_output_grad(model, net_train_data.X, CD4T_labels, layer=0))
 
 true_labels, _ = scgen.label_encoder(net_train_data)
 fake_labels = np.zeros(shape=true_labels.shape)
 
 latent_with_true_labels = network.to_latent(net_train_data.X, labels=true_labels)
 latent_with_true_labels = sc.AnnData(X=latent_with_true_labels,
-                                     obs={"condition": CD4T.obs["condition"].tolist(),
-                                          "cell_type": CD4T.obs["cell_type"].tolist()})
+                                     obs={"condition": net_train_data.obs["condition"].tolist(),
+                                          "cell_type": net_train_data.obs["cell_type"].tolist()})
 sc.pp.neighbors(latent_with_true_labels)
 sc.tl.umap(latent_with_true_labels)
 sc.pl.umap(latent_with_true_labels, color=["condition", "cell_type"], save=f"latent_true_labels_{z_dim}")
 
-latent_with_fake_labels = network.to_latent(net_train_data.X, np.ones(shape=(CD4T.shape[0], 1)))
+latent_with_fake_labels = network.to_latent(net_train_data.X, np.ones(shape=(net_train_data.shape[0], 1)))
 latent_with_fake_labels = sc.AnnData(X=latent_with_fake_labels,
                                      obs={"condition": net_train_data.obs["condition"].tolist(),
                                           "cell_type": net_train_data.obs["cell_type"].tolist()})
