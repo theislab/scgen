@@ -117,7 +117,7 @@ class MMDCVAE:
         h = LeakyReLU()(h)
         h = Dropout(self.dr_rate)(h)
         h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=True)(h)
-        h = ReLU()(h)
+        h = ReLU(name="reconstruction_output")(h)
         model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
         return h, h_mmd, model
 
@@ -159,8 +159,11 @@ class MMDCVAE:
         self.mu, self.log_var, self.encoder_model = self._encoder(*inputs[:2], name="encoder")
         self.x_hat, self.mmd_hl, self.decoder_model = self._mmd_decoder(self.z, self.decoder_labels,
                                                                         name="decoder")
+        decoder_outputs = self.decoder_model([self.encoder_model(inputs[:2])[2], self.decoder_labels])
+        reconstruction_output = Lambda(lambda x:x, name="kl_reconstruction")(decoder_outputs[0])
+        mmd_output = Lambda(lambda x:x, name="mmd")(decoder_outputs[1])
         self.cvae_model = Model(inputs=inputs,
-                                outputs=self.decoder_model([self.encoder_model(inputs[:2])[2], self.decoder_labels]),
+                                outputs=[reconstruction_output, mmd_output],
                                 name="cvae")
 
     @staticmethod
@@ -246,20 +249,18 @@ class MMDCVAE:
                 recon_loss = 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
                 return recon_loss + self.alpha * kl_loss
 
-            def mmd_loss(y_true, y_pred):
-                encoder_labels = self.cvae_model.inputs[1]
-                labels = K.cast(encoder_labels, 'int32')
-                labels = K.reshape(labels, shape=(-1,))
-
-                source_mmd, dest_mmd = tf.dynamic_partition(y_pred, labels, num_partitions=2)
-
-                mmd_loss = self.compute_mmd(source_mmd, dest_mmd, self.kernel_method)
-                return self.beta * mmd_loss
+            def mmd_loss(real_labels, y_pred):
+                with tf.variable_scope("mmd_loss", reuse=tf.AUTO_REUSE):
+                    real_labels = K.reshape(K.cast(real_labels, 'int32'), (-1,))
+                    source_mmd, dest_mmd = tf.dynamic_partition(y_pred, real_labels, num_partitions=2)
+                    loss = self.compute_mmd(source_mmd, dest_mmd, self.kernel_method)
+                    return self.beta * loss
 
             self.cvae_optimizer = keras.optimizers.Adam(lr=self.lr)
             self.cvae_model.compile(optimizer=self.cvae_optimizer,
                                     loss=[kl_recon_loss, mmd_loss],
-                                    metrics=[kl_recon_loss, mmd_loss])
+                                    metrics={self.cvae_model.outputs[0].name: kl_recon_loss,
+                                             self.cvae_model.outputs[1].name: mmd_loss})
 
         def non_batch_loss(data, labels):
             def cvae_kl_re_loss(mu, log_var):
@@ -331,7 +332,7 @@ class MMDCVAE:
         latent = self.encoder_model.predict([data, labels])[2]
         return latent
 
-    def to_mmd_layer(self, model, data, encoder_labels, decoder_labels=None):
+    def to_mmd_layer(self, model, data, encoder_labels):
         """
             Map `data` in to the pn layer after latent layer. This function will feed data
             in encoder part of C-VAE and compute the latent space coordinates
@@ -348,7 +349,7 @@ class MMDCVAE:
                     returns array containing latent space encoding of 'data'
         """
         if self.train_with_fake_labels:
-            decoder_labels = np.ones()
+            decoder_labels = np.ones(shape=encoder_labels.shape)
         else:
             decoder_labels = encoder_labels
         mmd_model = Model(inputs=model.inputs, outputs=model.output[1])
@@ -529,9 +530,10 @@ class MMDCVAE:
 
         if self.train_with_fake_labels:
             x = [train_data.X, train_labels, pseudo_labels]
+            y = [train_data.X, np.ones(shape=train_labels.shape)]
         else:
             x = [train_data.X, train_labels, train_labels]
-        y = [train_data.X, np.zeros(shape=(train_data.shape[0], 128))]  # 2nd element does not matter! :)
+            y = [train_data.X, train_labels]
 
         if use_validation:
             self.cvae_model.fit(
