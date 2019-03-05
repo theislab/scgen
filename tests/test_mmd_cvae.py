@@ -104,6 +104,8 @@ def test_train_whole_data_one_celltype_out(z_dim=50, alpha=0.001, beta=100, kern
 
         sc.pl.violin(all_adata, keys="ISG15", groupby="condition", save=f"_{z_dim}")
 
+        os.chdir("../../")
+
 
 if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(z_dim=50,
