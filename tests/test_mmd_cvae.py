@@ -8,15 +8,11 @@ import scgen
 
 if not os.getcwd().endswith("tests"):
     os.chdir("./tests")
-# def get_layer_output_grad(model, inputs, outputs, layer=-1):
-#     from keras import backend as K
-#     grads = model.optimizer.get_gradients(model.loss_fnctions[1], model.layers[layer].output)
-#     symb_inputs = (model._feed_inputs + model._feed_targets + model._feed_sample_weights)
-#     f = K.function(symb_inputs, grads)
-#     x, y, sample_weight = model._standardize_user_data(inputs, outputs)
-#     output_grad = f(x + y + sample_weight)
-#     return output_grad
+from datetime import datetime, timezone
 
+current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
+os.makedirs(current_time, exist_ok=True)
+os.chdir("./" + current_time)
 
 train = sc.read("../data/train.h5ad", backup_url="https://goo.gl/33HtVh")
 
@@ -27,10 +23,8 @@ net_train_data = train[~((train.obs["cell_type"] == "CD4T") & (train.obs["condit
 network = scgen.MMDCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=0.001, beta=100, batch_mmd=True,
                         kernel="multi-scale-rbf", train_with_fake_labels=False)
 # network.restore_model()
-network.train(net_train_data, n_epochs=500, batch_size=1024, verbose=2)
+network.train(net_train_data, n_epochs=500, batch_size=1024, verbose=1)
 print("network has been restored/trained!")
-# model = network.cvae_model
-# print(get_layer_output_grad(model, net_train_data.X, CD4T_labels, layer=0))
 
 true_labels, _ = scgen.label_encoder(net_train_data)
 fake_labels = np.zeros(shape=true_labels.shape)
@@ -92,4 +86,4 @@ sc.pp.neighbors(all_adata)
 sc.tl.umap(all_adata)
 sc.pl.umap(all_adata, color="condition", save="pred")
 
-sc.pl.violin(all_adata, keys="ISG15", groupby="condition", save=f"violin_{z_dim}")
+sc.pl.violin(all_adata, keys="ISG15", groupby="condition", save=f"_{z_dim}")
