@@ -248,17 +248,10 @@ class MMDCVAE:
 
             def mmd_loss(y_true, y_pred):
                 encoder_labels = self.cvae_model.inputs[1]
+                labels = K.cast(encoder_labels, 'int32')
+                labels = K.reshape(labels, shape=(-1,))
 
-                source_bool_mask = K.equal(encoder_labels, K.zeros(shape=K.shape(encoder_labels)))
-                source_bool_mask = K.reshape(source_bool_mask, shape=(-1,))
-
-                source_mmd = tf.boolean_mask(y_pred, source_bool_mask)
-                source_mmd = K.reshape(source_mmd, shape=(-1, K.shape(source_mmd)[1]))
-
-                dest_bool_mask = K.equal(encoder_labels, K.ones(shape=K.shape(encoder_labels)))
-                dest_bool_mask = K.reshape(dest_bool_mask, shape=(-1,))
-                dest_mmd = tf.boolean_mask(y_pred, dest_bool_mask)
-                dest_mmd = K.reshape(dest_mmd, shape=(-1, K.shape(dest_mmd)[1]))
+                source_mmd, dest_mmd = tf.dynamic_partition(y_pred, labels, num_partitions=2)
 
                 mmd_loss = self.compute_mmd(source_mmd, dest_mmd, self.kernel_method)
                 return self.beta * mmd_loss
@@ -301,12 +294,8 @@ class MMDCVAE:
                     dest_x = K.reshape(dest_x, shape=(-1, K.get_variable_shape(dest_x)[1]))
                     dest_y = K.ones(shape=(K.shape(dest_x)[0], 1))
 
-                    mmd_s = self._to_mmd_layer(model=self.cvae_model,
-                                               data=source_x,  # source_x
-                                               labels=source_y)  # source_y
-                    mmd_d = self._to_mmd_layer(model=self.cvae_model,
-                                               data=dest_x,  # dest_x
-                                               labels=dest_y)  # dest_y
+                    mmd_s = self.cvae_model([source_x, source_y, source_y])[1]
+                    mmd_d = self.cvae_model([source_x, dest_y, dest_y])[1]
 
                     mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method, scales=self.scales)
                     return self.beta * mmd_loss
