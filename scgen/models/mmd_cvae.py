@@ -535,7 +535,7 @@ class MMDCVAE:
 
         callbacks = [
             # EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
-            CSVLogger(filename="./results/csv_logger.log")
+            CSVLogger(filename="./csv_logger.log")
         ]
 
         if self.train_with_fake_labels:
