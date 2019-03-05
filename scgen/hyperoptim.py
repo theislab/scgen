@@ -10,7 +10,7 @@ import scgen
 
 
 def data():
-    x_train = sc.read("../data/train.h5ad")
+    x_train = sc.read("./data/train.h5ad")
     return x_train
 
 
@@ -25,7 +25,7 @@ def create_model(x_train):
                            verbose=2,
                            shuffle=True,
                            save=False)
-    best_mmd_loss = np.amax(result.history['mmd_loss'])
+    best_mmd_loss = np.amin(result.history['mmd_loss'])
     print('Best validation acc of epoch:', best_mmd_loss)
     return {'loss': best_mmd_loss, 'status': STATUS_OK, 'model': network.cvae_model}
 
