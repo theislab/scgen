@@ -26,8 +26,8 @@ z_dim = 50
 net_train_data = train[~((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "stimulated"))]
 network = scgen.MMDCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=0.001, beta=100, batch_mmd=True,
                         kernel="multi-scale-rbf", train_with_fake_labels=False)
-network.restore_model()
-# network.train(net_train_data, n_epochs=500, batch_size=1024, verbose=2)
+# network.restore_model()
+network.train(net_train_data, n_epochs=500, batch_size=1024, verbose=2)
 print("network has been restored/trained!")
 # model = network.cvae_model
 # print(get_layer_output_grad(model, net_train_data.X, CD4T_labels, layer=0))

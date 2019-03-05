@@ -54,7 +54,8 @@ class MMDCVAE:
         self.kernel_method = kwargs.get("kernel", "multi-scale-rbf")
 
         self.x = Input(shape=(self.x_dim,), name="data")
-        self.y = Input(shape=(1,), name="labels")
+        self.encoder_labels = Input(shape=(1,), name="encoder_labels")
+        self.decoder_labels = Input(shape=(1,), name="decoder_labels")
         self.z = Input(shape=(self.z_dim,), name="latent_data")
 
         self.init_w = keras.initializers.glorot_normal()
@@ -154,8 +155,7 @@ class MMDCVAE:
                 Nothing will be returned.
         """
 
-        self.decoder_labels = Input(shape=(1,), name="decoder_labels")
-        inputs = [self.x, self.y, self.decoder_labels]
+        inputs = [self.x, self.encoder_labels, self.decoder_labels]
         self.mu, self.log_var, self.encoder_model = self._encoder(*inputs[:2], name="encoder")
         self.x_hat, self.mmd_hl, self.decoder_model = self._mmd_decoder(self.z, self.decoder_labels,
                                                                         name="decoder")
@@ -247,26 +247,20 @@ class MMDCVAE:
                 return recon_loss + self.alpha * kl_loss
 
             def mmd_loss(y_true, y_pred):
-                data = self.cvae_model.inputs[0]
-                labels = self.cvae_model.inputs[1]
-                bool_mask = K.equal(labels, K.zeros(shape=K.shape(labels)))
-                bool_mask = K.reshape(bool_mask, shape=(-1,))
-                source_x = tf.boolean_mask(data, bool_mask)
-                source_x = K.reshape(source_x, shape=(-1, K.get_variable_shape(source_x)[1]))
-                source_y = K.zeros(shape=(K.shape(source_x)[0], 1))
-                bool_mask = K.equal(labels, K.ones(shape=K.shape(labels)))
-                bool_mask = K.reshape(bool_mask, shape=(-1,))
-                dest_x = tf.boolean_mask(data, bool_mask)
-                dest_x = K.reshape(dest_x, shape=(-1, K.get_variable_shape(dest_x)[1]))
-                dest_y = K.ones(shape=(K.shape(dest_x)[0], 1))
+                encoder_labels = self.cvae_model.inputs[1]
 
-                mmd_s = self._to_mmd_layer(model=self.cvae_model,
-                                           data=source_x,  # source_x
-                                           labels=source_y)  # source_y
-                mmd_d = self._to_mmd_layer(model=self.cvae_model,
-                                           data=dest_x,  # dest_x
-                                           labels=dest_y)  # dest_y
-                mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method)
+                source_bool_mask = K.equal(encoder_labels, K.zeros(shape=K.shape(encoder_labels)))
+                source_bool_mask = K.reshape(source_bool_mask, shape=(-1,))
+
+                source_mmd = tf.boolean_mask(y_pred, source_bool_mask)
+                source_mmd = K.reshape(source_mmd, shape=(-1, K.shape(source_mmd)[1]))
+
+                dest_bool_mask = K.equal(encoder_labels, K.ones(shape=K.shape(encoder_labels)))
+                dest_bool_mask = K.reshape(dest_bool_mask, shape=(-1,))
+                dest_mmd = tf.boolean_mask(y_pred, dest_bool_mask)
+                dest_mmd = K.reshape(dest_mmd, shape=(-1, K.shape(dest_mmd)[1]))
+
+                mmd_loss = self.compute_mmd(source_mmd, dest_mmd, self.kernel_method)
                 return self.beta * mmd_loss
 
             self.cvae_optimizer = keras.optimizers.Adam(lr=self.lr)
@@ -348,27 +342,6 @@ class MMDCVAE:
         latent = self.encoder_model.predict([data, labels])[2]
         return latent
 
-    def _to_mmd_layer(self, model, data, labels):
-        """
-            Map `data` in to the pn layer after latent layer. This function will feed data
-            in encoder part of C-VAE and compute the latent space coordinates
-            for each sample in data.
-
-            # Parameters
-                data: `~anndata.AnnData`
-                    Annotated data matrix to be mapped to latent space. `data.X` has to be in shape [n_obs, n_vars].
-                labels: numpy nd-array
-                    `numpy nd-array` of labels to be fed as CVAE's condition array.
-
-            # Returns
-                latent: numpy nd-array
-                    returns array containing latent space encoding of 'data'
-        """
-
-        mmd_model = Model(inputs=model.inputs, outputs=model.output[1])
-        latent = mmd_model([data, labels, K.ones(shape=K.shape(labels))])
-        return latent
-
     def to_mmd_layer(self, model, data, encoder_labels, decoder_labels=None):
         """
             Map `data` in to the pn layer after latent layer. This function will feed data
@@ -385,7 +358,9 @@ class MMDCVAE:
                 latent: numpy nd-array
                     returns array containing latent space encoding of 'data'
         """
-        if decoder_labels is None:
+        if self.train_with_fake_labels:
+            decoder_labels = np.ones()
+        else:
             decoder_labels = encoder_labels
         mmd_model = Model(inputs=model.inputs, outputs=model.output[1])
         mmd_latent = mmd_model.predict([data, encoder_labels, decoder_labels])
