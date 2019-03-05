@@ -5,7 +5,7 @@ import keras
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
-from keras.callbacks import CSVLogger
+from keras.callbacks import CSVLogger, History
 from keras.layers import Dense, BatchNormalization, Dropout, Input, concatenate, LeakyReLU, ReLU, Lambda
 from keras.models import Model, load_model
 from scipy import sparse
@@ -355,7 +355,7 @@ class MMDCVAE:
         mmd_latent = model.predict([data, encoder_labels, decoder_labels])[1]
         return mmd_latent
 
-    def _reconstruct(self, data, labels, use_data=False):
+    def _reconstruct(self, data, encoder_labels, decoder_labels, use_data=False):
         """
             Map back the latent space encoding via the decoder.
 
@@ -378,11 +378,11 @@ class MMDCVAE:
         if use_data:
             latent = data
         else:
-            latent = self.to_latent(data, labels)
-        rec_data = self.decoder_model.predict([latent, labels])
+            latent = self.to_latent(data, encoder_labels)
+        rec_data = self.decoder_model.predict([latent, decoder_labels])
         return rec_data
 
-    def predict(self, data, labels, data_space='None'):
+    def predict(self, data, encoder_labels, decoder_labels, data_space='None'):
         """
             Predicts the cell type provided by the user in stimulated condition.
 
@@ -410,18 +410,18 @@ class MMDCVAE:
         """
         if sparse.issparse(data.X):
             if data_space == 'latent':
-                stim_pred = self._reconstruct(data.X.A, labels, use_data=True)
+                stim_pred = self._reconstruct(data.X.A, encoder_labels, decoder_labels, use_data=True)
             elif data_space == 'mmd':
                 stim_pred = self._reconstruct_from_mmd(data.X.A)
             else:
-                stim_pred = self._reconstruct(data.X.A, labels)
+                stim_pred = self._reconstruct(data.X.A, encoder_labels, decoder_labels)
         else:
             if data_space == 'latent':
-                stim_pred = self._reconstruct(data.X, labels, use_data=True)
+                stim_pred = self._reconstruct(data.X, encoder_labels, decoder_labels, use_data=True)
             elif data_space == 'mmd':
                 stim_pred = self._reconstruct_from_mmd(data.X)
             else:
-                stim_pred = self._reconstruct(data.X, labels)
+                stim_pred = self._reconstruct(data.X, encoder_labels, decoder_labels)
         return stim_pred[0]
 
     def _reconstruct_from_mmd(self, data):
@@ -455,7 +455,7 @@ class MMDCVAE:
 
     def train(self, train_data, use_validation=False, valid_data=None, n_epochs=25, batch_size=32, early_stop_limit=20,
               threshold=0.0025, initial_run=True,
-              shuffle=True, verbose=2):  # TODO: Write minibatches for each source and destination
+              shuffle=True, verbose=2, save=True):  # TODO: Write minibatches for each source and destination
         """
             Trains the network `n_epochs` times with given `train_data`
             and validates the model using validation_data if it was given
@@ -523,6 +523,7 @@ class MMDCVAE:
             valid_labels, _ = label_encoder(valid_data)
 
         callbacks = [
+            History(),
             # EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
             CSVLogger(filename="./csv_logger.log")
         ]
@@ -535,7 +536,7 @@ class MMDCVAE:
             y = [train_data.X, train_labels]
 
         if use_validation:
-            self.cvae_model.fit(
+            histories = self.cvae_model.fit(
                 x=x,
                 y=y,
                 epochs=n_epochs,
@@ -545,7 +546,7 @@ class MMDCVAE:
                 callbacks=callbacks,
                 verbose=verbose)
         else:
-            self.cvae_model.fit(
+            histories = self.cvae_model.fit(
                 x=x,
                 y=y,
                 epochs=n_epochs,
@@ -553,7 +554,9 @@ class MMDCVAE:
                 shuffle=shuffle,
                 callbacks=callbacks,
                 verbose=verbose)
-        self.cvae_model.save(os.path.join("mmd_cvae.h5"), overwrite=True)
-        self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
-        self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
-        log.info(f"Model saved in file: {self.model_to_use}. Training finished")
+        if save:
+            self.cvae_model.save(os.path.join("mmd_cvae.h5"), overwrite=True)
+            self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
+            self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
+            log.info(f"Model saved in file: {self.model_to_use}. Training finished")
+        return histories
