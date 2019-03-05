@@ -14,7 +14,7 @@ current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
 os.makedirs(current_time, exist_ok=True)
 os.chdir("./" + current_time)
 
-train = sc.read("../data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+train = sc.read("../../data/train.h5ad", backup_url="https://goo.gl/33HtVh")
 
 CD4T = train[train.obs["cell_type"] == "CD4T"]
 CD4T_labels, _ = scgen.label_encoder(CD4T)
