@@ -187,7 +187,7 @@ if __name__ == '__main__':
                                            alpha=0.01,
                                            beta=1,
                                            kernel="multi-scale-rbf",
-                                           n_epochs=0,
+                                           n_epochs=1500,
                                            batch_size=768,
                                            condition_key="condition")
     # reconstruct_whole_data()
