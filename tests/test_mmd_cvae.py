@@ -135,7 +135,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.chdir("../../../")
 
 
-def reconstruct_whole_data(data_name="pbmc", cell_type_key="cell_type", condition_key="condition"):
+def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
     if data_name == "pbmc":
         stim_key = "stimulated"
         ctrl_key = "control"
@@ -190,4 +190,4 @@ if __name__ == '__main__':
                                            n_epochs=1500,
                                            batch_size=768,
                                            condition_key="condition")
-    # reconstruct_whole_data()
+    # reconstruct_whole_data(data_name="pbmc")
