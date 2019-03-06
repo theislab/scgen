@@ -21,16 +21,16 @@ def test_train_whole_data_one_celltype_out(z_dim=50, alpha=0.001, beta=100, kern
                                            batch_size=1024):
     train = sc.read("../data/ch10_train_7000.h5ad", backup_url="https://goo.gl/33HtVh")
     for cell_type in train.obs["cell_label"].unique().tolist():
-        # os.makedirs(f"./results/{cell_type}/", exist_ok=True)
-        os.chdir(f"./results/new/{cell_type}")
+        os.makedirs(f"./results/{cell_type}/", exist_ok=True)
+        os.chdir(f"./results/{cell_type}")
         net_train_data = train[~((train.obs["cell_label"] == cell_type) & (train.obs["condition"] == "stimulated"))]
 
         network = scgen.MMDCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=alpha, beta=beta,
                                 batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
                                 model_path=f"./")
 
-        network.restore_model()
-        # network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
+        # network.restore_model()
+        network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
         print(f"network_{cell_type} has been trained!")
 
         true_labels, _ = scgen.label_encoder(net_train_data)
