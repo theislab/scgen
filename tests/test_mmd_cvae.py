@@ -40,6 +40,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         ctrl_key = "Control"
         cell_type_key = "cell_label"
         train = sc.read("../data/chsal_train_7000.h5ad")
+
     for cell_type in train.obs[cell_type_key].unique().tolist():
         os.makedirs(f"./results/{data_name}/{cell_type}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/{cell_type}")
@@ -185,7 +186,7 @@ if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="hpoly",
                                            z_dim=100,
                                            alpha=0.01,
-                                           beta=1,
+                                           beta=100,
                                            kernel="multi-scale-rbf",
                                            n_epochs=1500,
                                            batch_size=768,
