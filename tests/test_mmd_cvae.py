@@ -153,7 +153,8 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         cell_type_key = "cell_label"
         train = sc.read("../data/chsal_train_7000.h5ad")
     all_data = anndata.AnnData()
-    for cell_type in train.obs[cell_type_key].unique().tolist():
+    for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
+        print(f"Reconstructing for {cell_type}")
         os.chdir(f"./results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
         network = scgen.MMDCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=50, alpha=0.001, beta=100,
@@ -163,7 +164,7 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
         cell_type_ctrl_data = train[
-            (train.obs[cell_type_key] == cell_type_data) & (train.obs[condition_key] == ctrl_key)]
+            (train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key)]
         unperturbed_data = train[((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key))]
         true_labels = np.zeros((len(unperturbed_data), 1))
         fake_labels = np.ones((len(unperturbed_data), 1))
@@ -174,21 +175,29 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         pred_adata = anndata.AnnData(pred, obs={condition_key: [f"{cell_type}_pred_stim"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
         ctrl_adata = anndata.AnnData(ctrl_reconstructed,
-                                     obs={condition_key: [f"{cell_type}_pred_stim"] * len(ctrl_reconstructed)},
+                                     obs={condition_key: [f"{cell_type}_ctrl"] * len(ctrl_reconstructed)},
                                      var={"var_names": cell_type_data.var_names})
-        all_data = all_data.concatenate(cell_type_data)
-        all_data = all_data.concatenate(pred_adata)
+        real_stim = cell_type_data[cell_type_data.obs[condition_key] == stim_key].X.A
+        real_stim_adata = anndata.AnnData(real_stim,
+                                     obs={condition_key: [f"{cell_type}_real_stim"] * len(real_stim)},
+                                     var={"var_names": cell_type_data.var_names})
+        if idx == 0:
+            all_data = ctrl_adata.concatenate(pred_adata, real_stim_adata)
+        else:
+            all_data = all_data.concatenate(ctrl_adata, pred_adata, real_stim_adata)
 
         os.chdir("../../../")
+        print(f"Finish Reconstructing for {cell_type}")
+    all_data.write_h5ad(f"./results/{data_name}/reconstructed.h5ad")
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="hpoly",
-                                           z_dim=100,
-                                           alpha=0.01,
-                                           beta=100,
-                                           kernel="multi-scale-rbf",
-                                           n_epochs=1500,
-                                           batch_size=768,
-                                           condition_key="condition")
-    # reconstruct_whole_data(data_name="pbmc")
+    # test_train_whole_data_one_celltype_out(data_name="hpoly",
+    #                                        z_dim=100,
+    #                                        alpha=0.01,
+    #                                        beta=100,
+    #                                        kernel="multi-scale-rbf",
+    #                                        n_epochs=1500,
+    #                                        batch_size=768,
+    #                                        condition_key="condition")
+    reconstruct_whole_data(data_name="pbmc")
