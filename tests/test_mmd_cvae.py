@@ -148,7 +148,7 @@ if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(z_dim=100,
                                            alpha=0.01,
                                            beta=1,
-                                           kernel="rbf",
+                                           kernel="multi-scale-rbf",
                                            n_epochs=1500,
                                            batch_size=768)
     # reconstruct_whole_data()
