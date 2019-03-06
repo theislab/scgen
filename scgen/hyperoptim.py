@@ -43,3 +43,12 @@ if __name__ == '__main__':
     print(best_model.evaluate([x_train.X, true_labels, fake_labels]))
     print("Best performing model chosen hyper-parameters:")
     print(best_run)
+
+"""
+    best run:
+    alpha = 0.01, 
+    beta = 1,
+    kernel = rbf,
+    n_epochs = 1500,
+    z_dim = 100
+"""
