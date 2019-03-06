@@ -19,7 +19,7 @@ if not os.getcwd().endswith("tests"):
 
 def test_train_whole_data_one_celltype_out(z_dim=50, alpha=0.001, beta=100, kernel="multi-scale-rbf", n_epochs=1000,
                                            batch_size=1024):
-    train = sc.read("../data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+    train = sc.read("../data/ch10_train_7000.h5ad", backup_url="https://goo.gl/33HtVh")
     for cell_type in train.obs["cell_type"].unique().tolist():
         # os.makedirs(f"./results/{cell_type}/", exist_ok=True)
         os.chdir(f"./results/new/{cell_type}")
@@ -115,7 +115,7 @@ def test_train_whole_data_one_celltype_out(z_dim=50, alpha=0.001, beta=100, kern
 
 
 def reconstruct_whole_data():
-    train = sc.read("../data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+    train = sc.read("../data/ch10_train_7000.h5ad", backup_url="https://goo.gl/33HtVh")
     all_data = anndata.AnnData()
     for cell_type in train.obs["cell_type"].unique().tolist():
         os.chdir(f"./results/new/{cell_type}")
