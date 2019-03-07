@@ -54,7 +54,7 @@ class MMDCCVAE:
         self.train_with_fake_labels = kwargs.get("train_with_fake_labels", False)
         self.kernel_method = kwargs.get("kernel", "multi-scale-rbf")
 
-        self.x = Input(shape=(28, 28, 1), name="data")
+        self.x = Input(shape=(784,), name="data")
         self.encoder_labels = Input(shape=(1,), name="encoder_labels")
         self.decoder_labels = Input(shape=(1,), name="decoder_labels")
         self.z = Input(shape=(self.z_dim,), name="latent_data")
@@ -63,7 +63,6 @@ class MMDCCVAE:
         self._create_network()
         self._loss_function()
         self.decoder_model.summary()
-        exit()
 
     def _encoder(self, x, y, name="encoder"):
         """
@@ -80,7 +79,8 @@ class MMDCCVAE:
                 log_var: Tensor
                     A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
-        h = Conv2D(64, kernel_size=(4, 4), strides=2, padding='same')(x)
+        h = Reshape(target_shape=(28, 28, 1))(x)
+        h = Conv2D(64, kernel_size=(4, 4), strides=2, padding='same')(h)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Conv2D(128, kernel_size=(4, 4), strides=2, padding='same')(h)
@@ -97,6 +97,7 @@ class MMDCCVAE:
         z = Lambda(self._sample_z, output_shape=(self.z_dim,))([mean, log_var])
         # source and dest data are not connected to encoder's 1st dense but will used for mmd batch computation
         model = Model(inputs=[x, y], outputs=[mean, log_var, z], name=name)
+        model.summary()
         return mean, log_var, model
 
     def _mmd_decoder(self, x, y, name="decoder"):
@@ -121,13 +122,12 @@ class MMDCCVAE:
         h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
         h = Reshape(target_shape=(28, 28, 1))(h)
-        h = Conv2DTranspose(128, kernel_size=(4, 4), strides=2, padding='same')(h)
+        h = Conv2DTranspose(128, kernel_size=(4, 4), padding='same')(h)
         h = LeakyReLU()(h)
-        h = Conv2DTranspose(64, kernel_size=(4, 4), strides=2, padding='same')(h)
+        h = Conv2DTranspose(64, kernel_size=(4, 4), padding='same')(h)
         h = LeakyReLU()(h)
-        h = Conv2DTranspose(1, kernel_size=(4, 4), strides=2, padding='same')(h)
-        h = ReLU()(h)
-
+        h = Conv2DTranspose(1, kernel_size=(4, 4), padding='same', activation="sigmoid")(h)
+        h = Reshape((784, ))(h)
         model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
         return h, h_mmd, model
 
@@ -255,11 +255,15 @@ class MMDCCVAE:
 
         def batch_loss():
             def kl_recon_loss(y_true, y_pred):
+                y_pred = K.reshape(y_pred, (-1, 784))
+                y_true = K.reshape(y_true, (-1, 784))
+
                 kl_loss = 0.5 * K.mean(K.exp(self.log_var) + K.square(self.mu) - 1. - self.log_var, 1)
                 recon_loss = 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
                 return recon_loss + self.alpha * kl_loss
 
             def mmd_loss(real_labels, y_pred):
+                y_pred = K.reshape(y_pred, (-1, 128))
                 with tf.variable_scope("mmd_loss", reuse=tf.AUTO_REUSE):
                     real_labels = K.reshape(K.cast(real_labels, 'int32'), (-1,))
                     source_mmd, dest_mmd = tf.dynamic_partition(y_pred, real_labels, num_partitions=2)
@@ -505,27 +509,28 @@ class MMDCCVAE:
         """
         if initial_run:
             log.info("----Training----")
-        train_labels, le = label_encoder(train_data)
-        train_source = train_data[train_data.obs["condition"] == "control"]
-        train_dest = train_data[train_data.obs["condition"] == "stimulated"]
+        # train_labels, le = label_encoder(train_data)
+        # train_source = train_data[train_data.obs["condition"] == "normal"]
+        # train_dest = train_data[train_data.obs["condition"] == "thin"]
+        train_labels, _ = label_encoder(train_data)
         pseudo_labels = np.ones(shape=train_labels.shape)
 
         if not self.batch_mmd:
             self._loss_function(train_data.X.A, train_labels)
 
-        if self.kernel_method == "raphy":
-            med = np.zeros(20)
-            n_neighbors = 25
-            sample_size = 1000
-            for i in range(1, 20):
-                sample = train_dest[np.random.randint(train_dest.shape[0], size=sample_size), :]
-                nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
-                distances, dummy = nbrs.kneighbors(sample)
-                med[i] = np.median(distances[:, 1:n_neighbors])
-            med = np.median(med)
-            self.scales = [med / 2, med, med * 2]
-        if shuffle:
-            train_data, train_labels = shuffle_data(train_data, train_labels)
+        # if self.kernel_method == "raphy":
+        #     med = np.zeros(20)
+        #     n_neighbors = 25
+        #     sample_size = 1000
+        #     for i in range(1, 20):
+        #         sample = train_dest[np.random.randint(train_dest.shape[0], size=sample_size), :]
+        #         nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
+        #         distances, dummy = nbrs.kneighbors(sample)
+        #         med[i] = np.median(distances[:, 1:n_neighbors])
+        #     med = np.median(med)
+        #     self.scales = [med / 2, med, med * 2]
+        # if shuffle:
+        #     train_data, train_labels = shuffle_data(train_data, train_labels)
 
         if use_validation and valid_data is None:
             raise Exception("valid_data is None but use_validation is True.")
@@ -539,9 +544,11 @@ class MMDCCVAE:
         ]
 
         if self.train_with_fake_labels:
+            train_data.X = np.reshape(train_data.X, newshape=(-1, 784))
             x = [train_data.X, train_labels, pseudo_labels]
             y = [train_data.X, np.ones(shape=train_labels.shape)]
         else:
+            train_data.X = np.reshape(train_data.X, newshape=(-1, 784))
             x = [train_data.X, train_labels, train_labels]
             y = [train_data.X, train_labels]
 
@@ -570,8 +577,3 @@ class MMDCCVAE:
             self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
             log.info(f"Model saved in file: {self.model_to_use}. Training finished")
         return histories
-
-if __name__ == '__main__':
-    network = MMDCCVAE(x_dimension=784, z_dimension=100, alpha=0.001, beta=100,
-                            batch_mmd=True, kernel='multi-scale-rbf', train_with_fake_labels=False,
-                            model_path=f"./")
