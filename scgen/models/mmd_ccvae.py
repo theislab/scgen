@@ -17,7 +17,7 @@ from scgen.models.util import shuffle_data, label_encoder
 log = logging.getLogger(__file__)
 
 
-class MMDCVAE:
+class MMDCCVAE:
     """
         MMD C-VAE vector Network class. This class contains the implementation of Conditional
         Variational Auto-encoder network.
@@ -62,7 +62,8 @@ class MMDCVAE:
         self.init_w = keras.initializers.glorot_normal()
         self._create_network()
         self._loss_function()
-        self.cvae_model.summary()
+        self.decoder_model.summary()
+        exit()
 
     def _encoder(self, x, y, name="encoder"):
         """
@@ -79,10 +80,10 @@ class MMDCVAE:
                 log_var: Tensor
                     A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
-        h = Conv2D(64, kernel_size=(4, 4), strides=2)(x)
+        h = Conv2D(64, kernel_size=(4, 4), strides=2, padding='same')(x)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
-        h = Conv2D(128, kernel_size=(4, 4), strides=2)(h)
+        h = Conv2D(128, kernel_size=(4, 4), strides=2, padding='same')(h)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Flatten()(h)
@@ -116,12 +117,16 @@ class MMDCVAE:
         h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(xy)
         h = BatchNormalization(axis=1)(h)
         h_mmd = LeakyReLU(name="mmd")(h)
-        h = Reshape(target_shape=(8, 8, 2))
-        h = Conv2DTranspose(128, kernel_size=(4, 4), strides=2)(h)
+        h = Dense(784, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
+        h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
-        h = Conv2DTranspose(64, kernel_size=(4, 4), strides=2)(h)
+        h = Reshape(target_shape=(28, 28, 1))(h)
+        h = Conv2DTranspose(128, kernel_size=(4, 4), strides=2, padding='same')(h)
         h = LeakyReLU()(h)
-
+        h = Conv2DTranspose(64, kernel_size=(4, 4), strides=2, padding='same')(h)
+        h = LeakyReLU()(h)
+        h = Conv2DTranspose(1, kernel_size=(4, 4), strides=2, padding='same')(h)
+        h = ReLU()(h)
 
         model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
         return h, h_mmd, model
@@ -195,7 +200,7 @@ class MMDCVAE:
             return K.exp(-K.mean(K.square(tiled_x - tiled_y), axis=2) / K.cast(dim, tf.float32))
         elif method == 'raphy':
             scales = K.variable(value=np.asarray(scales))
-            squared_dist = K.expand_dims(MMDCVAE.squared_distance(x, y), 0)
+            squared_dist = K.expand_dims(MMDCCVAE.squared_distance(x, y), 0)
             scales = K.expand_dims(K.expand_dims(scales, -1), -1)
             weights = K.eval(K.shape(scales)[0])
             weights = K.variable(value=np.asarray(weights))
@@ -205,7 +210,7 @@ class MMDCVAE:
             sigmas = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 5, 10, 15, 20, 25, 30, 35, 100, 1e3, 1e4, 1e5, 1e6]
 
             beta = 1. / (2. * (K.expand_dims(sigmas, 1)))
-            distances = MMDCVAE.squared_distance(x, y)
+            distances = MMDCCVAE.squared_distance(x, y)
             s = K.dot(beta, K.reshape(distances, (1, -1)))
 
             return K.reshape(tf.reduce_sum(tf.exp(-s), 0), K.shape(distances)) / len(sigmas)
@@ -229,9 +234,9 @@ class MMDCVAE:
             # Returns
                 returns the computed MMD between x and y
         """
-        x_kernel = MMDCVAE.compute_kernel(x, x, method=kernel_method, **kwargs)
-        y_kernel = MMDCVAE.compute_kernel(y, y, method=kernel_method, **kwargs)
-        xy_kernel = MMDCVAE.compute_kernel(x, y, method=kernel_method, **kwargs)
+        x_kernel = MMDCCVAE.compute_kernel(x, x, method=kernel_method, **kwargs)
+        y_kernel = MMDCCVAE.compute_kernel(y, y, method=kernel_method, **kwargs)
+        xy_kernel = MMDCCVAE.compute_kernel(x, y, method=kernel_method, **kwargs)
         return K.mean(x_kernel) + K.mean(y_kernel) - 2 * K.mean(xy_kernel)
 
     def _loss_function(self, data=np.zeros((10, 6998)), labels=np.zeros((10, 1))):
@@ -565,3 +570,8 @@ class MMDCVAE:
             self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
             log.info(f"Model saved in file: {self.model_to_use}. Training finished")
         return histories
+
+if __name__ == '__main__':
+    network = MMDCCVAE(x_dimension=784, z_dimension=100, alpha=0.001, beta=100,
+                            batch_mmd=True, kernel='multi-scale-rbf', train_with_fake_labels=False,
+                            model_path=f"./")

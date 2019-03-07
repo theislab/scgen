@@ -195,13 +195,13 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
 
 if __name__ == '__main__':
-    # test_train_whole_data_one_celltype_out(data_name="hpoly",
-    #                                        z_dim=100,
-    #                                        alpha=0.01,
-    #                                        beta=100,
-    #                                        kernel="multi-scale-rbf",
-    #                                        n_epochs=1500,
-    #                                        batch_size=768,
-    #                                        condition_key="condition")
-    reconstruct_whole_data(data_name="pbmc")
-    reconstruct_whole_data(data_name="salmonella")
+    test_train_whole_data_one_celltype_out(data_name="hpoly",
+                                           z_dim=100,
+                                           alpha=0.01,
+                                           beta=100,
+                                           kernel="multi-scale-rbf",
+                                           n_epochs=1500,
+                                           batch_size=768,
+                                           condition_key="condition")
+    reconstruct_whole_data(data_name="hpoly")
+    # reconstruct_whole_data(data_name="salmonella")
