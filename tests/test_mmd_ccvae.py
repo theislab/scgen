@@ -36,7 +36,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                        (train.obs["labels"] == 2) |
                        (train.obs["labels"] == 7))]
         train.X /= 255.0
-    elif data_name == "normal_thin":
+    elif data_name == "normal_thick":
         stim_key = "thick"
         ctrl_key = "normal"
         cell_type_key = "labels"
