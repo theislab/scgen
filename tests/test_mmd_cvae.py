@@ -164,6 +164,8 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         train = sc.read("../data/train_all_lsp6.h5ad")
     all_data = anndata.AnnData()
     for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
+        if cell_type != "rat":
+            continue
         print(f"Reconstructing for {cell_type}")
         os.chdir(f"./results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
