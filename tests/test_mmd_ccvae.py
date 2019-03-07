@@ -177,7 +177,7 @@ def feed_normal_sample(data_name="normal_thin", digit=1):
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="normal_thin",
+    test_train_whole_data_one_celltype_out(data_name="normal_thick",
                                            z_dim=100,
                                            alpha=0.01,
                                            beta=100,
