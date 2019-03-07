@@ -40,6 +40,11 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         ctrl_key = "Control"
         cell_type_key = "cell_label"
         train = sc.read("../data/chsal_train_7000.h5ad")
+    elif data_name == "species":
+        stim_key = "LPS6"
+        ctrl_key = "unst"
+        cell_type_key = "species"
+        train = sc.read("../data/train_all_lsp6.h5ad")
 
     for cell_type in train.obs[cell_type_key].unique().tolist():
         os.makedirs(f"./results/{data_name}/{cell_type}/", exist_ok=True)
