@@ -177,7 +177,10 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         ctrl_adata = anndata.AnnData(ctrl_reconstructed,
                                      obs={condition_key: [f"{cell_type}_ctrl"] * len(ctrl_reconstructed)},
                                      var={"var_names": cell_type_data.var_names})
-        real_stim = cell_type_data[cell_type_data.obs[condition_key] == stim_key].X.A
+        if data_name == "pbmc":
+            real_stim = cell_type_data[cell_type_data.obs[condition_key] == stim_key].X.A
+        else:
+            real_stim = cell_type_data[cell_type_data.obs[condition_key] == stim_key].X
         real_stim_adata = anndata.AnnData(real_stim,
                                      obs={condition_key: [f"{cell_type}_real_stim"] * len(real_stim)},
                                      var={"var_names": cell_type_data.var_names})
@@ -201,3 +204,4 @@ if __name__ == '__main__':
     #                                        batch_size=768,
     #                                        condition_key="condition")
     reconstruct_whole_data(data_name="pbmc")
+    reconstruct_whole_data(data_name="salmonella")
