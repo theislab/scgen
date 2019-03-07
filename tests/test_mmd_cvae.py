@@ -152,6 +152,11 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         ctrl_key = "Control"
         cell_type_key = "cell_label"
         train = sc.read("../data/chsal_train_7000.h5ad")
+    elif data_name == "species":
+        stim_key = "LPS6"
+        ctrl_key = "unst"
+        cell_type_key = "species"
+        train = sc.read("../data/train_all_lsp6.h5ad")
     all_data = anndata.AnnData()
     for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
         print(f"Reconstructing for {cell_type}")
@@ -194,13 +199,13 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
 
 if __name__ == '__main__':
-    # test_train_whole_data_one_celltype_out(data_name="hpoly",
-    #                                        z_dim=100,
-    #                                        alpha=0.01,
-    #                                        beta=100,
-    #                                        kernel="multi-scale-rbf",
-    #                                        n_epochs=1500,
-    #                                        batch_size=768,
-    #                                        condition_key="condition")
-    reconstruct_whole_data(data_name="pbmc")
+    test_train_whole_data_one_celltype_out(data_name="species",
+                                           z_dim=100,
+                                           alpha=0.01,
+                                           beta=100,
+                                           kernel="multi-scale-rbf",
+                                           n_epochs=1500,
+                                           batch_size=768,
+                                           condition_key="condition")
+    reconstruct_whole_data(data_name="species")
     # reconstruct_whole_data(data_name="salmonella")

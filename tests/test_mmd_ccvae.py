@@ -43,13 +43,13 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
     for cell_type in train.obs[cell_type_key].unique().tolist():
         if cell_type != 3:
             continue
-        os.makedirs(f"./results/{data_name}/{cell_type}/temp/", exist_ok=True)
-        os.chdir(f"./results/{data_name}/{cell_type}/temp")
+        os.makedirs(f"./results/{data_name}/{cell_type}/", exist_ok=True)
+        os.chdir(f"./results/{data_name}/{cell_type}")
         # net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
         net_train_data = train
         network = scgen.MMDCCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=alpha, beta=beta,
                                  batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
-                                 model_path=f"../", arch_style=arch_style)
+                                 model_path=f"./", arch_style=arch_style)
 
         # network.restore_model()
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
@@ -143,7 +143,8 @@ def feed_normal_sample(data_name="normal_thin", digit=1):
     print(mnist_data.shape)
     normal_data = mnist_data[mnist_data.obs["condition"] == "normal"]
     k = 5
-    sample_normal = normal_data.X[:k]
+    random_samples = np.random.choice(normal_data.shape[0], k, replace=False)
+    sample_normal = normal_data.X[random_samples]
     sample_normal_reshaped = np.reshape(sample_normal, (-1, 28, 28))
     sample_normal = np.reshape(sample_normal, (-1, 784))
     sample_normal = anndata.AnnData(X=sample_normal)
@@ -171,19 +172,23 @@ def feed_normal_sample(data_name="normal_thin", digit=1):
         ax[i, 1].axis('off')
         if i == 0:
             ax[i, 0].set_title("Normal")
-            ax[i, 1].set_title("Thick")
+            if data_name.endswith("thick"):
+                ax[i, 1].set_title("Thick")
+            else:
+                ax[i, 1].set_title("Thin")
         ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
     plt.savefig(f"./sample_images_{data_name}.pdf")
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="normal_thick",
-                                           z_dim=100,
-                                           alpha=0.01,
-                                           beta=100,
-                                           kernel="multi-scale-rbf",
-                                           n_epochs=1500,
-                                           batch_size=1024,
-                                           condition_key="condition",
-                                           arch_style=2)
-    # feed_normal_sample("normal_thin", digit=1)
+    # test_train_whole_data_one_celltype_out(data_name="normal_thick",
+    #                                        z_dim=100,
+    #                                        alpha=0.01,
+    #                                        beta=100,
+    #                                        kernel="multi-scale-rbf",
+    #                                        n_epochs=1500,
+    #                                        batch_size=1024,
+    #                                        condition_key="condition",
+    #                                        arch_style=2)
+    feed_normal_sample("normal_thin", digit=1)
+    feed_normal_sample("normal_thick", digit=3)
