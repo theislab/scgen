@@ -133,5 +133,5 @@ if __name__ == '__main__':
                                            beta=100,
                                            kernel="multi-scale-rbf",
                                            n_epochs=1500,
-                                           batch_size=768,
+                                           batch_size=1024,
                                            condition_key="condition")
