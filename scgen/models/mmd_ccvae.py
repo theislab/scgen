@@ -53,7 +53,7 @@ class MMDCCVAE:
         self.batch_mmd = kwargs.get("batch_mmd", True)
         self.train_with_fake_labels = kwargs.get("train_with_fake_labels", False)
         self.kernel_method = kwargs.get("kernel", "multi-scale-rbf")
-
+        self.arch_style = kwargs.get("arch_style", 1)
         self.x = Input(shape=(784,), name="data")
         self.encoder_labels = Input(shape=(1,), name="encoder_labels")
         self.decoder_labels = Input(shape=(1,), name="decoder_labels")
@@ -79,26 +79,44 @@ class MMDCCVAE:
                 log_var: Tensor
                     A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
-        h = Reshape(target_shape=(28, 28, 1))(x)
-        h = Conv2D(64, kernel_size=(4, 4), strides=2, padding='same')(h)
-        h = BatchNormalization()(h)
-        h = LeakyReLU()(h)
-        h = Conv2D(128, kernel_size=(4, 4), strides=2, padding='same')(h)
-        h = BatchNormalization()(h)
-        h = LeakyReLU()(h)
-        h = Flatten()(h)
-        hy = concatenate([h, y], axis=1)
-        h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(hy)
-        h = BatchNormalization(axis=1)(h)
-        h = LeakyReLU()(h)
-        h = Dropout(self.dr_rate)(h)
-        mean = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
-        log_var = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
-        z = Lambda(self._sample_z, output_shape=(self.z_dim,))([mean, log_var])
-        # source and dest data are not connected to encoder's 1st dense but will used for mmd batch computation
-        model = Model(inputs=[x, y], outputs=[mean, log_var, z], name=name)
-        model.summary()
-        return mean, log_var, model
+        if self.arch_style == 1:
+            h = Reshape(target_shape=(28, 28, 1))(x)
+            h = Conv2D(64, kernel_size=(4, 4), strides=2, padding='same')(h)
+            h = BatchNormalization()(h)
+            h = LeakyReLU()(h)
+            h = Conv2D(128, kernel_size=(4, 4), strides=2, padding='same')(h)
+            h = BatchNormalization()(h)
+            h = LeakyReLU()(h)
+            h = Flatten()(h)
+            hy = concatenate([h, y], axis=1)
+            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(hy)
+            h = BatchNormalization(axis=1)(h)
+            h = LeakyReLU()(h)
+            h = Dropout(self.dr_rate)(h)
+            mean = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
+            log_var = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
+            z = Lambda(self._sample_z, output_shape=(self.z_dim,))([mean, log_var])
+            # source and dest data are not connected to encoder's 1st dense but will used for mmd batch computation
+            model = Model(inputs=[x, y], outputs=[mean, log_var, z], name=name)
+            model.summary()
+            return mean, log_var, model
+        else:
+            xy = concatenate([x, y], axis=1)
+            h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(xy)
+            h = BatchNormalization(axis=1)(h)
+            h = LeakyReLU()(h)
+            h = Dropout(self.dr_rate)(h)
+            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(h)
+            h = BatchNormalization(axis=1)(h)
+            h = LeakyReLU()(h)
+            h = Dropout(self.dr_rate)(h)
+            mean = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
+            log_var = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
+            z = Lambda(self._sample_z, output_shape=(self.z_dim,))([mean, log_var])
+            # source and dest data are not connected to encoder's 1st dense but will used for mmd batch computation
+            model = Model(inputs=[x, y], outputs=[mean, log_var, z], name=name)
+            model.summary()
+            return mean, log_var, model
 
     def _mmd_decoder(self, x, y, name="decoder"):
         """
@@ -114,22 +132,38 @@ class MMDCCVAE:
                     A Tensor for last dense layer with the shape of [n_vars, ] to reconstruct data.
 
         """
-        xy = concatenate([x, y], axis=1)
-        h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(xy)
-        h = BatchNormalization(axis=1)(h)
-        h_mmd = LeakyReLU(name="mmd")(h)
-        h = Dense(784, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
-        h = BatchNormalization(axis=1)(h)
-        h = LeakyReLU()(h)
-        h = Reshape(target_shape=(28, 28, 1))(h)
-        h = Conv2DTranspose(128, kernel_size=(4, 4), padding='same')(h)
-        h = LeakyReLU()(h)
-        h = Conv2DTranspose(64, kernel_size=(4, 4), padding='same')(h)
-        h = LeakyReLU()(h)
-        h = Conv2DTranspose(1, kernel_size=(4, 4), padding='same', activation="sigmoid")(h)
-        h = Reshape((784, ))(h)
-        model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
-        return h, h_mmd, model
+        if self.arch_style == 1:
+            xy = concatenate([x, y], axis=1)
+            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(xy)
+            h = BatchNormalization(axis=1)(h)
+            h_mmd = LeakyReLU(name="mmd")(h)
+            h = Dense(784, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
+            h = BatchNormalization(axis=1)(h)
+            h = LeakyReLU()(h)
+            h = Reshape(target_shape=(28, 28, 1))(h)
+            h = Conv2DTranspose(128, kernel_size=(4, 4), padding='same')(h)
+            h = LeakyReLU()(h)
+            h = Conv2DTranspose(64, kernel_size=(4, 4), padding='same')(h)
+            h = LeakyReLU()(h)
+            h = Conv2DTranspose(1, kernel_size=(4, 4), padding='same', activation="sigmoid")(h)
+            h = Reshape((784, ))(h)
+            model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
+            model.summary()
+            return h, h_mmd, model
+        else:
+            xy = concatenate([x, y], axis=1)
+            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(xy)
+            h = BatchNormalization(axis=1)(h)
+            h_mmd = LeakyReLU(name="mmd")(h)
+            h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
+            h = BatchNormalization(axis=1)(h)
+            h = LeakyReLU()(h)
+            h = Dropout(self.dr_rate)(h)
+            h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=True)(h)
+            h = ReLU(name="reconstruction_output")(h)
+            model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
+            model.summary()
+            return h, h_mmd, model
 
     @staticmethod
     def _sample_z(args):

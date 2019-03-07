@@ -24,7 +24,8 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            kernel="multi-scale-rbf",
                                            n_epochs=1000,
                                            batch_size=1024,
-                                           condition_key="condition"):
+                                           condition_key="condition",
+                                           arch_style=1):
     if data_name == "normal_thin":
         stim_key = "thin"
         ctrl_key = "normal"
@@ -39,7 +40,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
 
         network = scgen.MMDCCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=alpha, beta=beta,
                                 batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
-                                model_path=f"./")
+                                model_path=f"./", arch_style=arch_style)
 
         # network.restore_model()
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
@@ -98,10 +99,6 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         true_labels = np.zeros((len(unperturbed_data), 1))
         fake_labels = np.ones((len(unperturbed_data), 1))
 
-        sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
-        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
-        # cell_type_data = cell_type_data.copy()[:, diff_genes.tolist()]
-
         pred = network.predict(data=unperturbed_data, encoder_labels=true_labels, decoder_labels=fake_labels)
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
@@ -109,11 +106,9 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
 
         scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
                                      axis_keys={"x": "pred", "y": stim_key, "y1": stim_key},
-                                     gene_list=diff_genes,
                                      path_to_save=f"./figures/reg_mean_{z_dim}.pdf")
         scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
                                     axis_keys={"x": "pred", "y": stim_key, 'y1': stim_key},
-                                    gene_list=diff_genes,
                                     path_to_save=f"./figures/reg_var_{z_dim}.pdf")
 
         sc.pp.neighbors(all_adata)
@@ -121,8 +116,8 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         sc.pl.umap(all_adata, color=condition_key,
                    save="pred")
 
-        sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
-                     save=f"_{z_dim}_{diff_genes.tolist()[0]}")
+        # sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
+        #              save=f"_{z_dim}_{diff_genes.tolist()[0]}")
 
         os.chdir("../../../")
 
@@ -135,4 +130,5 @@ if __name__ == '__main__':
                                            kernel="multi-scale-rbf",
                                            n_epochs=1500,
                                            batch_size=1024,
-                                           condition_key="condition")
+                                           condition_key="condition",
+                                           arch_style=2)
