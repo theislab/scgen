@@ -61,7 +61,7 @@ class MMDCVAE:
         self.init_w = keras.initializers.glorot_normal()
         self._create_network()
         self._loss_function()
-        self.cvae_model.summary()
+        # self.cvae_model.summary()
 
     def _encoder(self, x, y, name="encoder"):
         """
