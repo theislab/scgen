@@ -50,31 +50,29 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
     x = numpy.average(ctrl.X, axis=0)
     y = numpy.average(stim.X, axis=0)
     m, b, r_value, p_value, std_err = stats.linregress(x, y)
-    _p1 = pyplot.scatter(x, y, marker=".", c="grey", alpha=.5, label=f"x-y")
+    _p1 = pyplot.scatter(x, y, marker=".", label=f"x-y")
     pyplot.plot(x, m * x + b, "-", color="green")
     pyplot.xlabel(axis_keys["x"], fontsize=12)
     pyplot.ylabel(axis_keys["y"], fontsize=12)
     if "y1" in axis_keys.keys():
         y1 = numpy.average(real_stim.X, axis=0)
-        _p2 = pyplot.scatter(x, y1, marker="*", c="blue", alpha=.5, label="x-y1")
+        _p2 = pyplot.scatter(x, y1, marker="*", c="grey", alpha=.5, label="x-y1")
     if gene_list is not None:
-        texts = []
         for i in gene_list:
             j = adata.var_names.tolist().index(i)
             x_bar = x[j]
             y_bar = y[j]
-            texts.append(pyplot.text(x_bar, y_bar, i, fontsize=11, color="grey"))
+            pyplot.text(x_bar, y_bar, i, fontsize=11, color="grey")
             if "y1" in axis_keys.keys():
                 y1_bar = y1[j]
-                pyplot.plot(x_bar, y1_bar, '*', color="blue", alpha=.5)
+                pyplot.text(x_bar, y1_bar, i, fontsize=11, color="grey")
     pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     pyplot.title(f"", fontsize=12)
-    pyplot.text(max(x) - max(x) * .25, .1, r'$R^2$=' + f"{r_value**2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y)-.8*max(y), r'$R^2$=' + f"{r_value**2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
     pyplot.close()
-
 
 
 def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", gene_list=None, show=False):
@@ -124,31 +122,29 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
     x = numpy.var(ctrl.X, axis=0)
     y = numpy.var(stim.X, axis=0)
     m, b, r_value, p_value, std_err = stats.linregress(x, y)
-    _p1 = pyplot.scatter(x, y, marker=".", c="grey", alpha=.5, label=f"x-y")
+    _p1 = pyplot.scatter(x, y, marker=".", label=f"x-y")
     pyplot.plot(x, m * x + b, "-", color="green")
     pyplot.xlabel(axis_keys["x"], fontsize=12)
     pyplot.ylabel(axis_keys["y"], fontsize=12)
     if "y1" in axis_keys.keys():
         y1 = numpy.var(real_stim.X, axis=0)
-        _p2 = pyplot.scatter(x, y1, marker="*", c="blue", alpha=.5, label="x-y1")
+        _p2 = pyplot.scatter(x, y1, marker="*", c="grey", alpha=.5, label="x-y1")
     if gene_list is not None:
-        texts = []
         for i in gene_list:
             j = adata.var_names.tolist().index(i)
             x_bar = x[j]
             y_bar = y[j]
-            texts.append(pyplot.text(x_bar, y_bar, i, fontsize=11, color="grey"))
+            pyplot.text(x_bar, y_bar, i, fontsize=11, color="grey")
             if "y1" in axis_keys.keys():
                 y1_bar = y1[j]
-                pyplot.plot(x_bar, y1_bar, '*', color="blue", alpha=.5)
+                pyplot.text(x_bar, y1_bar, '*', color="blue", alpha=.5)
     pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     pyplot.title(f"", fontsize=12)
-    pyplot.text(max(x) - .2 * max(x), .1, r'$R^2$=' + f"{r_value**2:.2f}")
+    pyplot.text(max(x) - .2 * max(x), max(y)-.8*max(y), r'$R^2$=' + f"{r_value**2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
     pyplot.close()
-
 
 
 def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_to_save):
@@ -214,4 +210,3 @@ def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_
     ax = pyplot.gca()
     ax.grid(False)
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
-    pyplot.close()
