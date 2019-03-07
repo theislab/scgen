@@ -163,8 +163,7 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         network.restore_model()
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
-        cell_type_ctrl_data = train[
-            (train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key)]
+        cell_type_ctrl_data = train[((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key))]
         unperturbed_data = train[((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key))]
         true_labels = np.zeros((len(unperturbed_data), 1))
         fake_labels = np.ones((len(unperturbed_data), 1))
@@ -195,13 +194,13 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="hpoly",
-                                           z_dim=100,
-                                           alpha=0.01,
-                                           beta=100,
-                                           kernel="multi-scale-rbf",
-                                           n_epochs=1500,
-                                           batch_size=768,
-                                           condition_key="condition")
-    reconstruct_whole_data(data_name="hpoly")
+    # test_train_whole_data_one_celltype_out(data_name="hpoly",
+    #                                        z_dim=100,
+    #                                        alpha=0.01,
+    #                                        beta=100,
+    #                                        kernel="multi-scale-rbf",
+    #                                        n_epochs=1500,
+    #                                        batch_size=768,
+    #                                        condition_key="condition")
+    reconstruct_whole_data(data_name="pbmc")
     # reconstruct_whole_data(data_name="salmonella")
