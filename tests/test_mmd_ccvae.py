@@ -30,6 +30,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         ctrl_key = "normal"
         cell_type_key = "labels"
         train = sc.read(f"../data/{data_name}.h5ad")
+        train.X /= 255.0
     for cell_type in train.obs[cell_type_key].unique().tolist():
         os.makedirs(f"./results/{data_name}/{cell_type}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/{cell_type}")
