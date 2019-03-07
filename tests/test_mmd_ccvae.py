@@ -41,7 +41,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                        (train.obs["labels"] == 2))]
         train.X /= 255.0
     for cell_type in train.obs[cell_type_key].unique().tolist():
-        if cell_type != 1:
+        if cell_type != 3:
             continue
         os.makedirs(f"./results/{data_name}/{cell_type}/temp/", exist_ok=True)
         os.chdir(f"./results/{data_name}/{cell_type}/temp")
