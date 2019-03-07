@@ -206,11 +206,11 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="species",
                                            z_dim=100,
-                                           alpha=0.01,
-                                           beta=100,
+                                           alpha=0.001,
+                                           beta=1000,
                                            kernel="multi-scale-rbf",
-                                           n_epochs=1500,
-                                           batch_size=768,
+                                           n_epochs=1000,
+                                           batch_size=2048,
                                            condition_key="condition")
     reconstruct_whole_data(data_name="species")
     # reconstruct_whole_data(data_name="salmonella")
