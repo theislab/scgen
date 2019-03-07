@@ -3,19 +3,13 @@ import os
 import anndata
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scanpy as sc
 
 import scgen
 
 if not os.getcwd().endswith("tests"):
     os.chdir("./tests")
-
-
-# from datetime import datetime, timezone
-
-# current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
-# os.makedirs(current_time, exist_ok=True)
-# os.chdir("./" + current_time)
 
 
 def test_train_whole_data_one_celltype_out(data_name="pbmc",
@@ -47,15 +41,15 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                        (train.obs["labels"] == 2))]
         train.X /= 255.0
     for cell_type in train.obs[cell_type_key].unique().tolist():
-        if cell_type != 3:
+        if cell_type != 1:
             continue
-        os.makedirs(f"./results/{data_name}/{cell_type}/", exist_ok=True)
-        os.chdir(f"./results/{data_name}/{cell_type}")
-        net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
-
+        os.makedirs(f"./results/{data_name}/{cell_type}/temp/", exist_ok=True)
+        os.chdir(f"./results/{data_name}/{cell_type}/temp")
+        # net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
+        net_train_data = train
         network = scgen.MMDCCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=alpha, beta=beta,
                                  batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
-                                 model_path=f"./", arch_style=arch_style)
+                                 model_path=f"../", arch_style=arch_style)
 
         # network.restore_model()
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
@@ -67,7 +61,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         latent_with_true_labels = network.to_latent(net_train_data.X, labels=true_labels)
         latent_with_true_labels = sc.AnnData(X=latent_with_true_labels,
                                              obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                                  cell_type_key: net_train_data.obs[cell_type_key].tolist()})
+                                                  cell_type_key: pd.Categorical(net_train_data.obs[cell_type_key])})
         sc.pp.neighbors(latent_with_true_labels)
         sc.tl.umap(latent_with_true_labels)
         sc.pl.umap(latent_with_true_labels, color=[condition_key, cell_type_key],
@@ -77,7 +71,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         latent_with_fake_labels = network.to_latent(net_train_data.X, fake_labels)
         latent_with_fake_labels = sc.AnnData(X=latent_with_fake_labels,
                                              obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                                  cell_type_key: net_train_data.obs[cell_type_key].tolist()})
+                                                  cell_type_key: pd.Categorical(net_train_data.obs[cell_type_key])})
         sc.pp.neighbors(latent_with_fake_labels)
         sc.tl.umap(latent_with_fake_labels)
         sc.pl.umap(latent_with_fake_labels, color=[condition_key, cell_type_key],
@@ -88,7 +82,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                                                     encoder_labels=true_labels, feed_fake=False)
         mmd_with_true_labels = sc.AnnData(X=mmd_with_true_labels,
                                           obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                               cell_type_key: net_train_data.obs[cell_type_key].tolist()})
+                                               cell_type_key: pd.Categorical(net_train_data.obs[cell_type_key])})
         sc.pp.neighbors(mmd_with_true_labels)
         sc.tl.umap(mmd_with_true_labels)
         sc.pl.umap(mmd_with_true_labels, color=[condition_key, cell_type_key],
@@ -99,15 +93,12 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                                                     encoder_labels=true_labels, feed_fake=True)
         mmd_with_fake_labels = sc.AnnData(X=mmd_with_fake_labels,
                                           obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                               cell_type_key: net_train_data.obs[cell_type_key].tolist()})
+                                               cell_type_key: pd.Categorical(net_train_data.obs[cell_type_key])})
         sc.pp.neighbors(mmd_with_fake_labels)
         sc.tl.umap(mmd_with_fake_labels)
         sc.pl.umap(mmd_with_fake_labels, color=[condition_key, cell_type_key],
                    save=f"_mmd_fake_labels_{z_dim}",
                    show=False)
-
-        decoded_latent_with_true_labels = network.predict(data=latent_with_true_labels, encoder_labels=true_labels,
-                                                          decoder_labels=true_labels, data_space='latent')
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
         unperturbed_data = train[((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key))]
@@ -117,7 +108,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         pred = network.predict(data=unperturbed_data, encoder_labels=true_labels, decoder_labels=fake_labels)
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
-        all_adata = cell_type_data.concatenate(pred_adata)
+        all_adata = cell_type_data.copy().concatenate(pred_adata.copy())
 
         scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
                                      axis_keys={"x": "pred", "y": stim_key, "y1": stim_key},
@@ -137,10 +128,19 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.chdir("../../../")
 
 
-def feed_normal_sample():
-    mnist_data = sc.read("../data/normal_thin.h5ad")
-    mnist_data = mnist_data[
-        ((mnist_data.obs["labels"] == 1) | (mnist_data.obs["labels"] == 2) | (mnist_data.obs["labels"] == 7))]
+def feed_normal_sample(data_name="normal_thin", digit=1):
+    if data_name == "normal_thin":
+        mnist_data = sc.read(f"../data/{data_name}.h5ad")
+        mnist_data = mnist_data[((mnist_data.obs["labels"] == 1) |
+                                 (mnist_data.obs["labels"] == 2) |
+                                 (mnist_data.obs["labels"] == 7))]
+    else:
+        mnist_data = sc.read(f"../data/{data_name}.h5ad")
+        mnist_data = mnist_data[((mnist_data.obs["labels"] == 8) |
+                                 (mnist_data.obs["labels"] == 3) |
+                                 (mnist_data.obs["labels"] == 5) |
+                                 (mnist_data.obs["labels"] == 2))]
+    print(mnist_data.shape)
     normal_data = mnist_data[mnist_data.obs["condition"] == "normal"]
     k = 5
     sample_normal = normal_data.X[:k]
@@ -149,26 +149,21 @@ def feed_normal_sample():
     sample_normal = anndata.AnnData(X=sample_normal)
     sample_normal.X /= 255.0
     sample_normal.X = np.reshape(sample_normal.X, (-1, 784))
-    # print(sample_normal.X.shape)
-    # sample_label = normal_data.obs["labels"][1234]
 
-    network = scgen.MMDCCVAE(x_dimension=784, z_dimension=100, alpha=0.01, beta=1000,
+    network = scgen.MMDCCVAE(x_dimension=784, z_dimension=100, alpha=0.001, beta=100,
                              batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
-                             model_path=f"./results/new_results/normal_thin/1/", arch_style=1)
+                             model_path=f"./results/new_results/{data_name}/{digit}/", arch_style=2)
 
     network.restore_model()
+    print("model has been restored!")
 
     sample_thick = network.predict(data=sample_normal,
                                    encoder_labels=np.zeros((len(sample_normal), 1)),
                                    decoder_labels=np.ones((len(sample_normal), 1)))
     print(sample_thick.shape)
+    # print(sample_normal_reshaped[0])
     sample_thick = np.reshape(sample_thick, newshape=(-1, 28, 28))
-    print(sample_thick[1].shape)
-    # sample_image = np.reshape(sample_thick[1], newshape=(28, 28))
     plt.close("all")
-    # plt.figure(figsize=(5, 5))
-    # plt.imshow(sample_thick[1])
-    # plt.show()
     fig, ax = plt.subplots(k, 2, figsize=(k * 1, 6))
     for i in range(k):
         ax[i, 0].axis('off')
@@ -176,16 +171,13 @@ def feed_normal_sample():
         ax[i, 1].axis('off')
         if i == 0:
             ax[i, 0].set_title("Normal")
-            ax[i, 1].set_title("Thin")
-        im = ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
-        cb_ax = fig.add_axes([1, 0.1, 0.02, 0.8])
-        cbar = fig.colorbar(im, cax=cb_ax)
-        cbar.set_ticks(np.arange(-1.0, 1.25, 0.25))
-    plt.savefig("./sample_images.pdf")
+            ax[i, 1].set_title("Thick")
+        ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
+    plt.savefig(f"./sample_images_{data_name}.pdf")
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="normal_thick",
+    test_train_whole_data_one_celltype_out(data_name="normal_thin",
                                            z_dim=100,
                                            alpha=0.01,
                                            beta=100,
@@ -194,4 +186,4 @@ if __name__ == '__main__':
                                            batch_size=1024,
                                            condition_key="condition",
                                            arch_style=2)
-    # feed_normal_sample()
+    # feed_normal_sample("normal_thin", digit=1)
