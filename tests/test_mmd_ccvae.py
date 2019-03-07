@@ -1,6 +1,7 @@
 import os
 
 import anndata
+import matplotlib.pyplot as plt
 import numpy as np
 import scanpy as sc
 
@@ -31,16 +32,30 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         ctrl_key = "normal"
         cell_type_key = "labels"
         train = sc.read(f"../data/{data_name}.h5ad")
-        train = train[((train.obs["labels"] == 1) | (train.obs["labels"] == 2) | (train.obs["labels"] == 7))]
+        train = train[((train.obs["labels"] == 1) |
+                       (train.obs["labels"] == 2) |
+                       (train.obs["labels"] == 7))]
+        train.X /= 255.0
+    elif data_name == "normal_thin":
+        stim_key = "thick"
+        ctrl_key = "normal"
+        cell_type_key = "labels"
+        train = sc.read(f"../data/{data_name}.h5ad")
+        train = train[((train.obs["labels"] == 8) |
+                       (train.obs["labels"] == 3) |
+                       (train.obs["labels"] == 5) |
+                       (train.obs["labels"] == 2))]
         train.X /= 255.0
     for cell_type in train.obs[cell_type_key].unique().tolist():
+        if cell_type != 3:
+            continue
         os.makedirs(f"./results/{data_name}/{cell_type}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
 
         network = scgen.MMDCCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=alpha, beta=beta,
-                                batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
-                                model_path=f"./", arch_style=arch_style)
+                                 batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
+                                 model_path=f"./", arch_style=arch_style)
 
         # network.restore_model()
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
@@ -122,8 +137,55 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.chdir("../../../")
 
 
+def feed_normal_sample():
+    mnist_data = sc.read("../data/normal_thin.h5ad")
+    mnist_data = mnist_data[
+        ((mnist_data.obs["labels"] == 1) | (mnist_data.obs["labels"] == 2) | (mnist_data.obs["labels"] == 7))]
+    normal_data = mnist_data[mnist_data.obs["condition"] == "normal"]
+    k = 5
+    sample_normal = normal_data.X[:k]
+    sample_normal_reshaped = np.reshape(sample_normal, (-1, 28, 28))
+    sample_normal = np.reshape(sample_normal, (-1, 784))
+    sample_normal = anndata.AnnData(X=sample_normal)
+    sample_normal.X /= 255.0
+    sample_normal.X = np.reshape(sample_normal.X, (-1, 784))
+    # print(sample_normal.X.shape)
+    # sample_label = normal_data.obs["labels"][1234]
+
+    network = scgen.MMDCCVAE(x_dimension=784, z_dimension=100, alpha=0.01, beta=1000,
+                             batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
+                             model_path=f"./results/new_results/normal_thin/1/", arch_style=1)
+
+    network.restore_model()
+
+    sample_thick = network.predict(data=sample_normal,
+                                   encoder_labels=np.zeros((len(sample_normal), 1)),
+                                   decoder_labels=np.ones((len(sample_normal), 1)))
+    print(sample_thick.shape)
+    sample_thick = np.reshape(sample_thick, newshape=(-1, 28, 28))
+    print(sample_thick[1].shape)
+    # sample_image = np.reshape(sample_thick[1], newshape=(28, 28))
+    plt.close("all")
+    # plt.figure(figsize=(5, 5))
+    # plt.imshow(sample_thick[1])
+    # plt.show()
+    fig, ax = plt.subplots(k, 2, figsize=(k * 1, 6))
+    for i in range(k):
+        ax[i, 0].axis('off')
+        ax[i, 0].imshow(sample_normal_reshaped[i], cmap='Greys', vmin=0, vmax=1)
+        ax[i, 1].axis('off')
+        if i == 0:
+            ax[i, 0].set_title("Normal")
+            ax[i, 1].set_title("Thin")
+        im = ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
+        cb_ax = fig.add_axes([1, 0.1, 0.02, 0.8])
+        cbar = fig.colorbar(im, cax=cb_ax)
+        cbar.set_ticks(np.arange(-1.0, 1.25, 0.25))
+    plt.savefig("./sample_images.pdf")
+
+
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="normal_thin",
+    test_train_whole_data_one_celltype_out(data_name="normal_thick",
                                            z_dim=100,
                                            alpha=0.01,
                                            beta=100,
@@ -132,3 +194,4 @@ if __name__ == '__main__':
                                            batch_size=1024,
                                            condition_key="condition",
                                            arch_style=2)
+    # feed_normal_sample()
