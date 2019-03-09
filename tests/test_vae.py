@@ -165,7 +165,7 @@ if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            z_dim=100,
                                            alpha=0.001,
-                                           n_epochs=0,
+                                           n_epochs=250,
                                            batch_size=64,
                                            condition_key="condition")
     test_train_whole_data_one_celltype_out(data_name="hpoly",
