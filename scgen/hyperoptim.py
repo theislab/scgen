@@ -29,7 +29,7 @@ def create_model(x_train):
                            shuffle=True,
                            save=False)
     best_loss = np.amin(result.history['loss'])
-    print('Best validation acc of epoch:', best_loss)
+    print('Best Loss of model:', best_loss)
     return {'loss': best_loss, 'status': STATUS_OK, 'model': network.vae_model}
 
 
@@ -40,8 +40,8 @@ if __name__ == '__main__':
                                           max_evals=20,
                                           trials=Trials())
     x_train = data()
-    print("Evalutation of best performing model:")
-    print(best_model.evaluate([x_train.X]))
+    # print("Evalutation of best performing model:")
+    # print(best_model.evaluate([x_train.X]))
     print("Best performing model chosen hyper-parameters:")
     print(best_run)
 

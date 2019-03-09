@@ -397,8 +397,8 @@ class VAEArith:
             >>> network.restore_model()
         """
         self.vae_model = load_model(os.path.join(self.model_to_use, 'vae.h5'), compile=False)
-        self.encoder_model = load_model(os.path.join(self.model_to_use, 'decoder.h5'), compile=False)
-        self.decoder_model = load_model(os.path.join(self.model_to_use, 'encoder.h5'), compile=False)
+        self.encoder_model = load_model(os.path.join(self.model_to_use, 'encoder.h5'), compile=False)
+        self.decoder_model = load_model(os.path.join(self.model_to_use, 'decoder.h5'), compile=False)
         self._loss_function()
 
     def train(self, train_data, use_validation=False, valid_data=None, n_epochs=25, batch_size=32, early_stop_limit=20,
