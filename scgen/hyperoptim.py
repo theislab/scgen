@@ -15,37 +15,38 @@ def data():
 
 
 def create_model(x_train):
-    network = scgen.MMDCVAE(x_dimension=x_train.X.shape[1], z_dimension={{choice([10, 20, 50, 75, 100])}},
-                            alpha={{choice([0.1, 0.01, 0.001])}}, beta={{choice([1, 10, 100, 1000])}},
-                            batch_mmd=True, kernel={{choice(["multi-scale-rbf", "rbf"])}}, train_with_fake_labels=False,
-                            model_path=f"./")
+    network = scgen.VAEArith(x_dimension=x_train.X.shape[1],
+                             z_dimension={{choice([10, 20, 50, 75, 100])}},
+                             learning_rate={{choice([0.1, 0.01, 0.001, 0.0001])}},
+                             alpha={{choice([0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001])}},
+                             dropout_rate={{choice([0.2, 0.25, 0.5, 0.75, 0.8])}},
+                             model_path=f"./")
+
     result = network.train(x_train,
-                           n_epochs={{choice([500, 1000, 1500, 2000])}},
-                           batch_size={{choice([256, 512, 768, 1024, 1280, 1536, 1792, 2048])}},
+                           n_epochs={{choice([100, 150, 200, 250])}},
+                           batch_size={{choice([32, 64, 128, 256])}},
                            verbose=2,
                            shuffle=True,
                            save=False)
-    best_mmd_loss = np.amin(result.history['mmd_loss'])
-    print('Best validation acc of epoch:', best_mmd_loss)
-    return {'loss': best_mmd_loss, 'status': STATUS_OK, 'model': network.cvae_model}
+    best_loss = np.amin(result.history['loss'])
+    print('Best validation acc of epoch:', best_loss)
+    return {'loss': best_loss, 'status': STATUS_OK, 'model': network.vae_model}
 
 
 if __name__ == '__main__':
     best_run, best_model = optim.minimize(model=create_model,
                                           data=data,
                                           algo=tpe.suggest,
-                                          max_evals=5,
+                                          max_evals=20,
                                           trials=Trials())
     x_train = data()
-    true_labels, _ = scgen.label_encoder(x_train)
-    fake_labels = np.ones(shape=true_labels.shape)
     print("Evalutation of best performing model:")
-    print(best_model.evaluate([x_train.X, true_labels, fake_labels]))
+    print(best_model.evaluate([x_train.X]))
     print("Best performing model chosen hyper-parameters:")
     print(best_run)
 
 """
-    best run:
+    best run for MMD-CVAE:
     alpha = 0.01, 
     beta = 1,
     kernel = rbf,

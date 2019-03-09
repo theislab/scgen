@@ -402,7 +402,7 @@ class VAEArith:
         self._loss_function()
 
     def train(self, train_data, use_validation=False, valid_data=None, n_epochs=25, batch_size=32, early_stop_limit=20,
-              threshold=0.0025, initial_run=True, shuffle=True, verbose=1):
+              threshold=0.0025, initial_run=True, shuffle=True, verbose=1, save=True):
         """
             Trains the network `n_epochs` times with given `train_data`
             and validates the model using validation_data if it was given
@@ -485,7 +485,8 @@ class VAEArith:
                                shuffle=shuffle,
                                callbacks=callbacks,
                                verbose=verbose)
-        self.vae_model.save(os.path.join("vae.h5"), overwrite=True)
-        self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
-        self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
-        log.info(f"Models are saved in file: {self.model_to_use}. Training finished")
+        if save is True:
+            self.vae_model.save(os.path.join("vae.h5"), overwrite=True)
+            self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
+            self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
+            log.info(f"Models are saved in file: {self.model_to_use}. Training finished")
