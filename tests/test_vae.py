@@ -60,7 +60,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         true_labels, _ = scgen.label_encoder(net_train_data)
         fake_labels = np.ones(shape=(net_train_data.shape[0], 1))
 
-        latent_with_true_labels = network.to_latent(net_train_data.X, labels=true_labels)
+        latent_with_true_labels = network.to_latent(net_train_data.X)
         latent_with_true_labels = sc.AnnData(X=latent_with_true_labels,
                                              obs={condition_key: net_train_data.obs[condition_key].tolist(),
                                                   cell_type_key: net_train_data.obs[cell_type_key].tolist()})
@@ -70,7 +70,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                    save=f"_latent_true_labels_{z_dim}",
                    show=False)
 
-        latent_with_fake_labels = network.to_latent(net_train_data.X, fake_labels)
+        latent_with_fake_labels = network.to_latent(net_train_data.X)
         latent_with_fake_labels = sc.AnnData(X=latent_with_fake_labels,
                                              obs={condition_key: net_train_data.obs[condition_key].tolist(),
                                                   cell_type_key: net_train_data.obs[cell_type_key].tolist()})
@@ -80,41 +80,14 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                    save=f"_latent_fake_labels_{z_dim}",
                    show=False)
 
-        mmd_with_true_labels = network.to_mmd_layer(network.cvae_model, net_train_data.X,
-                                                    encoder_labels=true_labels, feed_fake=False)
-        mmd_with_true_labels = sc.AnnData(X=mmd_with_true_labels,
-                                          obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                               cell_type_key: net_train_data.obs[cell_type_key].tolist()})
-        sc.pp.neighbors(mmd_with_true_labels)
-        sc.tl.umap(mmd_with_true_labels)
-        sc.pl.umap(mmd_with_true_labels, color=[condition_key, cell_type_key],
-                   save=f"_mmd_true_labels_{z_dim}",
-                   show=False)
-
-        mmd_with_fake_labels = network.to_mmd_layer(network.cvae_model, net_train_data.X,
-                                                    encoder_labels=true_labels, feed_fake=True)
-        mmd_with_fake_labels = sc.AnnData(X=mmd_with_fake_labels,
-                                          obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                               cell_type_key: net_train_data.obs[cell_type_key].tolist()})
-        sc.pp.neighbors(mmd_with_fake_labels)
-        sc.tl.umap(mmd_with_fake_labels)
-        sc.pl.umap(mmd_with_fake_labels, color=[condition_key, cell_type_key],
-                   save=f"_mmd_fake_labels_{z_dim}",
-                   show=False)
-
-        decoded_latent_with_true_labels = network.predict(data=latent_with_true_labels, encoder_labels=true_labels,
-                                                          decoder_labels=true_labels, data_space='latent')
-
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
-        unperturbed_data = train[((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key))]
-        true_labels = np.zeros((len(unperturbed_data), 1))
-        fake_labels = np.ones((len(unperturbed_data), 1))
 
         sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
         diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
         # cell_type_data = cell_type_data.copy()[:, diff_genes.tolist()]
 
-        pred = network.predict(data=unperturbed_data, encoder_labels=true_labels, decoder_labels=fake_labels)
+        pred = network.predict(adata=train, conditions={"ctrl": ctrl_key, "stim": stim_key},
+                               celltype_to_predict=cell_type)
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
         all_adata = cell_type_data.concatenate(pred_adata)
@@ -203,6 +176,18 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
 if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="pbmc",
+                                           z_dim=100,
+                                           alpha=0.001,
+                                           n_epochs=250,
+                                           batch_size=64,
+                                           condition_key="condition")
+    test_train_whole_data_one_celltype_out(data_name="hpoly",
+                                           z_dim=100,
+                                           alpha=0.001,
+                                           n_epochs=250,
+                                           batch_size=64,
+                                           condition_key="condition")
+    test_train_whole_data_one_celltype_out(data_name="salmonella",
                                            z_dim=100,
                                            alpha=0.001,
                                            n_epochs=250,
