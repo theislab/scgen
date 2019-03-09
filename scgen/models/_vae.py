@@ -5,7 +5,7 @@ import keras
 import numpy
 import tensorflow as tf
 from keras import backend as K, Model
-from keras.callbacks import EarlyStopping, CSVLogger
+from keras.callbacks import CSVLogger
 from keras.layers import Input, Dense, BatchNormalization, LeakyReLU, Dropout, Lambda
 from keras.models import load_model
 from scipy import sparse
@@ -469,24 +469,26 @@ class VAEArith:
             CSVLogger(filename="./csv_logger.log")
         ]
         if use_validation:
-            self.vae_model.fit(x=train_data.X,
-                               y=train_data.X,
-                               epochs=n_epochs,
-                               batch_size=batch_size,
-                               validation_data=(valid_data.X, valid_data.X),
-                               shuffle=shuffle,
-                               callbacks=callbacks,
-                               verbose=verbose)
+            result = self.vae_model.fit(x=train_data.X,
+                                      y=train_data.X,
+                                      epochs=n_epochs,
+                                      batch_size=batch_size,
+                                      validation_data=(valid_data.X, valid_data.X),
+                                      shuffle=shuffle,
+                                      callbacks=callbacks,
+                                      verbose=verbose)
         else:
-            self.vae_model.fit(x=train_data.X,
-                               y=train_data.X,
-                               epochs=n_epochs,
-                               batch_size=batch_size,
-                               shuffle=shuffle,
-                               callbacks=callbacks,
-                               verbose=verbose)
+            result = self.vae_model.fit(x=train_data.X,
+                                      y=train_data.X,
+                                      epochs=n_epochs,
+                                      batch_size=batch_size,
+                                      shuffle=shuffle,
+                                      callbacks=callbacks,
+                                      verbose=verbose)
+
         if save is True:
             self.vae_model.save(os.path.join("vae.h5"), overwrite=True)
             self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
             self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
             log.info(f"Models are saved in file: {self.model_to_use}. Training finished")
+        return result
