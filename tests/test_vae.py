@@ -47,7 +47,6 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.makedirs(f"./vae_results/{data_name}/{cell_type}/", exist_ok=True)
         os.chdir(f"./vae_results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
-
         network = scgen.VAEArith(x_dimension=net_train_data.X.shape[1],
                                  z_dimension=z_dim,
                                  alpha=alpha,
@@ -164,21 +163,21 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            z_dim=100,
-                                           alpha=0.001,
+                                           alpha=0.000001,
                                            n_epochs=250,
                                            batch_size=64,
                                            condition_key="condition")
-    test_train_whole_data_one_celltype_out(data_name="hpoly",
-                                           z_dim=100,
-                                           alpha=0.001,
-                                           n_epochs=250,
-                                           batch_size=64,
-                                           condition_key="condition")
-    test_train_whole_data_one_celltype_out(data_name="salmonella",
-                                           z_dim=100,
-                                           alpha=0.001,
-                                           n_epochs=250,
-                                           batch_size=64,
-                                           condition_key="condition")
+    # test_train_whole_data_one_celltype_out(data_name="hpoly",
+    #                                        z_dim=100,
+    #                                        alpha=0.001,
+    #                                        n_epochs=250,
+    #                                        batch_size=64,
+    #                                        condition_key="condition")
+    # test_train_whole_data_one_celltype_out(data_name="salmonella",
+    #                                        z_dim=100,
+    #                                        alpha=0.001,
+    #                                        n_epochs=250,
+    #                                        batch_size=64,
+    #                                        condition_key="condition")
     # reconstruct_whole_data(data_name="species")
     # reconstruct_whole_data(data_name="salmonella")
