@@ -53,3 +53,13 @@ if __name__ == '__main__':
     n_epochs = 1500,
     z_dim = 100
 """
+
+"""
+    best run for VAE Arithmetic:
+    alpha = .01
+    batch_size = 256 
+    dropout_rate = 0.75
+    learning_rate = 0.1
+    n_epochs = 100
+    z_dimension = 20
+"""
