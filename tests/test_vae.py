@@ -17,27 +17,33 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            batch_size=32,
                                            condition_key="condition"):
     if data_name == "pbmc":
+        cell_type_to_monitor = "CD4T"
         stim_key = "stimulated"
         ctrl_key = "control"
         cell_type_key = "cell_type"
         train = sc.read("../data/train.h5ad")
     elif data_name == "hpoly":
+        cell_type_to_monitor = None
         stim_key = "Hpoly.Day10"
         ctrl_key = "Control"
         cell_type_key = "cell_label"
         train = sc.read("../data/ch10_train_7000.h5ad")
     elif data_name == "salmonella":
+        cell_type_to_monitor = None
         stim_key = "Salmonella"
         ctrl_key = "Control"
         cell_type_key = "cell_label"
         train = sc.read("../data/chsal_train_7000.h5ad")
     elif data_name == "species":
+        cell_type_to_monitor = "rat"
         stim_key = "LPS6"
         ctrl_key = "unst"
         cell_type_key = "species"
         train = sc.read("../data/train_all_lps6.h5ad")
 
     for cell_type in train.obs[cell_type_key].unique().tolist():
+        if cell_type_to_monitor is not None and cell_type_to_monitor != cell_type:
+            continue
         os.makedirs(f"./vae_results/{data_name}/{cell_type}/", exist_ok=True)
         os.chdir(f"./vae_results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
@@ -156,8 +162,6 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         train = sc.read("../data/train_all_lps6.h5ad")
     all_data = anndata.AnnData()
     for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
-        if cell_type != "rat":
-            continue
         print(f"Reconstructing for {cell_type}")
         os.chdir(f"./results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
@@ -198,7 +202,7 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="species",
+    test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            z_dim=100,
                                            alpha=0.001,
                                            n_epochs=250,
