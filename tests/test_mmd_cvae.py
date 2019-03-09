@@ -122,11 +122,11 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         all_adata = cell_type_data.concatenate(pred_adata)
 
         scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
-                                     axis_keys={"x": "pred", "y": stim_key, "y1": stim_key},
+                                     axis_keys={"x": ctrl_key, "y": stim_key, "y1": "pred"},
                                      gene_list=diff_genes,
                                      path_to_save=f"./figures/reg_mean_{z_dim}.pdf")
         scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
-                                    axis_keys={"x": "pred", "y": stim_key, 'y1': stim_key},
+                                    axis_keys={"x": ctrl_key, "y": stim_key, 'y1': "pred"},
                                     gene_list=diff_genes,
                                     path_to_save=f"./figures/reg_var_{z_dim}.pdf")
 
