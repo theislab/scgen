@@ -71,36 +71,67 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                    show=False)
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
-        print(cell_type_data.shape)
-
-        sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=50)
-        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
 
         pred, delta = network.predict(adata=cell_type_data, conditions={"ctrl": ctrl_key, "stim": stim_key},
                                       celltype_to_predict=cell_type)
 
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
-        print(pred_adata.shape)
         all_adata = cell_type_data.concatenate(pred_adata)
-        all_adata = all_adata.copy()[:, diff_genes.tolist()]
+        sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
+        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
 
         scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
-                                     axis_keys={"x": stim_key, "y": "pred", "y1": ctrl_key},
+                                     axis_keys={"x": stim_key, "y": "pred"},
                                      gene_list=diff_genes[:5],
-                                     path_to_save=f"./figures/reg_mean_{z_dim}.pdf")
+                                     path_to_save=f"./figures/reg_mean_all_genes.pdf")
+
         scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
-                                    axis_keys={"x": stim_key, "y": "pred", 'y1': ctrl_key},
+                                    axis_keys={"x": stim_key, "y": "pred"},
                                     gene_list=diff_genes[:5],
-                                    path_to_save=f"./figures/reg_var_{z_dim}.pdf")
+                                    path_to_save=f"./figures/reg_var_all_genes.pdf")
+
+        all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
+
+        scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
+                                     axis_keys={"x": stim_key, "y": "pred"},
+                                     gene_list=diff_genes[:5],
+                                     path_to_save=f"./figures/reg_mean_top_100_genes.pdf")
+
+        scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
+                                    axis_keys={"x": stim_key, "y": "pred"},
+                                    gene_list=diff_genes[:5],
+                                    path_to_save=f"./figures/reg_var_top_100_genes.pdf")
+
+        all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
+
+        scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
+                                     axis_keys={"x": stim_key, "y": "pred"},
+                                     gene_list=diff_genes[:5],
+                                     path_to_save=f"./figures/reg_mean_top_50_genes.pdf")
+
+        scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
+                                    axis_keys={"x": stim_key, "y": "pred"},
+                                    gene_list=diff_genes[:5],
+                                    path_to_save=f"./figures/reg_var_top_50_genes.pdf")
 
         sc.pp.neighbors(all_adata)
         sc.tl.umap(all_adata)
         sc.pl.umap(all_adata, color=condition_key,
-                   save="pred")
+                   save="pred_all_genes")
+
+        sc.pp.neighbors(all_adata_top_100_genes)
+        sc.tl.umap(all_adata_top_100_genes)
+        sc.pl.umap(all_adata_top_100_genes, color=condition_key,
+                   save="pred_top_100_genes")
+
+        sc.pp.neighbors(all_adata_top_50_genes)
+        sc.tl.umap(all_adata_top_50_genes)
+        sc.pl.umap(all_adata_top_50_genes, color=condition_key,
+                   save="pred_top_50_genes")
 
         sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
-                     save=f"_{z_dim}_{diff_genes.tolist()[0]}")
+                     save=f"_{diff_genes.tolist()[0]}")
 
         os.chdir("../../../")
 
@@ -169,12 +200,12 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
 if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="pbmc",
-                                           z_dim=20,
-                                           alpha=0.01,
-                                           n_epochs=100,
-                                           batch_size=256,
+                                           z_dim=100,
+                                           alpha=0.00001,
+                                           n_epochs=300,
+                                           batch_size=128,
                                            dropout_rate=0.75,
-                                           learning_rate=0.1,
+                                           learning_rate=0.001,
                                            condition_key="condition")
     # test_train_whole_data_one_celltype_out(data_name="hpoly",
     #                                        z_dim=100,

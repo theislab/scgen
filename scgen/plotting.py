@@ -122,13 +122,13 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
     x = numpy.var(ctrl.X, axis=0)
     y = numpy.var(stim.X, axis=0)
     m, b, r_value, p_value, std_err = stats.linregress(x, y)
-    _p1 = pyplot.scatter(x, y, marker=".", label=f"x-y")
+    _p1 = pyplot.scatter(x, y, marker=".", label=f"{axis_keys['x']}-{axis_keys['y']}")
     pyplot.plot(x, m * x + b, "-", color="green")
     pyplot.xlabel(axis_keys["x"], fontsize=12)
     pyplot.ylabel(axis_keys["y"], fontsize=12)
     if "y1" in axis_keys.keys():
         y1 = numpy.var(real_stim.X, axis=0)
-        _p2 = pyplot.scatter(x, y1, marker="*", c="grey", alpha=.5, label="x-y1")
+        _p2 = pyplot.scatter(x, y1, marker="*", c="grey", alpha=.5, label=f"{axis_keys['x']}-{axis_keys['y1']}")
     if gene_list is not None:
         for i in gene_list:
             j = adata.var_names.tolist().index(i)
