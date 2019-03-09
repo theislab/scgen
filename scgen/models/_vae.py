@@ -203,7 +203,7 @@ class VAEArith:
             latent: numpy nd-array
                 Returns array containing latent space encoding of 'data'
         """
-        latent = self.encoder_model.predict(x=data)
+        latent = self.encoder_model.predict(data)[2]
         return latent
 
     def _avg_vector(self, data):

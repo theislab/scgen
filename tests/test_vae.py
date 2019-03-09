@@ -57,27 +57,14 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
         print(f"network_{cell_type} has been trained!")
 
-        true_labels, _ = scgen.label_encoder(net_train_data)
-        fake_labels = np.ones(shape=(net_train_data.shape[0], 1))
-
-        latent_with_true_labels = network.to_latent(net_train_data.X)
-        latent_with_true_labels = sc.AnnData(X=latent_with_true_labels,
-                                             obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                                  cell_type_key: net_train_data.obs[cell_type_key].tolist()})
-        sc.pp.neighbors(latent_with_true_labels)
-        sc.tl.umap(latent_with_true_labels)
-        sc.pl.umap(latent_with_true_labels, color=[condition_key, cell_type_key],
-                   save=f"_latent_true_labels_{z_dim}",
-                   show=False)
-
-        latent_with_fake_labels = network.to_latent(net_train_data.X)
-        latent_with_fake_labels = sc.AnnData(X=latent_with_fake_labels,
-                                             obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                                  cell_type_key: net_train_data.obs[cell_type_key].tolist()})
-        sc.pp.neighbors(latent_with_fake_labels)
-        sc.tl.umap(latent_with_fake_labels)
-        sc.pl.umap(latent_with_fake_labels, color=[condition_key, cell_type_key],
-                   save=f"_latent_fake_labels_{z_dim}",
+        latent = network.to_latent(net_train_data.X)
+        latent = sc.AnnData(X=latent,
+                            obs={condition_key: net_train_data.obs[condition_key].tolist(),
+                                 cell_type_key: net_train_data.obs[cell_type_key].tolist()})
+        sc.pp.neighbors(latent)
+        sc.tl.umap(latent)
+        sc.pl.umap(latent, color=[condition_key, cell_type_key],
+                   save=f"_latent_{z_dim}",
                    show=False)
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
@@ -86,8 +73,8 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
         # cell_type_data = cell_type_data.copy()[:, diff_genes.tolist()]
 
-        pred = network.predict(adata=train, conditions={"ctrl": ctrl_key, "stim": stim_key},
-                               celltype_to_predict=cell_type)
+        pred, delta = network.predict(adata=train, conditions={"ctrl": ctrl_key, "stim": stim_key},
+                                      celltype_to_predict=cell_type)
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
         all_adata = cell_type_data.concatenate(pred_adata)
@@ -178,7 +165,7 @@ if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            z_dim=100,
                                            alpha=0.001,
-                                           n_epochs=250,
+                                           n_epochs=0,
                                            batch_size=64,
                                            condition_key="condition")
     test_train_whole_data_one_celltype_out(data_name="hpoly",
