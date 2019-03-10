@@ -370,36 +370,36 @@ def visualize_trained_network_results(network, train, cell_type,
         diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
         if plot_reg:
             scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
-                                         axis_keys={"x": stim_key, "y": "pred"},
+                                         axis_keys={"x": "pred", "y": stim_key},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_all_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
-                                        axis_keys={"x": stim_key, "y": "pred"},
+                                        axis_keys={"x": "pred", "y": stim_key},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_all_genes.pdf"))
 
             all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
 
             scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                         axis_keys={"x": stim_key, "y": "pred"},
+                                         axis_keys={"x": "pred", "y": stim_key},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_top_100_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                        axis_keys={"x": stim_key, "y": "pred"},
+                                        axis_keys={"x": "pred", "y": stim_key},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_top_100_genes.pdf"))
 
             all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
 
             scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                         axis_keys={"x": stim_key, "y": "pred"},
+                                         axis_keys={"x": "pred", "y": stim_key},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_top_50_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                        axis_keys={"x": stim_key, "y": "pred"},
+                                        axis_keys={"x": "pred", "y": stim_key},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_top_50_genes.pdf"))
 
