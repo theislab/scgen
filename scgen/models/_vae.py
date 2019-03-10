@@ -421,7 +421,7 @@ class VAEArith:
             increment_global_step_op = tf.assign(self.global_step, self.global_step + 1)
             _step = self.sess.run(increment_global_step_op)
             current_step = self.sess.run(self.global_step)
-            train_loss = 0
+            train_loss = 0.0
             for lower in range(0, train_data.shape[0], batch_size):
                 upper = min(lower + batch_size, train_data.shape[0])
                 if sparse.issparse(train_data.X):
@@ -452,7 +452,7 @@ class VAEArith:
                 if patience_cnt > patience:
                     save_path = self.saver.save(self.sess, self.model_to_use)
                     break
-            log.info(f"Epoch {it}: Train Loss: {train_loss}")
+            log.info(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}")
         else:
             save_path = self.saver.save(self.sess, self.model_to_use)
         log.info(f"Model saved in file: {save_path}. Training finished")
