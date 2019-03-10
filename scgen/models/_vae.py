@@ -37,6 +37,7 @@ class VAEArith:
         self.learning_rate = kwargs.get("learning_rate", 0.001)
         self.dropout_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "../models/scgen")
+        self.alpha = kwargs.get("alpha", 0.001)
         self.is_training = tf.placeholder(tf.bool, name='training_flag')
         self.global_step = tf.Variable(0, name='global_step', trainable=False, dtype=tf.int32)
         self.x = tf.placeholder(tf.float32, shape=[None, self.x_dim], name="data")
@@ -154,7 +155,7 @@ class VAEArith:
         kl_loss = 0.5 * tf.reduce_sum(
             tf.exp(self.log_var) + tf.square(self.mu) - 1. - self.log_var, 1)
         recon_loss = 0.5 * tf.reduce_sum(tf.square((self.x - self.x_hat)), 1)
-        self.vae_loss = tf.reduce_mean(recon_loss + 0.001 * kl_loss)
+        self.vae_loss = tf.reduce_mean(recon_loss + self.alpha * kl_loss)
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             self.solver = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.vae_loss)
 
