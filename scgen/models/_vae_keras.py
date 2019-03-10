@@ -78,11 +78,11 @@ class VAEArithKeras:
                 A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
         h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(self.x)
-        h = BatchNormalization()(h)
+        h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
         h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(h)
-        h = BatchNormalization()(h)
+        h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
         # h = Dense(512, kernel_initializer=self.init_w, use_bias=False)(h)
@@ -118,11 +118,11 @@ class VAEArithKeras:
 
         """
         h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(self.z)
-        h = BatchNormalization()(h)
+        h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
         h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(h)
-        h = BatchNormalization()(h)
+        h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
         # h = Dense(768, kernel_initializer=self.init_w, use_bias=False)(h)
@@ -154,7 +154,7 @@ class VAEArithKeras:
             The computed Tensor of samples with shape [size, z_dim].
         """
         mu, log_var = args
-        batch_size = K.shape(mu)[0]
+        batch_size = K.int_shape(mu)[0]
         z_dim = K.int_shape(mu)[1]
         eps = K.random_normal(shape=[batch_size, z_dim])
         return mu + K.exp(log_var / 2) * eps
@@ -493,7 +493,7 @@ class VAEArithKeras:
 
         def on_epoch_end(epoch, logs):
             if epoch % checkpoint == 0:
-                path_to_save = f"./figures/epoch_{epoch}/"
+                path_to_save = os.path.join(kwargs.get("path_to_save"), f"epoch_{epoch}") + "/"
                 scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
                                                         kwargs.get("ctrl_key"), kwargs.get("stim_key"),
                                                         kwargs.get("condition_key"), kwargs.get("cell_type_key"),

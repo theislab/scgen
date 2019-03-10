@@ -57,7 +57,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         network.train(net_train_data, train, n_epochs=n_epochs, batch_size=batch_size, verbose=2,
                       ctrl_key=ctrl_key, stim_key=stim_key,
                       condition_key=condition_key, cell_type_key=cell_type_key,
-                      cell_type=cell_type)
+                      cell_type=cell_type, path_to_save="./figures/keras/")
         print(f"network_{cell_type} has been trained!")
 
         scgen.visualize_trained_network_results(network, train, cell_type,
