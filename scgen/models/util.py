@@ -6,7 +6,7 @@ import numpy as np
 import scanpy as sc
 from scipy import sparse
 from sklearn import preprocessing
-
+from matplotlib import pyplot as plt
 import scgen
 
 
@@ -342,6 +342,7 @@ def visualize_trained_network_results(network, train, cell_type,
                                       path_to_save="./figures/",
                                       plot_umap=True,
                                       plot_reg=True):
+    plt.close("all")
     os.makedirs(path_to_save, exist_ok=True)
     sc.settings.figdir = os.path.abspath(path_to_save)
     if isinstance(network, scgen.VAEArith):
@@ -420,3 +421,5 @@ def visualize_trained_network_results(network, train, cell_type,
 
         sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
                      save=f"_{diff_genes.tolist()[0]}")
+
+        plt.close("all")
