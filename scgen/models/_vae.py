@@ -50,7 +50,7 @@ class VAEArith:
         self.z_dim = z_dimension
         self.learning_rate = kwargs.get("learning_rate", 0.001)
         self.dropout_rate = kwargs.get("dropout_rate", 0.2)
-        self.model_to_use = kwargs.get("model_path", "./")
+        self.model_to_use = kwargs.get("model_path", "./models/")
         self.alpha = kwargs.get("alpha", 0.1)
         self.x = Input(shape=(x_dimension,), name="input")
         self.z = Input(shape=(z_dimension,), name="latent")
@@ -76,11 +76,19 @@ class VAEArith:
             log_var: Tensor
                 A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
-        h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(self.x)
+        h = Dense(1024, kernel_initializer=self.init_w, use_bias=False)(self.x)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
-        h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(h)
+        h = Dense(768, kernel_initializer=self.init_w, use_bias=False)(h)
+        h = BatchNormalization()(h)
+        h = LeakyReLU()(h)
+        h = Dropout(self.dropout_rate)(h)
+        h = Dense(512, kernel_initializer=self.init_w, use_bias=False)(h)
+        h = BatchNormalization()(h)
+        h = LeakyReLU()(h)
+        h = Dropout(self.dropout_rate)(h)
+        h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(h)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
@@ -108,11 +116,19 @@ class VAEArith:
                 A Tensor for last dense layer with the shape of [n_vars, ] to reconstruct data.
 
         """
-        h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(self.z)
+        h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(self.z)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
-        h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(h)
+        h = Dense(512, kernel_initializer=self.init_w, use_bias=False)(h)
+        h = BatchNormalization()(h)
+        h = LeakyReLU()(h)
+        h = Dropout(self.dropout_rate)(h)
+        h = Dense(768, kernel_initializer=self.init_w, use_bias=False)(h)
+        h = BatchNormalization()(h)
+        h = LeakyReLU()(h)
+        h = Dropout(self.dropout_rate)(h)
+        h = Dense(1024, kernel_initializer=self.init_w, use_bias=False)(h)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
@@ -487,6 +503,7 @@ class VAEArith:
                                       verbose=verbose)
 
         if save is True:
+            os.makedirs(self.model_to_use, exist_ok=True)
             self.vae_model.save(os.path.join("vae.h5"), overwrite=True)
             self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
             self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)

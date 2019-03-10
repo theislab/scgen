@@ -53,8 +53,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                                  z_dimension=z_dim,
                                  alpha=alpha,
                                  dropout_rate=dropout_rate,
-                                 learning_rate=learning_rate,
-                                 model_path=f"./")
+                                 learning_rate=learning_rate)
 
         # network.restore_model()
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
