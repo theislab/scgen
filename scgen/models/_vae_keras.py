@@ -324,7 +324,7 @@ class VAEArithKeras:
         interpolation = self.reconstruct(vectors, use_data=True)
         return interpolation
 
-    def predict(self, adata, conditions, adata_to_predict=None, celltype_to_predict=None, obs_key="all"):
+    def predict(self, adata, conditions, cell_type_key, condition_key, adata_to_predict=None, celltype_to_predict=None, obs_key="all"):
         """
             Predicts the cell type provided by the user in stimulated condition.
 
@@ -375,7 +375,7 @@ class VAEArithKeras:
         if celltype_to_predict is None and adata_to_predict is None:
             raise Exception("Please provide a cell type name or adata for your unperturbed cells")
         if celltype_to_predict is not None:
-            ctrl_pred = extractor(adata, celltype_to_predict, conditions)[1]
+            ctrl_pred = extractor(adata, celltype_to_predict, conditions, cell_type_key, condition_key)[1]
         else:
             ctrl_pred = adata_to_predict
         eq = min(ctrl_x.X.shape[0], stim_x.X.shape[0])
@@ -495,7 +495,7 @@ class VAEArithKeras:
             if epoch % checkpoint == 0:
                 path_to_save = os.path.join(kwargs.get("path_to_save"), f"epoch_{epoch}") + "/"
                 scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
-                                                        kwargs.get("ctrl_key"), kwargs.get("stim_key"),
+                                                        kwargs.get("conditions"),
                                                         kwargs.get("condition_key"), kwargs.get("cell_type_key"),
                                                         path_to_save,
                                                         plot_umap=False,

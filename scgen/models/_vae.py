@@ -267,7 +267,7 @@ class VAEArith:
         interpolation = self.reconstruct(vectors, use_data=True)
         return interpolation
 
-    def predict(self, adata, conditions,  adata_to_predict = None, celltype_to_predict = None, obs_key="all"):
+    def predict(self, adata, conditions, cell_type_key, condition_key, adata_to_predict=None, celltype_to_predict=None, obs_key="all"):
         """
             Predicts the cell type provided by the user in stimulated condition.
 
@@ -297,25 +297,25 @@ class VAEArith:
             ```
         """
         if obs_key == "all":
-            ctrl_x = adata[adata.obs["condition"] == conditions["ctrl"], :]
-            stim_x = adata[adata.obs["condition"] == conditions["stim"], :]
+            ctrl_x = adata[adata.obs[condition_key] == conditions["ctrl"], :]
+            stim_x = adata[adata.obs[condition_key] == conditions["stim"], :]
             ctrl_x = balancer(ctrl_x)
             stim_x = balancer(stim_x)
         else:
             key = list(obs_key.keys())[0]
             values = obs_key[key]
             subset = adata[adata.obs[key].isin(values)]
-            ctrl_x = subset[subset.obs["condition"] == conditions["ctrl"], :]
-            stim_x = subset[subset.obs["condition"] == conditions["stim"], :]
+            ctrl_x = subset[subset.obs[condition_key] == conditions["ctrl"], :]
+            stim_x = subset[subset.obs[condition_key] == conditions["stim"], :]
             if len(values) > 1:
                 ctrl_x = balancer(ctrl_x)
                 stim_x = balancer(stim_x)
-        if celltype_to_predict is not None and adata_to_predict is not None :
+        if celltype_to_predict is not None and adata_to_predict is not None:
             raise Exception("Please provide either a cell type or adata not both!")
-        if celltype_to_predict is None and adata_to_predict is None :
+        if celltype_to_predict is None and adata_to_predict is None:
             raise Exception("Please provide a cell type name or adata for your unperturbed cells")
-        if celltype_to_predict is not None :
-            ctrl_pred = extractor(adata, celltype_to_predict, conditions)[1]
+        if celltype_to_predict is not None:
+            ctrl_pred = extractor(adata, celltype_to_predict, conditions, cell_type_key, condition_key)[1]
         else:
             ctrl_pred = adata_to_predict
         eq = min(ctrl_x.X.shape[0], stim_x.X.shape[0])

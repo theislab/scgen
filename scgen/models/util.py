@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 import scgen
 
 
-def data_remover(adata, remain_list, remove_list):
+def data_remover(adata, remain_list, remove_list, cell_type_key, condition_key):
     """
         Removes specific cell type in stimulated condition form `adata`.
 
@@ -38,16 +38,18 @@ def data_remover(adata, remain_list, remove_list):
     """
     source_data = []
     for i in remain_list:
-        source_data.append(extractor(adata, i, conditions={"ctrl": "control", "stim": "stimulated"})[3])
+        source_data.append(extractor(adata, i, conditions={"ctrl": "control", "stim": "stimulated"},
+                                     cell_type_key=cell_type_key, condition_key=condition_key)[3])
     target_data = []
     for i in remove_list:
-        target_data.append(extractor(adata, i, conditions={"ctrl": "control", "stim": "stimulated"})[1])
+        target_data.append(extractor(adata, i, conditions={"ctrl": "control", "stim": "stimulated"},
+                                     cell_type_key=cell_type_key, condition_key=condition_key)[1])
     merged_data = training_data_provider(source_data, target_data)
     merged_data.var_names = adata.var_names
     return merged_data
 
 
-def extractor(data, cell_type, conditions):
+def extractor(data, cell_type, conditions, cell_type_key="cell_type", condition_key="condition"):
     """
         Returns a list of `data` files while filtering for a specific `cell_type`.
 
@@ -72,10 +74,10 @@ def extractor(data, cell_type, conditions):
         ```
 
     """
-    cell_with_both_condition = data[data.obs["cell_type"] == cell_type]
-    condtion_1 = data[(data.obs["cell_type"] == cell_type) & (data.obs["condition"] == conditions["ctrl"])]
-    condtion_2 = data[(data.obs["cell_type"] == cell_type) & (data.obs["condition"] == conditions["stim"])]
-    training = data[~((data.obs["cell_type"] == cell_type) & (data.obs["condition"] == conditions["stim"]))]
+    cell_with_both_condition = data[data.obs[cell_type_key] == cell_type]
+    condtion_1 = data[(data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == conditions["ctrl"])]
+    condtion_2 = data[(data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == conditions["stim"])]
+    training = data[~((data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == conditions["stim"]))]
     return [training, condtion_1, condtion_2, cell_with_both_condition]
 
 
@@ -140,7 +142,7 @@ def training_data_provider(train_s, train_t):
     return train_real
 
 
-def balancer(adata):
+def balancer(adata, cell_type_key="cell_type", condition_key="condition"):
     """
         Makes cell type population equal.
 
@@ -161,16 +163,16 @@ def balancer(adata):
         train_ctrl = balancer(train_ctrl)
         ```
     """
-    class_names = np.unique(adata.obs["cell_type"])
+    class_names = np.unique(adata.obs[cell_type_key])
     class_pop = {}
     for cls in class_names:
-        class_pop[cls] = adata.copy()[adata.obs["cell_type"] == cls].shape[0]
+        class_pop[cls] = adata.copy()[adata.obs[cell_type_key] == cls].shape[0]
     max_number = np.max(list(class_pop.values()))
     all_data_x = []
     all_data_label = []
     all_data_condition = []
     for cls in class_names:
-        temp = adata.copy()[adata.obs["cell_type"] == cls]
+        temp = adata.copy()[adata.obs[cell_type_key] == cls]
         index = np.random.choice(range(len(temp)), max_number)
         if sparse.issparse(temp.X):
             temp_x = temp.X.A[index]
@@ -179,15 +181,15 @@ def balancer(adata):
         all_data_x.append(temp_x)
         temp_ct = np.repeat(cls, max_number)
         all_data_label.append(temp_ct)
-        temp_cc = np.repeat(np.unique(temp.obs["condition"]), max_number)
+        temp_cc = np.repeat(np.unique(temp.obs[condition_key]), max_number)
         all_data_condition.append(temp_cc)
     balanced_data = anndata.AnnData(np.concatenate(all_data_x))
-    balanced_data.obs["cell_type"] = np.concatenate(all_data_label)
-    balanced_data.obs["condition"] = np.concatenate(all_data_label)
-    class_names = np.unique(balanced_data.obs["cell_type"])
+    balanced_data.obs[cell_type_key] = np.concatenate(all_data_label)
+    balanced_data.obs[condition_key] = np.concatenate(all_data_label)
+    class_names = np.unique(balanced_data.obs[cell_type_key])
     class_pop = {}
     for cls in class_names:
-        class_pop[cls] = len(balanced_data[balanced_data.obs["cell_type"] == cls])
+        class_pop[cls] = len(balanced_data[balanced_data.obs[cell_type_key] == cls])
     return balanced_data
 
 
@@ -336,7 +338,7 @@ def label_encoder(adata):
 
 
 def visualize_trained_network_results(network, train, cell_type,
-                                      ctrl_key="control", stim_key="stimulated",
+                                      conditions={"ctrl": "control", "stim": "stimulated"},
                                       condition_key="condition",
                                       cell_type_key="cell_type",
                                       path_to_save="./figures/",
@@ -363,46 +365,46 @@ def visualize_trained_network_results(network, train, cell_type,
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
 
         pred, delta = network.predict(adata=cell_type_data,
-                                      conditions={"ctrl": ctrl_key, "stim": stim_key},
+                                      conditions=conditions,
                                       celltype_to_predict=cell_type)
 
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
         all_adata = cell_type_data.concatenate(pred_adata)
         sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
-        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
+        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][conditions["stim"]]
         if plot_reg:
             scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
-                                         axis_keys={"x": "pred", "y": stim_key},
+                                         axis_keys={"x": "pred", "y": conditions["stim"]},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_all_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
-                                        axis_keys={"x": "pred", "y": stim_key},
+                                        axis_keys={"x": "pred", "y": conditions["stim"]},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_all_genes.pdf"))
 
             all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
 
             scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                         axis_keys={"x": "pred", "y": stim_key},
+                                         axis_keys={"x": "pred", "y": conditions["stim"]},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_top_100_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                        axis_keys={"x": "pred", "y": stim_key},
+                                        axis_keys={"x": "pred", "y": conditions["stim"]},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_top_100_genes.pdf"))
 
             all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
 
             scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                         axis_keys={"x": "pred", "y": stim_key},
+                                         axis_keys={"x": "pred", "y": conditions["stim"]},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_top_50_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                        axis_keys={"x": "pred", "y": stim_key},
+                                        axis_keys={"x": "pred", "y": conditions["stim"]},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_top_50_genes.pdf"))
 
@@ -449,46 +451,46 @@ def visualize_trained_network_results(network, train, cell_type,
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
 
         pred, delta = network.predict(adata=cell_type_data,
-                                      conditions={"ctrl": ctrl_key, "stim": stim_key},
+                                      conditions=conditions,
                                       celltype_to_predict=cell_type)
 
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
         all_adata = cell_type_data.concatenate(pred_adata)
         sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
-        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
+        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][conditions["stim"]]
         if plot_reg:
             scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
-                                         axis_keys={"x": "pred", "y": stim_key},
+                                         axis_keys={"x": "pred", "y": conditions["stim"]},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_all_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
-                                        axis_keys={"x": "pred", "y": stim_key},
+                                        axis_keys={"x": "pred", "y": conditions["stim"]},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_all_genes.pdf"))
 
             all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
 
             scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                         axis_keys={"x": "pred", "y": stim_key},
+                                         axis_keys={"x": "pred", "y": conditions["stim"]},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_top_100_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                        axis_keys={"x": "pred", "y": stim_key},
+                                        axis_keys={"x": "pred", "y": conditions["stim"]},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_top_100_genes.pdf"))
 
             all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
 
             scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                         axis_keys={"x": "pred", "y": stim_key},
+                                         axis_keys={"x": "pred", "y": conditions["stim"]},
                                          gene_list=diff_genes[:5],
                                          path_to_save=os.path.join(path_to_save, f"reg_mean_top_50_genes.pdf"))
 
             scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                        axis_keys={"x": "pred", "y": stim_key},
+                                        axis_keys={"x": "pred", "y": conditions["stim"]},
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_top_50_genes.pdf"))
 
