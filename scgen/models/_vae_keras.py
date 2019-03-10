@@ -154,8 +154,8 @@ class VAEArithKeras:
             The computed Tensor of samples with shape [size, z_dim].
         """
         mu, log_var = args
-        batch_size = K.int_shape(mu)[0]
-        z_dim = K.int_shape(mu)[1]
+        batch_size = K.shape(mu)[0]
+        z_dim = K.shape(mu)[1]
         eps = K.random_normal(shape=[batch_size, z_dim])
         return mu + K.exp(log_var / 2) * eps
 
