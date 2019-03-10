@@ -44,8 +44,6 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         train = sc.read("../data/train_all_lps6.h5ad")
 
     for cell_type in train.obs[cell_type_key].unique().tolist():
-        if cell_type_to_monitor is not None and cell_type_to_monitor != cell_type:
-            continue
         os.makedirs(f"./vae_results/{data_name}/{cell_type}/", exist_ok=True)
         os.chdir(f"./vae_results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
