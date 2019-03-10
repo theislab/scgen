@@ -406,24 +406,24 @@ def visualize_trained_network_results(network, train, cell_type,
                                         gene_list=diff_genes[:5],
                                         path_to_save=os.path.join(path_to_save, f"reg_var_top_50_genes.pdf"))
 
-        if plot_umap:
-            sc.pp.neighbors(all_adata)
-            sc.tl.umap(all_adata)
-            sc.pl.umap(all_adata, color=condition_key,
-                       save="pred_all_genes",
-                       show=False)
+            if plot_umap:
+                sc.pp.neighbors(all_adata)
+                sc.tl.umap(all_adata)
+                sc.pl.umap(all_adata, color=condition_key,
+                           save="pred_all_genes",
+                           show=False)
 
-            sc.pp.neighbors(all_adata_top_100_genes)
-            sc.tl.umap(all_adata_top_100_genes)
-            sc.pl.umap(all_adata_top_100_genes, color=condition_key,
-                       save="pred_top_100_genes",
-                       show=False)
+                sc.pp.neighbors(all_adata_top_100_genes)
+                sc.tl.umap(all_adata_top_100_genes)
+                sc.pl.umap(all_adata_top_100_genes, color=condition_key,
+                           save="pred_top_100_genes",
+                           show=False)
 
-            sc.pp.neighbors(all_adata_top_50_genes)
-            sc.tl.umap(all_adata_top_50_genes)
-            sc.pl.umap(all_adata_top_50_genes, color=condition_key,
-                       save="pred_top_50_genes",
-                       show=False)
+                sc.pp.neighbors(all_adata_top_50_genes)
+                sc.tl.umap(all_adata_top_50_genes)
+                sc.pl.umap(all_adata_top_50_genes, color=condition_key,
+                           save="pred_top_50_genes",
+                           show=False)
 
         sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
                      save=f"_{diff_genes.tolist()[0]}",
@@ -432,7 +432,10 @@ def visualize_trained_network_results(network, train, cell_type,
         plt.close("all")
 
     elif isinstance(network, scgen.VAEArith):
-        latent = network.to_latent(train.X)
+        if sparse.issparse(train.X):
+            latent = network.to_latent(train.X.A)
+        else:
+            latent = network.to_latent(train.X)
         latent = sc.AnnData(X=latent,
                             obs={condition_key: train.obs[condition_key].tolist(),
                                  cell_type_key: train.obs[cell_type_key].tolist()})
