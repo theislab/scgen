@@ -54,7 +54,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                                  learning_rate=learning_rate)
 
         # network.restore_model()
-        network.train(net_train_data, train, n_epochs=n_epochs, batch_size=batch_size)
+        network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
         print(f"network_{cell_type} has been trained!")
 
         scgen.visualize_trained_network_results(network, train, cell_type,

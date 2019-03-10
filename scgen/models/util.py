@@ -345,7 +345,90 @@ def visualize_trained_network_results(network, train, cell_type,
     plt.close("all")
     os.makedirs(path_to_save, exist_ok=True)
     sc.settings.figdir = os.path.abspath(path_to_save)
-    if isinstance(network, scgen.VAEArith):
+    if isinstance(network, scgen.VAEArithKeras):
+        latent = network.to_latent(train.X)
+        latent = sc.AnnData(X=latent,
+                            obs={condition_key: train.obs[condition_key].tolist(),
+                                 cell_type_key: train.obs[cell_type_key].tolist()})
+        if plot_umap:
+            sc.pp.neighbors(latent)
+            sc.tl.umap(latent)
+            sc.pl.umap(latent, color=[condition_key, cell_type_key],
+                       save=f"_latent",
+                       show=False)
+
+        cell_type_data = train[train.obs[cell_type_key] == cell_type]
+
+        pred, delta = network.predict(adata=cell_type_data,
+                                      conditions={"ctrl": ctrl_key, "stim": stim_key},
+                                      celltype_to_predict=cell_type)
+
+        pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
+                                     var={"var_names": cell_type_data.var_names})
+        all_adata = cell_type_data.concatenate(pred_adata)
+        sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
+        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
+        if plot_reg:
+            scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
+                                         axis_keys={"x": "pred", "y": stim_key},
+                                         gene_list=diff_genes[:5],
+                                         path_to_save=os.path.join(path_to_save, f"reg_mean_all_genes.pdf"))
+
+            scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
+                                        axis_keys={"x": "pred", "y": stim_key},
+                                        gene_list=diff_genes[:5],
+                                        path_to_save=os.path.join(path_to_save, f"reg_var_all_genes.pdf"))
+
+            all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
+
+            scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
+                                         axis_keys={"x": "pred", "y": stim_key},
+                                         gene_list=diff_genes[:5],
+                                         path_to_save=os.path.join(path_to_save, f"reg_mean_top_100_genes.pdf"))
+
+            scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
+                                        axis_keys={"x": "pred", "y": stim_key},
+                                        gene_list=diff_genes[:5],
+                                        path_to_save=os.path.join(path_to_save, f"reg_var_top_100_genes.pdf"))
+
+            all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
+
+            scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
+                                         axis_keys={"x": "pred", "y": stim_key},
+                                         gene_list=diff_genes[:5],
+                                         path_to_save=os.path.join(path_to_save, f"reg_mean_top_50_genes.pdf"))
+
+            scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
+                                        axis_keys={"x": "pred", "y": stim_key},
+                                        gene_list=diff_genes[:5],
+                                        path_to_save=os.path.join(path_to_save, f"reg_var_top_50_genes.pdf"))
+
+        if plot_umap:
+            sc.pp.neighbors(all_adata)
+            sc.tl.umap(all_adata)
+            sc.pl.umap(all_adata, color=condition_key,
+                       save="pred_all_genes",
+                       show=False)
+
+            sc.pp.neighbors(all_adata_top_100_genes)
+            sc.tl.umap(all_adata_top_100_genes)
+            sc.pl.umap(all_adata_top_100_genes, color=condition_key,
+                       save="pred_top_100_genes",
+                       show=False)
+
+            sc.pp.neighbors(all_adata_top_50_genes)
+            sc.tl.umap(all_adata_top_50_genes)
+            sc.pl.umap(all_adata_top_50_genes, color=condition_key,
+                       save="pred_top_50_genes",
+                       show=False)
+
+        sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
+                     save=f"_{diff_genes.tolist()[0]}",
+                     show=False)
+
+        plt.close("all")
+
+    elif isinstance(network, scgen.VAEArith):
         latent = network.to_latent(train.X)
         latent = sc.AnnData(X=latent,
                             obs={condition_key: train.obs[condition_key].tolist(),

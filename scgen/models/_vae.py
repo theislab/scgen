@@ -452,6 +452,7 @@ class VAEArith:
                 if patience_cnt > patience:
                     save_path = self.saver.save(self.sess, self.model_to_use)
                     break
+            log.info(f"Epoch {it}: Train Loss: {train_loss}")
         else:
             save_path = self.saver.save(self.sess, self.model_to_use)
         log.info(f"Model saved in file: {save_path}. Training finished")
