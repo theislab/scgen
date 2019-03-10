@@ -359,8 +359,8 @@ class VAEArithKeras:
         if obs_key == "all":
             ctrl_x = adata[adata.obs["condition"] == conditions["ctrl"], :]
             stim_x = adata[adata.obs["condition"] == conditions["stim"], :]
-            ctrl_x = balancer(ctrl_x)
-            stim_x = balancer(stim_x)
+            ctrl_x = balancer(ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key)
+            stim_x = balancer(stim_x, cell_type_key=cell_type_key, condition_key=condition_key)
         else:
             key = list(obs_key.keys())[0]
             values = obs_key[key]
@@ -368,8 +368,8 @@ class VAEArithKeras:
             ctrl_x = subset[subset.obs["condition"] == conditions["ctrl"], :]
             stim_x = subset[subset.obs["condition"] == conditions["stim"], :]
             if len(values) > 1:
-                ctrl_x = balancer(ctrl_x)
-                stim_x = balancer(stim_x)
+                ctrl_x = balancer(ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key)
+                stim_x = balancer(stim_x, cell_type_key=cell_type_key, condition_key=condition_key)
         if celltype_to_predict is not None and adata_to_predict is not None:
             raise Exception("Please provide either a cell type or adata not both!")
         if celltype_to_predict is None and adata_to_predict is None:
