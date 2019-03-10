@@ -1,4 +1,5 @@
 import logging
+import os
 
 import numpy
 import tensorflow as tf
@@ -36,7 +37,7 @@ class VAEArith:
         self.z_dim = z_dimension
         self.learning_rate = kwargs.get("learning_rate", 0.001)
         self.dropout_rate = kwargs.get("dropout_rate", 0.2)
-        self.model_to_use = kwargs.get("model_path", "../models/scgen")
+        self.model_to_use = kwargs.get("model_path", "./models/scgen")
         self.alpha = kwargs.get("alpha", 0.001)
         self.is_training = tf.placeholder(tf.bool, name='training_flag')
         self.global_step = tf.Variable(0, name='global_step', trainable=False, dtype=tf.int32)
@@ -358,7 +359,7 @@ class VAEArith:
         self.saver.restore(self.sess, self.model_to_use)
 
     def train(self, train_data, use_validation=False, valid_data=None, n_epochs=25, batch_size=32, early_stop_limit=20,
-              threshold=0.0025, initial_run=True, shuffle=True):
+              threshold=0.0025, initial_run=True, shuffle=True, save=True):
         """
             Trains the network `n_epochs` times with given `train_data`
             and validates the model using validation_data if it was given
@@ -453,6 +454,7 @@ class VAEArith:
                     save_path = self.saver.save(self.sess, self.model_to_use)
                     break
             print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}")
-        else:
+        if save:
+            os.makedirs(self.model_to_use, exist_ok=True)
             save_path = self.saver.save(self.sess, self.model_to_use)
-        log.info(f"Model saved in file: {save_path}. Training finished")
+            log.info(f"Model saved in file: {save_path}. Training finished")

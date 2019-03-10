@@ -90,9 +90,11 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         print(f"Reconstructing for {cell_type}")
         os.chdir(f"./results/{data_name}/{cell_type}")
         net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
-        network = scgen.MMDCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=50, alpha=0.001, beta=100,
-                                batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
-                                model_path=f"./")
+        network = scgen.VAEArith(x_dimension=net_train_data.X.shape[1],
+                                 z_dimension=z_dim,
+                                 alpha=alpha,
+                                 dropout_rate=dropout_rate,
+                                 learning_rate=learning_rate)
         network.restore_model()
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
