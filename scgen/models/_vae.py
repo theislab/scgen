@@ -493,7 +493,9 @@ class VAEArith:
                 scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
                                                         kwargs.get("ctrl_key"), kwargs.get("stim_key"),
                                                         kwargs.get("condition_key"), kwargs.get("cell_type_key"),
-                                                        path_to_save)
+                                                        path_to_save,
+                                                        plot_umap=False,
+                                                        plot_reg=True)
 
         callbacks = [
             LambdaCallback(on_epoch_end=on_epoch_end),

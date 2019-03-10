@@ -339,7 +339,9 @@ def visualize_trained_network_results(network, train, cell_type,
                                       ctrl_key="control", stim_key="stimulated",
                                       condition_key="condition",
                                       cell_type_key="cell_type",
-                                      path_to_save="./figures/"):
+                                      path_to_save="./figures/",
+                                      plot_umap=True,
+                                      plot_reg=True):
     os.makedirs(path_to_save, exist_ok=True)
     sc.settings.figdir = os.path.abspath(path_to_save)
     if isinstance(network, scgen.VAEArith):
@@ -347,11 +349,12 @@ def visualize_trained_network_results(network, train, cell_type,
         latent = sc.AnnData(X=latent,
                             obs={condition_key: train.obs[condition_key].tolist(),
                                  cell_type_key: train.obs[cell_type_key].tolist()})
-        sc.pp.neighbors(latent)
-        sc.tl.umap(latent)
-        sc.pl.umap(latent, color=[condition_key, cell_type_key],
-                   save=os.path.join(f"_latent"),
-                   show=False)
+        if plot_umap:
+            sc.pp.neighbors(latent)
+            sc.tl.umap(latent)
+            sc.pl.umap(latent, color=[condition_key, cell_type_key],
+                       save=f"_latent",
+                       show=False)
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
 
@@ -364,55 +367,56 @@ def visualize_trained_network_results(network, train, cell_type,
         all_adata = cell_type_data.concatenate(pred_adata)
         sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
         diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
+        if plot_reg:
+            scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
+                                         axis_keys={"x": stim_key, "y": "pred"},
+                                         gene_list=diff_genes[:5],
+                                         path_to_save=os.path.join(path_to_save, f"reg_mean_all_genes.pdf"))
 
-        scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
-                                     axis_keys={"x": stim_key, "y": "pred"},
-                                     gene_list=diff_genes[:5],
-                                     path_to_save=os.path.join(path_to_save, f"reg_mean_all_genes.pdf"))
+            scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
+                                        axis_keys={"x": stim_key, "y": "pred"},
+                                        gene_list=diff_genes[:5],
+                                        path_to_save=os.path.join(path_to_save, f"reg_var_all_genes.pdf"))
 
-        scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
-                                    axis_keys={"x": stim_key, "y": "pred"},
-                                    gene_list=diff_genes[:5],
-                                    path_to_save=os.path.join(path_to_save, f"reg_var_all_genes.pdf"))
+            all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
 
-        all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
+            scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
+                                         axis_keys={"x": stim_key, "y": "pred"},
+                                         gene_list=diff_genes[:5],
+                                         path_to_save=os.path.join(path_to_save, f"reg_mean_top_100_genes.pdf"))
 
-        scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                     axis_keys={"x": stim_key, "y": "pred"},
-                                     gene_list=diff_genes[:5],
-                                     path_to_save=os.path.join(path_to_save, f"reg_mean_top_100_genes.pdf"))
+            scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
+                                        axis_keys={"x": stim_key, "y": "pred"},
+                                        gene_list=diff_genes[:5],
+                                        path_to_save=os.path.join(path_to_save, f"reg_var_top_100_genes.pdf"))
 
-        scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                    axis_keys={"x": stim_key, "y": "pred"},
-                                    gene_list=diff_genes[:5],
-                                    path_to_save=os.path.join(path_to_save, f"reg_var_top_100_genes.pdf"))
+            all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
 
-        all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
+            scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
+                                         axis_keys={"x": stim_key, "y": "pred"},
+                                         gene_list=diff_genes[:5],
+                                         path_to_save=os.path.join(path_to_save, f"reg_mean_top_50_genes.pdf"))
 
-        scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                     axis_keys={"x": stim_key, "y": "pred"},
-                                     gene_list=diff_genes[:5],
-                                     path_to_save=os.path.join(path_to_save, f"reg_mean_top_50_genes.pdf"))
+            scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
+                                        axis_keys={"x": stim_key, "y": "pred"},
+                                        gene_list=diff_genes[:5],
+                                        path_to_save=os.path.join(path_to_save, f"reg_var_top_50_genes.pdf"))
 
-        scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                    axis_keys={"x": stim_key, "y": "pred"},
-                                    gene_list=diff_genes[:5],
-                                    path_to_save=os.path.join(path_to_save, f"reg_var_top_50_genes.pdf"))
+        if plot_umap:
+            sc.pp.neighbors(all_adata)
+            sc.tl.umap(all_adata)
+            sc.pl.umap(all_adata, color=condition_key,
+                       save="pred_all_genes")
 
-        sc.pp.neighbors(all_adata)
-        sc.tl.umap(all_adata)
-        sc.pl.umap(all_adata, color=condition_key,
-                   save="pred_all_genes")
+            sc.pp.neighbors(all_adata_top_100_genes)
+            sc.tl.umap(all_adata_top_100_genes)
+            sc.pl.umap(all_adata_top_100_genes, color=condition_key,
+                       save="pred_top_100_genes")
 
-        sc.pp.neighbors(all_adata_top_100_genes)
-        sc.tl.umap(all_adata_top_100_genes)
-        sc.pl.umap(all_adata_top_100_genes, color=condition_key,
-                   save="pred_top_100_genes")
-
-        sc.pp.neighbors(all_adata_top_50_genes)
-        sc.tl.umap(all_adata_top_50_genes)
-        sc.pl.umap(all_adata_top_50_genes, color=condition_key,
-                   save="pred_top_50_genes")
+            sc.pp.neighbors(all_adata_top_50_genes)
+            sc.tl.umap(all_adata_top_50_genes)
+            sc.pl.umap(all_adata_top_50_genes, color=condition_key,
+                       save="pred_top_50_genes")
 
         sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
                      save=f"_{diff_genes.tolist()[0]}")
