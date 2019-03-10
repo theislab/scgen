@@ -489,7 +489,7 @@ class VAEArith:
 
         def on_epoch_end(epoch, logs):
             if epoch % checkpoint == 0:
-                path_to_save = f"./figures_epoch_{epoch}/"
+                path_to_save = f"./figures/epoch_{epoch}/"
                 scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
                                                         kwargs.get("ctrl_key"), kwargs.get("stim_key"),
                                                         kwargs.get("condition_key"), kwargs.get("cell_type_key"),

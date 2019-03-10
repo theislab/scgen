@@ -344,7 +344,6 @@ def visualize_trained_network_results(network, train, cell_type,
     sc.settings.figdir = os.path.abspath(path_to_save)
     if isinstance(network, scgen.VAEArith):
         latent = network.to_latent(train.X)
-        print(train)
         latent = sc.AnnData(X=latent,
                             obs={condition_key: train.obs[condition_key].tolist(),
                                  cell_type_key: train.obs[cell_type_key].tolist()})
