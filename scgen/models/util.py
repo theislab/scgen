@@ -366,6 +366,8 @@ def visualize_trained_network_results(network, train, cell_type,
 
         pred, delta = network.predict(adata=cell_type_data,
                                       conditions=conditions,
+                                      cell_type_key=cell_type_key,
+                                      condition_key=condition_key,
                                       celltype_to_predict=cell_type)
 
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
@@ -452,6 +454,8 @@ def visualize_trained_network_results(network, train, cell_type,
 
         pred, delta = network.predict(adata=cell_type_data,
                                       conditions=conditions,
+                                      cell_type_key=cell_type_key,
+                                      condition_key=condition_key,
                                       celltype_to_predict=cell_type)
 
         pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
