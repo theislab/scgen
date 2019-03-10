@@ -5,11 +5,12 @@ import keras
 import numpy
 import tensorflow as tf
 from keras import backend as K, Model
-from keras.callbacks import CSVLogger
+from keras.callbacks import CSVLogger, LambdaCallback
 from keras.layers import Input, Dense, BatchNormalization, LeakyReLU, Dropout, Lambda
 from keras.models import load_model
 from scipy import sparse
 
+import scgen
 from .util import balancer, extractor, shuffle_data
 
 log = logging.getLogger(__file__)
@@ -294,7 +295,7 @@ class VAEArith:
             >>> train_data = anndata.read("./data/train.h5ad")
             >>> validation_data = anndata.read("./data/validation.h5ad")
             >>> network = scgen.VAEArith(x_dimension= train_data.shape[1], model_path="./models/test" )
-            >>> network.train(train_data=train_data, use_validation=True, valid_data=validation_data, shuffle=True, n_epochs=2)
+            >>> network.train(train_data=train_data, use_validation=True, validation_data=validation_data, shuffle=True, n_epochs=2)
             >>> souece = train_data[((train_data.obs["cell_type"] == "CD8T") & (train_data.obs["condition"] == "control"))]
             >>> destination = train_data[((train_data.obs["cell_type"] == "CD8T") & (train_data.obs["condition"] == "stimulated"))]
             >>> interpolation = network.linear_interpolation(souece, destination, n_steps=25)
@@ -348,7 +349,7 @@ class VAEArith:
             >>> train_data = anndata.read("./data/train.h5ad"
             >>> validation_data = anndata.read("./data/validation.h5ad")
             >>> network = scgen.VAEArith(x_dimension= train_data.shape[1], model_path="./models/test" )
-            >>> network.train(train_data=train_data, use_validation=True, valid_data=validation_data, shuffle=True, n_epochs=2)
+            >>> network.train(train_data=train_data, use_validation=True, validation_data=validation_data, shuffle=True, n_epochs=2)
             >>> prediction, delta = network.predict(adata= train_data, celltype_to_predict= "CD4T", conditions={"ctrl": "control", "stim": "stimulated"})
         """
         if obs_key == "all":
@@ -417,8 +418,18 @@ class VAEArith:
         self.decoder_model = load_model(os.path.join(self.model_to_use, 'decoder.h5'), compile=False)
         self._loss_function()
 
-    def train(self, train_data, use_validation=False, valid_data=None, n_epochs=25, batch_size=32, early_stop_limit=20,
-              threshold=0.0025, initial_run=True, shuffle=True, verbose=1, save=True):
+    def train(self, train_data, vis_data,
+              validation_data=None,
+              n_epochs=25,
+              batch_size=32,
+              early_stop_limit=20,
+              threshold=0.0025,
+              initial_run=True,
+              shuffle=True,
+              verbose=1,
+              save=True,
+              checkpoint=50,
+              **kwargs):
         """
             Trains the network `n_epochs` times with given `train_data`
             and validates the model using validation_data if it was given
@@ -430,10 +441,7 @@ class VAEArith:
             train_data: scanpy AnnData
                 Annotated Data Matrix for training VAE network.
 
-            use_validation: bool
-                if `True`: must feed a valid AnnData object to `valid_data` argument.
-
-            valid_data: scanpy AnnData
+            validation_data: scanpy AnnData
                 Annotated Data Matrix for validating VAE network after each epoch.
 
             n_epochs: int
@@ -476,31 +484,39 @@ class VAEArith:
         """
         if initial_run:
             log.info("----Training----")
-        if use_validation and valid_data is None:
-            raise Exception("valid_data is None but use_validation is True.")
         if shuffle:
             train_data = shuffle_data(train_data)
+
+        def on_epoch_end(epoch, logs):
+            if epoch % checkpoint == 0:
+                path_to_save = f"./figures_epoch_{epoch}/"
+                scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
+                                                        kwargs.get("ctrl_key"), kwargs.get("stim_key"),
+                                                        kwargs.get("condition_key"), kwargs.get("cell_type_key"),
+                                                        path_to_save)
+
         callbacks = [
+            LambdaCallback(on_epoch_end=on_epoch_end),
             # EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
             CSVLogger(filename="./csv_logger.log")
         ]
-        if use_validation:
+        if validation_data is not None:
             result = self.vae_model.fit(x=train_data.X,
-                                      y=train_data.X,
-                                      epochs=n_epochs,
-                                      batch_size=batch_size,
-                                      validation_data=(valid_data.X, valid_data.X),
-                                      shuffle=shuffle,
-                                      callbacks=callbacks,
-                                      verbose=verbose)
+                                        y=train_data.X,
+                                        epochs=n_epochs,
+                                        batch_size=batch_size,
+                                        validation_data=(validation_data.X, validation_data.X),
+                                        shuffle=shuffle,
+                                        callbacks=callbacks,
+                                        verbose=verbose)
         else:
             result = self.vae_model.fit(x=train_data.X,
-                                      y=train_data.X,
-                                      epochs=n_epochs,
-                                      batch_size=batch_size,
-                                      shuffle=shuffle,
-                                      callbacks=callbacks,
-                                      verbose=verbose)
+                                        y=train_data.X,
+                                        epochs=n_epochs,
+                                        batch_size=batch_size,
+                                        shuffle=shuffle,
+                                        callbacks=callbacks,
+                                        verbose=verbose)
 
         if save is True:
             os.makedirs(self.model_to_use, exist_ok=True)

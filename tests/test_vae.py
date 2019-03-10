@@ -56,82 +56,15 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                                  learning_rate=learning_rate)
 
         # network.restore_model()
-        network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
+        network.train(net_train_data, train, n_epochs=n_epochs, batch_size=batch_size, verbose=2,
+                      ctrl_key=ctrl_key, stim_key=stim_key,
+                      condition_key=condition_key, cell_type_key=cell_type_key,
+                      cell_type=cell_type)
         print(f"network_{cell_type} has been trained!")
 
-        latent = network.to_latent(net_train_data.X)
-        latent = sc.AnnData(X=latent,
-                            obs={condition_key: net_train_data.obs[condition_key].tolist(),
-                                 cell_type_key: net_train_data.obs[cell_type_key].tolist()})
-        sc.pp.neighbors(latent)
-        sc.tl.umap(latent)
-        sc.pl.umap(latent, color=[condition_key, cell_type_key],
-                   save=f"_latent_{z_dim}",
-                   show=False)
-
-        cell_type_data = train[train.obs[cell_type_key] == cell_type]
-
-        pred, delta = network.predict(adata=cell_type_data, conditions={"ctrl": ctrl_key, "stim": stim_key},
-                                      celltype_to_predict=cell_type)
-
-        pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred)},
-                                     var={"var_names": cell_type_data.var_names})
-        all_adata = cell_type_data.concatenate(pred_adata)
-        sc.tl.rank_genes_groups(cell_type_data, groupby=condition_key, n_genes=100)
-        diff_genes = cell_type_data.uns["rank_genes_groups"]["names"][stim_key]
-
-        scgen.plotting.reg_mean_plot(all_adata, condition_key=condition_key,
-                                     axis_keys={"x": stim_key, "y": "pred"},
-                                     gene_list=diff_genes[:5],
-                                     path_to_save=f"./figures/reg_mean_all_genes.pdf")
-
-        scgen.plotting.reg_var_plot(all_adata, condition_key=condition_key,
-                                    axis_keys={"x": stim_key, "y": "pred"},
-                                    gene_list=diff_genes[:5],
-                                    path_to_save=f"./figures/reg_var_all_genes.pdf")
-
-        all_adata_top_100_genes = all_adata.copy()[:, diff_genes.tolist()]
-
-        scgen.plotting.reg_mean_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                     axis_keys={"x": stim_key, "y": "pred"},
-                                     gene_list=diff_genes[:5],
-                                     path_to_save=f"./figures/reg_mean_top_100_genes.pdf")
-
-        scgen.plotting.reg_var_plot(all_adata_top_100_genes, condition_key=condition_key,
-                                    axis_keys={"x": stim_key, "y": "pred"},
-                                    gene_list=diff_genes[:5],
-                                    path_to_save=f"./figures/reg_var_top_100_genes.pdf")
-
-        all_adata_top_50_genes = all_adata.copy()[:, diff_genes.tolist()[:50]]
-
-        scgen.plotting.reg_mean_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                     axis_keys={"x": stim_key, "y": "pred"},
-                                     gene_list=diff_genes[:5],
-                                     path_to_save=f"./figures/reg_mean_top_50_genes.pdf")
-
-        scgen.plotting.reg_var_plot(all_adata_top_50_genes, condition_key=condition_key,
-                                    axis_keys={"x": stim_key, "y": "pred"},
-                                    gene_list=diff_genes[:5],
-                                    path_to_save=f"./figures/reg_var_top_50_genes.pdf")
-
-        sc.pp.neighbors(all_adata)
-        sc.tl.umap(all_adata)
-        sc.pl.umap(all_adata, color=condition_key,
-                   save="pred_all_genes")
-
-        sc.pp.neighbors(all_adata_top_100_genes)
-        sc.tl.umap(all_adata_top_100_genes)
-        sc.pl.umap(all_adata_top_100_genes, color=condition_key,
-                   save="pred_top_100_genes")
-
-        sc.pp.neighbors(all_adata_top_50_genes)
-        sc.tl.umap(all_adata_top_50_genes)
-        sc.pl.umap(all_adata_top_50_genes, color=condition_key,
-                   save="pred_top_50_genes")
-
-        sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
-                     save=f"_{diff_genes.tolist()[0]}")
-
+        scgen.visualize_trained_network_results(network, train, cell_type,
+                                                ctrl_key, stim_key,
+                                                condition_key, cell_type_key)
         os.chdir("../../../")
 
 
