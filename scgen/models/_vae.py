@@ -76,11 +76,11 @@ class VAEArith:
             log_var: Tensor
                 A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
-        h = Dense(256)(self.x)
+        h = Dense(1024, kernel_initializer=self.init_w, use_bias=False)(self.x)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
-        h = Dense(128)(h)
+        h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(h)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
@@ -108,15 +108,15 @@ class VAEArith:
                 A Tensor for last dense layer with the shape of [n_vars, ] to reconstruct data.
 
         """
-        h = Dense(128, kernel_initializer=self.init_w)(self.z)
+        h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(self.z)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
-        h = Dense(256, kernel_initializer=self.init_w)(h)
+        h = Dense(1024, kernel_initializer=self.init_w, use_bias=False)(h)
         h = BatchNormalization()(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
-        h = Dense(self.x_dim, kernel_initializer=self.init_w)(h)
+        h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=True)(h)
 
         self.decoder_model = Model(inputs=self.z, outputs=h, name="decoder")
         return h
