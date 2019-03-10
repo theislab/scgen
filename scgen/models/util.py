@@ -407,19 +407,23 @@ def visualize_trained_network_results(network, train, cell_type,
             sc.pp.neighbors(all_adata)
             sc.tl.umap(all_adata)
             sc.pl.umap(all_adata, color=condition_key,
-                       save="pred_all_genes")
+                       save="pred_all_genes",
+                       show=False)
 
             sc.pp.neighbors(all_adata_top_100_genes)
             sc.tl.umap(all_adata_top_100_genes)
             sc.pl.umap(all_adata_top_100_genes, color=condition_key,
-                       save="pred_top_100_genes")
+                       save="pred_top_100_genes",
+                       show=False)
 
             sc.pp.neighbors(all_adata_top_50_genes)
             sc.tl.umap(all_adata_top_50_genes)
             sc.pl.umap(all_adata_top_50_genes, color=condition_key,
-                       save="pred_top_50_genes")
+                       save="pred_top_50_genes",
+                       show=False)
 
         sc.pl.violin(all_adata, keys=diff_genes.tolist()[0], groupby=condition_key,
-                     save=f"_{diff_genes.tolist()[0]}")
+                     save=f"_{diff_genes.tolist()[0]}",
+                     show=False)
 
         plt.close("all")
