@@ -201,10 +201,10 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            z_dim=100,
-                                           alpha=0.00001,
-                                           n_epochs=300,
-                                           batch_size=128,
-                                           dropout_rate=0.25,
+                                           alpha=0.00005,
+                                           n_epochs=150,
+                                           batch_size=32,
+                                           dropout_rate=0.2,
                                            learning_rate=0.001,
                                            condition_key="condition")
     # test_train_whole_data_one_celltype_out(data_name="hpoly",
