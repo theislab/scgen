@@ -130,7 +130,7 @@ if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="hpoly",
                                            z_dim=100,
                                            alpha=0.00005,
-                                           n_epochs=300,
+                                           n_epochs=1,
                                            batch_size=32,
                                            dropout_rate=0.2,
                                            learning_rate=0.001,
