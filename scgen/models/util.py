@@ -346,7 +346,10 @@ def visualize_trained_network_results(network, train, cell_type,
     os.makedirs(path_to_save, exist_ok=True)
     sc.settings.figdir = os.path.abspath(path_to_save)
     if isinstance(network, scgen.VAEArithKeras):
-        latent = network.to_latent(train.X)
+        if sparse.issparse(train.X):
+            latent = network.to_latent(train.X.A)
+        else:
+            latent = network.to_latent(train.X)
         latent = sc.AnnData(X=latent,
                             obs={condition_key: train.obs[condition_key].tolist(),
                                  cell_type_key: train.obs[cell_type_key].tolist()})
