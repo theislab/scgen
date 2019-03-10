@@ -204,7 +204,7 @@ if __name__ == '__main__':
                                            alpha=0.00001,
                                            n_epochs=300,
                                            batch_size=128,
-                                           dropout_rate=0.75,
+                                           dropout_rate=0.25,
                                            learning_rate=0.001,
                                            condition_key="condition")
     # test_train_whole_data_one_celltype_out(data_name="hpoly",
