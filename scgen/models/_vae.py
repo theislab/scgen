@@ -197,12 +197,16 @@ class VAEArith:
         """
 
         def vae_loss(y_true, y_pred):
-            kl_loss = 0.5 * K.sum(K.exp(self.log_var) + K.square(self.mu) - 1. - self.log_var, axis=1)
-            recon_loss = 0.5 * K.sum(tf.square((y_true - y_pred)), axis=1)
-            return K.mean(recon_loss + self.alpha * kl_loss)
+            return K.mean(recon_loss(y_true, y_pred) + self.alpha * kl_loss(y_true, y_pred))
+
+        def kl_loss(y_true, y_pred):
+            return 0.5 * K.sum(K.exp(self.log_var) + K.square(self.mu) - 1. - self.log_var, axis=1)
+
+        def recon_loss(y_true, y_pred):
+            return 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
 
         self.vae_optimizer = keras.optimizers.Adam(lr=self.learning_rate)
-        self.vae_model.compile(optimizer=self.vae_optimizer, loss=vae_loss)
+        self.vae_model.compile(optimizer=self.vae_optimizer, loss=vae_loss, metrics=[kl_loss, recon_loss])
 
     def to_latent(self, data):
         """
