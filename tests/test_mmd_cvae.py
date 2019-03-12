@@ -9,12 +9,41 @@ import scgen
 if not os.getcwd().endswith("tests"):
     os.chdir("./tests")
 
-
 # from datetime import datetime, timezone
 
 # current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
 # os.makedirs(current_time, exist_ok=True)
 # os.chdir("./" + current_time)
+
+
+def test_train_cross_study(
+                   z_dim=50,
+                   alpha=0.001,
+                   beta=100,
+                   kernel="multi-scale-rbf",
+                   n_epochs=1000,
+                   batch_size=1024,
+                   condition_key="condition"):
+    train = sc.read("data/kang_cross_study.h5ad")
+    control_data = sc.read("data/zheng_cross_study.h5ad")
+    network = scgen.MMDCVAE(x_dimension=train.X.shape[1], z_dimension=z_dim, alpha=alpha, beta=beta,
+                            batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
+                            model_path="./")
+
+    # network.train(train, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
+    print(f"network has been trained!")
+    network.restore_model()
+    true_labels= np.zeros(shape=(control_data.shape[0], 1))
+    fake_labels = np.ones(shape=(control_data.shape[0], 1))
+    pred = network.predict(data=control_data, encoder_labels=true_labels, decoder_labels=fake_labels)
+    pred_adata = anndata.AnnData(pred, obs={condition_key: ["pred"] * len(pred), "cell_type":control_data.obs["cell_type"].tolist()},
+                                 var={"var_names": control_data.var_names})
+    all_adata = control_data.concatenate(pred_adata)
+    sc.pp.neighbors(all_adata)
+    sc.tl.umap(all_adata)
+    sc.pl.umap(all_adata, color=[f"{condition_key}", "cell_type", "ISG15"],
+               save="cross_pred")
+    all_adata.write("cross_study_mmd.h5ad")
 
 
 def test_train_whole_data_one_celltype_out(data_name="pbmc",
@@ -141,6 +170,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.chdir("../../../")
 
 
+
 def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
     if data_name == "pbmc":
         stim_key = "stimulated"
@@ -206,13 +236,14 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="species",
-                                           z_dim=100,
-                                           alpha=0.001,
-                                           beta=1000,
-                                           kernel="multi-scale-rbf",
-                                           n_epochs=1000,
-                                           batch_size=2048,
-                                           condition_key="condition")
-    reconstruct_whole_data(data_name="species")
+    # test_train_whole_data_one_celltype_out(data_name="species",
+    #                                        z_dim=100,
+    #                                        alpha=0.001,
+    #                                        beta=1000,
+    #                                        kernel="multi-scale-rbf",
+    #                                        n_epochs=1000,
+    #                                        batch_size=2048,
+    #                                        condition_key="condition")
+    # reconstruct_whole_data(data_name="species")
     # reconstruct_whole_data(data_name="salmonella")
+    test_train_cross_study()
