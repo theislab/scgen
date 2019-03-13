@@ -56,7 +56,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         print(f"network has been trained!")
         true_labels, _ = scgen.label_encoder(net_train_data)
         fake_labels = np.ones(shape=(net_train_data.shape[0], 1))
-
+        exit()
     for cell_type in train.obs[cell_type_key].unique().tolist():
         if cell_type != 3:
             continue
