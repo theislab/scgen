@@ -62,7 +62,7 @@ class MMDCCVAE:
         self.init_w = keras.initializers.glorot_normal()
         self._create_network()
         self._loss_function()
-        self.decoder_model.summary()
+        self.cvae_model.summary()
 
     def _encoder(self, x, y, name="encoder"):
         """
@@ -641,11 +641,11 @@ class MMDCCVAE:
         ]
 
         if self.train_with_fake_labels:
-            train_data.X = np.reshape(train_data.X, newshape=(-1, 784))
+            train_data.X = np.reshape(train_data.X, newshape=(-1, *self.x_dim))
             x = [train_data.X, train_labels, pseudo_labels]
             y = [train_data.X, np.ones(shape=train_labels.shape)]
         else:
-            train_data.X = np.reshape(train_data.X, newshape=(-1, 784))
+            train_data.X = np.reshape(train_data.X, newshape=(-1, *self.x_dim))
             x = [train_data.X, train_labels, train_labels]
             y = [train_data.X, train_labels]
 
