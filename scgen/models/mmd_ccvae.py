@@ -355,15 +355,15 @@ class MMDCCVAE:
 
         def batch_loss():
             def kl_recon_loss(y_true, y_pred):
-                y_pred = K.reshape(y_pred, (-1, 784))
-                y_true = K.reshape(y_true, (-1, 784))
+                y_pred = K.reshape(y_pred, (-1, *self.x_dim))
+                y_true = K.reshape(y_true, (-1, *self.x_dim))
 
                 kl_loss = 0.5 * K.mean(K.exp(self.log_var) + K.square(self.mu) - 1. - self.log_var, 1)
                 recon_loss = 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
                 return recon_loss + self.alpha * kl_loss
 
             def mmd_loss(real_labels, y_pred):
-                y_pred = K.reshape(y_pred, (-1, 128))
+                y_pred = K.reshape(y_pred, (-1, 4096))
                 with tf.variable_scope("mmd_loss", reuse=tf.AUTO_REUSE):
                     real_labels = K.reshape(K.cast(real_labels, 'int32'), (-1,))
                     source_mmd, dest_mmd = tf.dynamic_partition(y_pred, real_labels, num_partitions=2)
