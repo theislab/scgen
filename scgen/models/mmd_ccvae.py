@@ -9,7 +9,6 @@ from keras.callbacks import CSVLogger, History
 from keras.layers import Dense, BatchNormalization, Dropout, Input, concatenate, LeakyReLU, ReLU, Lambda, Conv2D, \
     Flatten, Reshape, Conv2DTranspose, UpSampling2D, MaxPooling2D
 from keras.models import Model, load_model
-from keras.optimizers import Adam
 from scipy import sparse
 
 from scgen.models.util import label_encoder
@@ -118,7 +117,8 @@ class MMDCCVAE:
             model.summary()
             return mean, log_var, model
         else:  # VGG16 U-Net
-            self.conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+            h = Reshape(target_shape=(256, 256, 3))(x)
+            self.conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(h)
             # self.conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv1)
             self.pool1 = MaxPooling2D(pool_size=(2, 2))(self.conv1)
             self.conv2 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool1)
@@ -222,8 +222,9 @@ class MMDCCVAE:
             # merge9 = concatenate([self.conv1, up9], axis=3)
             conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up9)
             # conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
-            conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
-            conv10 = Conv2D(1, 1, activation='sigmoid')(conv9)
+            # conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
+            conv10 = Conv2D(3, 1, activation='sigmoid')(conv9)
+            conv10 = Reshape((256 * 256 * 3,))(conv10)
 
             model = Model(inputs=[z, y], outputs=[conv10, h_mmd], name=name)
             return h, h_mmd, model

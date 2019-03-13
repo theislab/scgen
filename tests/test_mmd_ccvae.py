@@ -48,7 +48,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
     if cell_type_key is None:
         os.makedirs(f"./results/{data_name}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/")
-        network = scgen.MMDCCVAE(x_dimension=(256, 256, 3,), z_dimension=z_dim, alpha=alpha, beta=beta,
+        network = scgen.MMDCCVAE(x_dimension=(256 * 256 * 3,), z_dimension=z_dim, alpha=alpha, beta=beta,
                                  batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
                                  model_path=f"./", arch_style=arch_style)
         net_train_data = train
@@ -64,12 +64,12 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.chdir(f"./results/{data_name}/{cell_type}")
         # net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
         net_train_data = train
-        network = scgen.MMDCCVAE(x_dimension=(256, 256, 3, ), z_dimension=z_dim, alpha=alpha, beta=beta,
+        network = scgen.MMDCCVAE(x_dimension=(256, 256, 3,), z_dimension=z_dim, alpha=alpha, beta=beta,
                                  batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
                                  model_path=f"./", arch_style=arch_style)
 
         # network.restore_model()
-        network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
+        network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=1)
         print(f"network_{cell_type} has been trained!")
 
         true_labels, _ = scgen.label_encoder(net_train_data)
@@ -203,7 +203,7 @@ if __name__ == '__main__':
                                            alpha=0.01,
                                            beta=100,
                                            kernel="multi-scale-rbf",
-                                           n_epochs=1500,
+                                           n_epochs=150,
                                            batch_size=1024,
                                            condition_key="condition",
                                            arch_style=3)
