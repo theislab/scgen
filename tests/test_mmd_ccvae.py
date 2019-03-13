@@ -40,6 +40,23 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                        (train.obs["labels"] == 5) |
                        (train.obs["labels"] == 2))]
         train.X /= 255.0
+    elif data_name == "h2z":
+        stim_key = "zebra"
+        ctrl_key = "horse"
+        cell_type_key = None
+        train = sc.read(f"../data/{data_name}.h5ad")
+    if cell_type_key is None:
+        os.makedirs(f"./results/{data_name}/", exist_ok=True)
+        os.chdir(f"./results/{data_name}/")
+        network = scgen.MMDCCVAE(x_dimension=(256, 256, 3,), z_dimension=z_dim, alpha=alpha, beta=beta,
+                                 batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
+                                 model_path=f"./", arch_style=arch_style)
+        net_train_data = train
+        network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
+        print(f"network has been trained!")
+        true_labels, _ = scgen.label_encoder(net_train_data)
+        fake_labels = np.ones(shape=(net_train_data.shape[0], 1))
+
     for cell_type in train.obs[cell_type_key].unique().tolist():
         if cell_type != 3:
             continue
@@ -47,7 +64,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.chdir(f"./results/{data_name}/{cell_type}")
         # net_train_data = train[~((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == stim_key))]
         net_train_data = train
-        network = scgen.MMDCCVAE(x_dimension=net_train_data.X.shape[1], z_dimension=z_dim, alpha=alpha, beta=beta,
+        network = scgen.MMDCCVAE(x_dimension=(256, 256, 3, ), z_dimension=z_dim, alpha=alpha, beta=beta,
                                  batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
                                  model_path=f"./", arch_style=arch_style)
 
@@ -181,14 +198,14 @@ def feed_normal_sample(data_name="normal_thin", digit=1):
 
 
 if __name__ == '__main__':
-    # test_train_whole_data_one_celltype_out(data_name="normal_thick",
-    #                                        z_dim=100,
-    #                                        alpha=0.01,
-    #                                        beta=100,
-    #                                        kernel="multi-scale-rbf",
-    #                                        n_epochs=1500,
-    #                                        batch_size=1024,
-    #                                        condition_key="condition",
-    #                                        arch_style=2)
-    feed_normal_sample("normal_thin", digit=1)
-    feed_normal_sample("normal_thick", digit=3)
+    test_train_whole_data_one_celltype_out(data_name="h2z",
+                                           z_dim=100,
+                                           alpha=0.01,
+                                           beta=100,
+                                           kernel="multi-scale-rbf",
+                                           n_epochs=1500,
+                                           batch_size=1024,
+                                           condition_key="condition",
+                                           arch_style=3)
+    # feed_normal_sample("normal_thin", digit=1)
+    # feed_normal_sample("normal_thick", digit=3)
