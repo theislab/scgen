@@ -7,12 +7,12 @@ import tensorflow as tf
 from keras import backend as K
 from keras.callbacks import CSVLogger, History
 from keras.layers import Dense, BatchNormalization, Dropout, Input, concatenate, LeakyReLU, ReLU, Lambda, Conv2D, \
-    Flatten, Reshape, Conv2DTranspose
+    Flatten, Reshape, Conv2DTranspose, UpSampling2D, MaxPooling2D
 from keras.models import Model, load_model
+from keras.optimizers import Adam
 from scipy import sparse
-from sklearn.neighbors import NearestNeighbors
 
-from scgen.models.util import shuffle_data, label_encoder
+from scgen.models.util import label_encoder
 
 log = logging.getLogger(__file__)
 
@@ -41,7 +41,7 @@ class MMDCCVAE:
     """
 
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
-        self.x_dim = x_dimension
+        self.x_dim = x_dimension if isinstance(x_dimension, tuple) else (x_dimension,)
         self.z_dim = z_dimension
 
         self.lr = kwargs.get("learning_rate", 0.001)
@@ -54,7 +54,7 @@ class MMDCCVAE:
         self.train_with_fake_labels = kwargs.get("train_with_fake_labels", False)
         self.kernel_method = kwargs.get("kernel", "multi-scale-rbf")
         self.arch_style = kwargs.get("arch_style", 1)
-        self.x = Input(shape=(784,), name="data")
+        self.x = Input(shape=self.x_dim, name="data")
         self.encoder_labels = Input(shape=(1,), name="encoder_labels")
         self.decoder_labels = Input(shape=(1,), name="decoder_labels")
         self.z = Input(shape=(self.z_dim,), name="latent_data")
@@ -79,7 +79,7 @@ class MMDCCVAE:
                 log_var: Tensor
                     A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
-        if self.arch_style == 1:
+        if self.arch_style == 1:  # Baseline CNN for MNIST
             h = Reshape(target_shape=(28, 28, 1))(x)
             h = Conv2D(64, kernel_size=(4, 4), strides=2, padding='same')(h)
             h = BatchNormalization()(h)
@@ -100,7 +100,7 @@ class MMDCCVAE:
             model = Model(inputs=[x, y], outputs=[mean, log_var, z], name=name)
             model.summary()
             return mean, log_var, model
-        else:
+        elif self.arch_style == 2:  # FC for MNIST dataset
             xy = concatenate([x, y], axis=1)
             h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(xy)
             h = BatchNormalization(axis=1)(h)
@@ -117,8 +117,35 @@ class MMDCCVAE:
             model = Model(inputs=[x, y], outputs=[mean, log_var, z], name=name)
             model.summary()
             return mean, log_var, model
+        else:  # VGG16 U-Net
+            self.conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(x)
+            # self.conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv1)
+            self.pool1 = MaxPooling2D(pool_size=(2, 2))(self.conv1)
+            self.conv2 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool1)
+            # self.conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv2)
+            self.pool2 = MaxPooling2D(pool_size=(2, 2))(self.conv2)
+            self.conv3 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool2)
+            # self.conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv3)
+            # self.conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv3)
+            self.pool3 = MaxPooling2D(pool_size=(2, 2))(self.conv3)
+            self.conv4 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool3)
+            # self.conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv4)
+            # self.conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv4)
+            self.drop4 = Dropout(self.dr_rate)(self.conv4)
+            self.pool4 = MaxPooling2D(pool_size=(2, 2))(self.drop4)
 
-    def _mmd_decoder(self, x, y, name="decoder"):
+            flat = Flatten(name='flatten')(self.pool4)
+            xy = concatenate([flat, y], axis=1)
+            dense = Dense(4096, activation='relu', name='fc1')(xy)
+            dense = Dense(4096, activation='relu', name='fc2')(dense)
+            mean = Dense(self.z_dim, kernel_initializer=self.init_w)(dense)
+            log_var = Dense(self.z_dim, kernel_initializer=self.init_w)(dense)
+            z = Lambda(self._sample_z, output_shape=(self.z_dim,))([mean, log_var])
+            model = Model(inputs=[x, y], outputs=[mean, log_var, z], name=name)
+            model.summary()
+            return mean, log_var, model
+
+    def _mmd_decoder(self, z, y, name="decoder"):
         """
             Constructs the decoder sub-network of C-VAE. This function implements the
             decoder part of Variational Auto-encoder. It will transform constructed
@@ -132,9 +159,9 @@ class MMDCCVAE:
                     A Tensor for last dense layer with the shape of [n_vars, ] to reconstruct data.
 
         """
-        if self.arch_style == 1:
-            xy = concatenate([x, y], axis=1)
-            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(xy)
+        if self.arch_style == 1:  # Baseline CNN for MNIST
+            zy = concatenate([z, y], axis=1)
+            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(zy)
             h = BatchNormalization(axis=1)(h)
             h_mmd = LeakyReLU(name="mmd")(h)
             h = Dense(784, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
@@ -146,13 +173,13 @@ class MMDCCVAE:
             h = Conv2DTranspose(64, kernel_size=(4, 4), padding='same')(h)
             h = LeakyReLU()(h)
             h = Conv2DTranspose(1, kernel_size=(4, 4), padding='same', activation="sigmoid")(h)
-            h = Reshape((784, ))(h)
-            model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
+            h = Reshape((784,))(h)
+            model = Model(inputs=[z, y], outputs=[h, h_mmd], name=name)
             model.summary()
             return h, h_mmd, model
-        else:
-            xy = concatenate([x, y], axis=1)
-            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(xy)
+        elif self.arch_style == 2:  # FC for MNIST dataset
+            zy = concatenate([z, y], axis=1)
+            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(zy)
             h = BatchNormalization(axis=1)(h)
             h_mmd = LeakyReLU(name="mmd")(h)
             h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
@@ -161,8 +188,44 @@ class MMDCCVAE:
             h = Dropout(self.dr_rate)(h)
             h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=True)(h)
             h = ReLU(name="reconstruction_output")(h)
-            model = Model(inputs=[x, y], outputs=[h, h_mmd], name=name)
-            model.summary()
+            model = Model(inputs=[z, y], outputs=[h, h_mmd], name=name)
+            return h, h_mmd, model
+        else:  # VGG16 U-Net
+            zy = concatenate([z, y], axis=1)
+            h_mmd = Dense(4096, activation="relu", kernel_initializer='he_normal')(zy)
+            h = Dense(4096, activation="relu", kernel_initializer='he_normal')(h_mmd)
+            h = Reshape(target_shape=(16, 16, 16))(h)
+            conv5 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(h)
+            # conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv5)
+            drop5 = Dropout(0.5)(conv5)
+
+            up6 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+                UpSampling2D(size=(2, 2))(drop5))
+            # merge6 = concatenate([self.drop4, up6], axis=3)
+            conv6 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up6)
+            # conv6 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv6)
+
+            up7 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+                UpSampling2D(size=(2, 2))(conv6))
+            # merge7 = concatenate([self.conv3, up7], axis=3)
+            conv7 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up7)
+            # conv7 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv7)
+
+            up8 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+                UpSampling2D(size=(2, 2))(conv7))
+            # merge8 = concatenate([self.conv2, up8], axis=3)
+            conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up8)
+            # conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv8)
+
+            up9 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+                UpSampling2D(size=(2, 2))(conv8))
+            # merge9 = concatenate([self.conv1, up9], axis=3)
+            conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up9)
+            # conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
+            conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
+            conv10 = Conv2D(1, 1, activation='sigmoid')(conv9)
+
+            model = Model(inputs=[z, y], outputs=[conv10, h_mmd], name=name)
             return h, h_mmd, model
 
     @staticmethod
@@ -204,8 +267,8 @@ class MMDCCVAE:
         self.x_hat, self.mmd_hl, self.decoder_model = self._mmd_decoder(self.z, self.decoder_labels,
                                                                         name="decoder")
         decoder_outputs = self.decoder_model([self.encoder_model(inputs[:2])[2], self.decoder_labels])
-        reconstruction_output = Lambda(lambda x:x, name="kl_reconstruction")(decoder_outputs[0])
-        mmd_output = Lambda(lambda x:x, name="mmd")(decoder_outputs[1])
+        reconstruction_output = Lambda(lambda x: x, name="kl_reconstruction")(decoder_outputs[0])
+        mmd_output = Lambda(lambda x: x, name="mmd")(decoder_outputs[1])
         self.cvae_model = Model(inputs=inputs,
                                 outputs=[reconstruction_output, mmd_output],
                                 name="cvae")

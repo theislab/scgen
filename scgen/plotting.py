@@ -68,7 +68,7 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
                 pyplot.text(x_bar, y1_bar, i, fontsize=11, color="grey")
     pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     pyplot.title(f"", fontsize=12)
-    pyplot.text(max(x) - max(x) * .25, max(y)-.8*max(y), r'$R^2$=' + f"{r_value**2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2$=' + f"{r_value ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
@@ -140,7 +140,7 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
                 pyplot.text(x_bar, y1_bar, '*', color="blue", alpha=.5)
     pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     pyplot.title(f"", fontsize=12)
-    pyplot.text(max(x) - .2 * max(x), max(y)-.8*max(y), r'$R^2$=' + f"{r_value**2:.2f}")
+    pyplot.text(max(x) - .2 * max(x), max(y) - .8 * max(y), r'$R^2$=' + f"{r_value ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
