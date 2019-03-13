@@ -189,6 +189,7 @@ class MMDCCVAE:
             h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=True)(h)
             h = ReLU(name="reconstruction_output")(h)
             model = Model(inputs=[z, y], outputs=[h, h_mmd], name=name)
+            model.summary()
             return h, h_mmd, model
         else:  # VGG16 U-Net
             zy = concatenate([z, y], axis=1)
@@ -227,6 +228,7 @@ class MMDCCVAE:
             conv10 = Reshape((256 * 256 * 3,))(conv10)
 
             model = Model(inputs=[z, y], outputs=[conv10, h_mmd], name=name)
+            model.summary()
             return h, h_mmd, model
 
     @staticmethod
