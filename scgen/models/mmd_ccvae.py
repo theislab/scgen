@@ -43,7 +43,7 @@ class MMDCCVAE:
         self.x_dim = x_dimension if isinstance(x_dimension, tuple) else (x_dimension,)
         self.z_dim = z_dimension
         self.mmd_dim = 128
-        self.image_shape = (256, 256, 3,)
+        self.image_shape = (28, 28, 1)
 
         self.lr = kwargs.get("learning_rate", 0.001)
         self.alpha = kwargs.get("alpha", 0.001)
@@ -182,7 +182,7 @@ class MMDCCVAE:
             h = BatchNormalization(axis=1)(h)
             h = LeakyReLU()(h)
             h = Dropout(self.dr_rate)(h)
-            h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=True)(h)
+            h = Dense(self.x_dim[0], kernel_initializer=self.init_w, use_bias=True)(h)
             h = ReLU(name="reconstruction_output")(h)
             model = Model(inputs=[z, y], outputs=[h, h_mmd], name=name)
             model.summary()
@@ -350,7 +350,7 @@ class MMDCCVAE:
                 return recon_loss + self.alpha * kl_loss
 
             def mmd_loss(real_labels, y_pred):
-                y_pred = K.reshape(y_pred, (-1, 4096))
+                y_pred = K.reshape(y_pred, (-1, self.mmd_dim))
                 with tf.variable_scope("mmd_loss", reuse=tf.AUTO_REUSE):
                     real_labels = K.reshape(K.cast(real_labels, 'int32'), (-1,))
                     source_mmd, dest_mmd = tf.dynamic_partition(y_pred, real_labels, num_partitions=2)

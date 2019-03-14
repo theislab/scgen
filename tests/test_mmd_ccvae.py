@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
-
 import scgen
 
 if not os.getcwd().endswith("tests"):
@@ -46,11 +45,20 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         cell_type_key = None
         train = sc.read(f"../data/{data_name}.h5ad")
         train.X /= 255.0
+    elif data_name == "mnist":
+        stim_key = '7'
+        ctrl_key = '1'
+        cell_type_key = None
+        train = sc.read(f"../data/{data_name}.h5ad")
+        train.obs["condition"] = train.obs["condition"].astype(np.str)
+        train = train[((train.obs["labels"] == 1) |
+                       (train.obs["labels"] == 7))]
+        train.X /= 255.0
     if cell_type_key is None:
         os.makedirs(f"./results/{data_name}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/")
-        network = scgen.MMDCCVAE(x_dimension=(256 * 256 * 3,), z_dimension=z_dim, alpha=alpha, beta=beta,
-                                 batch_mmd=False, kernel=kernel, train_with_fake_labels=False,
+        network = scgen.MMDCCVAE(x_dimension=(784,), z_dimension=z_dim, alpha=alpha, beta=beta,
+                                 batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
                                  model_path=f"./", arch_style=arch_style)
         net_train_data = train
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
@@ -214,7 +222,7 @@ def feed_normal_sample(data_name="normal_thin"):
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="h2z",
+    test_train_whole_data_one_celltype_out(data_name="mnist",
                                            z_dim=100,
                                            alpha=0.01,
                                            beta=100,
@@ -222,7 +230,7 @@ if __name__ == '__main__':
                                            n_epochs=150,
                                            batch_size=1024,
                                            condition_key="condition",
-                                           arch_style=3)
+                                           arch_style=2)
     # feed_normal_sample("normal_thin")
     # feed_normal_sample("normal_thick")
     # feed_normal_sample("h2z")
