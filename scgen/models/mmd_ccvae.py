@@ -42,6 +42,8 @@ class MMDCCVAE:
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
         self.x_dim = x_dimension if isinstance(x_dimension, tuple) else (x_dimension,)
         self.z_dim = z_dimension
+        self.mmd_dim = 128
+        self.image_shape = (256, 256, 3,)
 
         self.lr = kwargs.get("learning_rate", 0.001)
         self.alpha = kwargs.get("alpha", 0.001)
@@ -79,7 +81,7 @@ class MMDCCVAE:
                     A dense layer consists of log transformed variances of gaussian distributions of latent space dimensions.
         """
         if self.arch_style == 1:  # Baseline CNN for MNIST
-            h = Reshape(target_shape=(28, 28, 1))(x)
+            h = Reshape(target_shape=self.image_shape)(x)
             h = Conv2D(64, kernel_size=(4, 4), strides=2, padding='same')(h)
             h = BatchNormalization()(h)
             h = LeakyReLU()(h)
@@ -88,7 +90,7 @@ class MMDCCVAE:
             h = LeakyReLU()(h)
             h = Flatten()(h)
             hy = concatenate([h, y], axis=1)
-            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(hy)
+            h = Dense(self.mmd_dim, kernel_initializer=self.init_w, use_bias=False)(hy)
             h = BatchNormalization(axis=1)(h)
             h = LeakyReLU()(h)
             h = Dropout(self.dr_rate)(h)
@@ -105,7 +107,7 @@ class MMDCCVAE:
             h = BatchNormalization(axis=1)(h)
             h = LeakyReLU()(h)
             h = Dropout(self.dr_rate)(h)
-            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(h)
+            h = Dense(self.mmd_dim, kernel_initializer=self.init_w, use_bias=False)(h)
             h = BatchNormalization(axis=1)(h)
             h = LeakyReLU()(h)
             h = Dropout(self.dr_rate)(h)
@@ -117,27 +119,21 @@ class MMDCCVAE:
             model.summary()
             return mean, log_var, model
         else:  # VGG16 U-Net
-            h = Reshape(target_shape=(256, 256, 3))(x)
-            self.conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(h)
-            # self.conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv1)
+            h = Reshape(target_shape=self.image_shape)(x)
+            self.conv1 = Conv2D(16, 3, activation='relu', padding='same', kernel_initializer='he_normal')(h)
             self.pool1 = MaxPooling2D(pool_size=(2, 2))(self.conv1)
-            self.conv2 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool1)
-            # self.conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv2)
+            self.conv2 = Conv2D(16, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool1)
             self.pool2 = MaxPooling2D(pool_size=(2, 2))(self.conv2)
-            self.conv3 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool2)
-            # self.conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv3)
-            # self.conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv3)
+            self.conv3 = Conv2D(16, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool2)
             self.pool3 = MaxPooling2D(pool_size=(2, 2))(self.conv3)
-            self.conv4 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool3)
-            # self.conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv4)
-            # self.conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.conv4)
+            self.conv4 = Conv2D(16, 3, activation='relu', padding='same', kernel_initializer='he_normal')(self.pool3)
             self.drop4 = Dropout(self.dr_rate)(self.conv4)
             self.pool4 = MaxPooling2D(pool_size=(2, 2))(self.drop4)
 
             flat = Flatten(name='flatten')(self.pool4)
             xy = concatenate([flat, y], axis=1)
-            dense = Dense(4096, activation='relu', name='fc1')(xy)
-            dense = Dense(4096, activation='relu', name='fc2')(dense)
+            dense = Dense(512, activation='relu', name='fc1')(xy)
+            dense = Dense(self.mmd_dim, activation='relu', name='fc2')(dense)
             mean = Dense(self.z_dim, kernel_initializer=self.init_w)(dense)
             log_var = Dense(self.z_dim, kernel_initializer=self.init_w)(dense)
             z = Lambda(self._sample_z, output_shape=(self.z_dim,))([mean, log_var])
@@ -161,25 +157,25 @@ class MMDCCVAE:
         """
         if self.arch_style == 1:  # Baseline CNN for MNIST
             zy = concatenate([z, y], axis=1)
-            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(zy)
+            h = Dense(self.mmd_dim, kernel_initializer=self.init_w, use_bias=False)(zy)
             h = BatchNormalization(axis=1)(h)
             h_mmd = LeakyReLU(name="mmd")(h)
-            h = Dense(784, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
+            h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
             h = BatchNormalization(axis=1)(h)
             h = LeakyReLU()(h)
-            h = Reshape(target_shape=(28, 28, 1))(h)
+            h = Reshape(target_shape=self.image_shape)(h)
             h = Conv2DTranspose(128, kernel_size=(4, 4), padding='same')(h)
             h = LeakyReLU()(h)
             h = Conv2DTranspose(64, kernel_size=(4, 4), padding='same')(h)
             h = LeakyReLU()(h)
             h = Conv2DTranspose(1, kernel_size=(4, 4), padding='same', activation="sigmoid")(h)
-            h = Reshape((784,))(h)
+            h = Reshape((self.x_dim,))(h)
             model = Model(inputs=[z, y], outputs=[h, h_mmd], name=name)
             model.summary()
             return h, h_mmd, model
-        elif self.arch_style == 2:  # FC for MNIST dataset
+        elif self.arch_style == 2:  # FC
             zy = concatenate([z, y], axis=1)
-            h = Dense(128, kernel_initializer=self.init_w, use_bias=False)(zy)
+            h = Dense(self.mmd_dim, kernel_initializer=self.init_w, use_bias=False)(zy)
             h = BatchNormalization(axis=1)(h)
             h_mmd = LeakyReLU(name="mmd")(h)
             h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
@@ -191,41 +187,32 @@ class MMDCCVAE:
             model = Model(inputs=[z, y], outputs=[h, h_mmd], name=name)
             model.summary()
             return h, h_mmd, model
-        else:  # VGG16 U-Net
+        else:
             zy = concatenate([z, y], axis=1)
-            h_mmd = Dense(4096, activation="relu", kernel_initializer='he_normal')(zy)
-            h = Dense(4096, activation="relu", kernel_initializer='he_normal')(h_mmd)
-            h = Reshape(target_shape=(16, 16, 16))(h)
-            conv5 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(h)
-            # conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv5)
+            h_mmd = Dense(self.mmd_dim, activation="relu", kernel_initializer='he_normal')(zy)
+            h = Dense(512, activation="relu", kernel_initializer='he_normal')(h_mmd)
+            h = Reshape(target_shape=(16, 16, 2))(h)
+            conv5 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=self.init_w)(h)
             drop5 = Dropout(0.5)(conv5)
 
-            up6 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+            up6 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer=self.init_w)(
                 UpSampling2D(size=(2, 2))(drop5))
-            # merge6 = concatenate([self.drop4, up6], axis=3)
-            conv6 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up6)
-            # conv6 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv6)
+            conv6 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=self.init_w)(up6)
 
-            up7 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+            up7 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer=self.init_w)(
                 UpSampling2D(size=(2, 2))(conv6))
-            # merge7 = concatenate([self.conv3, up7], axis=3)
-            conv7 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up7)
-            # conv7 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv7)
+            conv7 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=self.init_w)(up7)
 
-            up8 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+            up8 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer=self.init_w)(
                 UpSampling2D(size=(2, 2))(conv7))
-            # merge8 = concatenate([self.conv2, up8], axis=3)
-            conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up8)
-            # conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv8)
+            conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer=self.init_w)(up8)
 
-            up9 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(
+            up9 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer=self.init_w)(
                 UpSampling2D(size=(2, 2))(conv8))
-            # merge9 = concatenate([self.conv1, up9], axis=3)
-            conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(up9)
-            # conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
-            # conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
+            conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=self.init_w)(up9)
             conv10 = Conv2D(3, 1, activation='sigmoid')(conv9)
-            conv10 = Reshape((256 * 256 * 3,))(conv10)
+            print(conv10)
+            conv10 = Reshape((self.x_dim, ))(conv10)
 
             model = Model(inputs=[z, y], outputs=[conv10, h_mmd], name=name)
             model.summary()

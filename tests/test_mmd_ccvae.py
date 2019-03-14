@@ -45,6 +45,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         ctrl_key = "horse"
         cell_type_key = None
         train = sc.read(f"../data/{data_name}.h5ad")
+        train.X /= 255.0
     if cell_type_key is None:
         os.makedirs(f"./results/{data_name}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/")
@@ -56,7 +57,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         print(f"network has been trained!")
         true_labels, _ = scgen.label_encoder(net_train_data)
         fake_labels = np.ones(shape=(net_train_data.shape[0], 1))
-        exit()
+
     for cell_type in train.obs[cell_type_key].unique().tolist():
         if cell_type != 3:
             continue
@@ -145,67 +146,82 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.chdir("../../../")
 
 
-def feed_normal_sample(data_name="normal_thin", digit=1):
+def feed_normal_sample(data_name="normal_thin"):
     if data_name == "normal_thin":
-        mnist_data = sc.read(f"../data/{data_name}.h5ad")
-        mnist_data = mnist_data[((mnist_data.obs["labels"] == 1) |
-                                 (mnist_data.obs["labels"] == 2) |
-                                 (mnist_data.obs["labels"] == 7))]
-    else:
-        mnist_data = sc.read(f"../data/{data_name}.h5ad")
-        mnist_data = mnist_data[((mnist_data.obs["labels"] == 8) |
-                                 (mnist_data.obs["labels"] == 3) |
-                                 (mnist_data.obs["labels"] == 5) |
-                                 (mnist_data.obs["labels"] == 2))]
-    print(mnist_data.shape)
-    normal_data = mnist_data[mnist_data.obs["condition"] == "normal"]
-    k = 5
-    random_samples = np.random.choice(normal_data.shape[0], k, replace=False)
-    sample_normal = normal_data.X[random_samples]
-    sample_normal_reshaped = np.reshape(sample_normal, (-1, 28, 28))
-    sample_normal = np.reshape(sample_normal, (-1, 784))
-    sample_normal = anndata.AnnData(X=sample_normal)
-    sample_normal.X /= 255.0
-    sample_normal.X = np.reshape(sample_normal.X, (-1, 784))
+        data = sc.read(f"../data/{data_name}.h5ad")
+        data = data[((data.obs["labels"] == 1) |
+                     (data.obs["labels"] == 2) |
+                     (data.obs["labels"] == 7))]
+        normal_data = data[data.obs["condition"] == "normal"]
+        image_shape = (28, 28, 1)
+    elif data_name == "normal_thick":
+        data = sc.read(f"../data/{data_name}.h5ad")
+        data = data[((data.obs["labels"] == 8) |
+                     (data.obs["labels"] == 3) |
+                     (data.obs["labels"] == 5) |
+                     (data.obs["labels"] == 2))]
+        normal_data = data[data.obs["condition"] == "normal"]
+        image_shape = (28, 28, 1)
+    elif data_name == "h2z":
+        data = sc.read(f"../data/{data_name}.h5d")
+        normal_data = data[data.obs["condition"] == "horse"]
+        image_shape = (256, 256, 3)
+    print(data.shape)
+    os.chdir(f"./results/{data_name}/")
 
-    network = scgen.MMDCCVAE(x_dimension=784, z_dimension=100, alpha=0.001, beta=100,
+    network = scgen.MMDCCVAE(x_dimension=(256, 256, 3,), z_dimension=100, alpha=0.001, beta=100,
                              batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
-                             model_path=f"./results/new_results/{data_name}/{digit}/", arch_style=2)
+                             model_path=f"./", arch_style=3)
 
     network.restore_model()
     print("model has been restored!")
 
-    sample_thick = network.predict(data=sample_normal,
-                                   encoder_labels=np.zeros((len(sample_normal), 1)),
-                                   decoder_labels=np.ones((len(sample_normal), 1)))
-    print(sample_thick.shape)
-    # print(sample_normal_reshaped[0])
-    sample_thick = np.reshape(sample_thick, newshape=(-1, 28, 28))
-    plt.close("all")
-    fig, ax = plt.subplots(k, 2, figsize=(k * 1, 6))
-    for i in range(k):
-        ax[i, 0].axis('off')
-        ax[i, 0].imshow(sample_normal_reshaped[i], cmap='Greys', vmin=0, vmax=1)
-        ax[i, 1].axis('off')
-        if i == 0:
-            ax[i, 0].set_title("Normal")
-            if data_name.endswith("thick"):
-                ax[i, 1].set_title("Thick")
-            else:
-                ax[i, 1].set_title("Thin")
-        ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
-    plt.savefig(f"./sample_images_{data_name}.pdf")
+    for j in range(5):
+        k = 5
+        random_samples = np.random.choice(normal_data.shape[0], k, replace=False)
+        sample_normal = normal_data.X[random_samples]
+        sample_normal_reshaped = np.reshape(sample_normal, (-1, 28, 28))
+        sample_normal = np.reshape(sample_normal, (-1, 784))
+        sample_normal = anndata.AnnData(X=sample_normal)
+        sample_normal.X /= 255.0
+        sample_normal.X = np.reshape(sample_normal.X, (-1, 784))
+
+        sample_thick = network.predict(data=sample_normal,
+                                       encoder_labels=np.zeros((len(sample_normal), 1)),
+                                       decoder_labels=np.ones((len(sample_normal), 1)))
+        sample_thick = np.reshape(sample_thick, newshape=(-1, *image_shape))
+        print(sample_thick.shape)
+        plt.close("all")
+        fig, ax = plt.subplots(k, 2, figsize=(k * 1, 6))
+        for i in range(k):
+            ax[i, 0].axis('off')
+            ax[i, 0].imshow(sample_normal_reshaped[i], cmap='Greys', vmin=0, vmax=1)
+            ax[i, 1].axis('off')
+            if i == 0:
+                if data_name.endswith("h2z"):
+                    ax[i, 0].set_title("Horse")
+                else:
+                    ax[i, 0].set_title("Normal")
+                if data_name.endswith("thick"):
+                    ax[i, 1].set_title("Thick")
+                elif data_name.endswith("thin"):
+                    ax[i, 1].set_title("Thin")
+                else:
+                    ax[i, 1].set_title("Zebra")
+            ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
+        plt.savefig(f"./sample_images_{data_name}_{j}.pdf")
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="h2z",
-                                           z_dim=100,
-                                           alpha=0.01,
-                                           beta=100,
-                                           kernel="multi-scale-rbf",
-                                           n_epochs=150,
-                                           batch_size=1024,
-                                           condition_key="condition",
-                                           arch_style=3)
-    # feed_normal_sample("normal_thin", digit=1)
-    # feed_normal_sample("normal_thick", digit=3)
+    # test_train_whole_data_one_celltype_out(data_name="h2z",
+    #                                        z_dim=100,
+    #                                        alpha=0.01,
+    #                                        beta=100,
+    #                                        kernel="multi-scale-rbf",
+    #                                        n_epochs=150,
+    #                                        batch_size=1024,
+    #                                        condition_key="condition",
+    #                                        arch_style=3)
+    # feed_normal_sample("normal_thin")
+    # feed_normal_sample("normal_thick")
+    feed_normal_sample("h2z")
