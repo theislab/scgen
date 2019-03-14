@@ -54,6 +54,14 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         train = train[((train.obs["labels"] == 1) |
                        (train.obs["labels"] == 7))]
         train.X /= 255.0
+    elif data_name == "fashion":
+        stim_key = 5
+        ctrl_key = 9
+        cell_type_key = None
+        train = sc.read(f"../data/{data_name}.h5ad")
+        train = train[((train.obs["labels"] == 5) |
+                       (train.obs["labels"] == 9))]
+        train.X /= 255.0
     if cell_type_key is None:
         os.makedirs(f"./results/{data_name}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/")
@@ -228,16 +236,17 @@ def feed_normal_sample(data_name="normal_thin"):
 
 
 if __name__ == '__main__':
-    # test_train_whole_data_one_celltype_out(data_name="mnist",
-    #                                        z_dim=100,
-    #                                        alpha=0.01,
-    #                                        beta=100,
-    #                                        kernel="multi-scale-rbf",
-    #                                        n_epochs=150,
-    #                                        batch_size=1024,
-    #                                        condition_key="condition",
-    #                                        arch_style=2)
+    test_train_whole_data_one_celltype_out(data_name="fashion",
+                                           z_dim=100,
+                                           alpha=0.01,
+                                           beta=100,
+                                           kernel="multi-scale-rbf",
+                                           n_epochs=1500,
+                                           batch_size=1024,
+                                           condition_key="condition",
+                                           arch_style=2)
     # feed_normal_sample("normal_thin")
     # feed_normal_sample("normal_thick")
     # feed_normal_sample("h2z")
-    feed_normal_sample("mnist")
+    # feed_normal_sample("mnist")
+    feed_normal_sample("fashion")
