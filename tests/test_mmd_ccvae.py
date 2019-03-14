@@ -169,7 +169,7 @@ def feed_normal_sample(data_name="normal_thin"):
     print(data.shape)
     os.chdir(f"./results/{data_name}/")
 
-    network = scgen.MMDCCVAE(x_dimension=(256, 256, 3,), z_dimension=100, alpha=0.001, beta=100,
+    network = scgen.MMDCCVAE(x_dimension=image_shape, z_dimension=100, alpha=0.001, beta=100,
                              batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
                              model_path=f"./", arch_style=3)
 
