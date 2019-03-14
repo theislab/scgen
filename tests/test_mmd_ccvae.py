@@ -50,7 +50,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         os.makedirs(f"./results/{data_name}/", exist_ok=True)
         os.chdir(f"./results/{data_name}/")
         network = scgen.MMDCCVAE(x_dimension=(256 * 256 * 3,), z_dimension=z_dim, alpha=alpha, beta=beta,
-                                 batch_mmd=True, kernel=kernel, train_with_fake_labels=False,
+                                 batch_mmd=False, kernel=kernel, train_with_fake_labels=False,
                                  model_path=f"./", arch_style=arch_style)
         net_train_data = train
         network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size, verbose=2)
@@ -165,6 +165,7 @@ def feed_normal_sample(data_name="normal_thin"):
     elif data_name == "h2z":
         data = sc.read(f"../data/{data_name}.h5ad")
         normal_data = data[data.obs["condition"] == "horse"]
+        normal_data.X /= 255.
         image_shape = (256 * 256 * 3, )
     print(data.shape)
     os.chdir(f"./results/{data_name}/")
@@ -180,17 +181,17 @@ def feed_normal_sample(data_name="normal_thin"):
         k = 5
         random_samples = np.random.choice(normal_data.shape[0], k, replace=False)
         sample_normal = normal_data.X[random_samples]
-        sample_normal_reshaped = np.reshape(sample_normal, (-1, 28, 28))
-        sample_normal = np.reshape(sample_normal, (-1, 784))
+        sample_normal_reshaped = np.reshape(sample_normal, (-1, 256, 256, 3))
+        sample_normal = np.reshape(sample_normal, (-1, *image_shape))
         sample_normal = anndata.AnnData(X=sample_normal)
-        sample_normal.X /= 255.0
-        sample_normal.X = np.reshape(sample_normal.X, (-1, 784))
+        sample_normal.X = np.reshape(sample_normal.X, (-1, *image_shape))
 
         sample_thick = network.predict(data=sample_normal,
                                        encoder_labels=np.zeros((len(sample_normal), 1)),
                                        decoder_labels=np.ones((len(sample_normal), 1)))
-        sample_thick = np.reshape(sample_thick, newshape=(-1, *image_shape))
+        sample_thick = np.reshape(sample_thick, newshape=(-1, 256, 256, 3))
         print(sample_thick.shape)
+        print(sample_normal_reshaped.shape)
         plt.close("all")
         fig, ax = plt.subplots(k, 2, figsize=(k * 1, 6))
         for i in range(k):
@@ -213,15 +214,15 @@ def feed_normal_sample(data_name="normal_thin"):
 
 
 if __name__ == '__main__':
-    # test_train_whole_data_one_celltype_out(data_name="h2z",
-    #                                        z_dim=100,
-    #                                        alpha=0.01,
-    #                                        beta=100,
-    #                                        kernel="multi-scale-rbf",
-    #                                        n_epochs=150,
-    #                                        batch_size=1024,
-    #                                        condition_key="condition",
-    #                                        arch_style=3)
+    test_train_whole_data_one_celltype_out(data_name="h2z",
+                                           z_dim=100,
+                                           alpha=0.01,
+                                           beta=100,
+                                           kernel="multi-scale-rbf",
+                                           n_epochs=150,
+                                           batch_size=1024,
+                                           condition_key="condition",
+                                           arch_style=3)
     # feed_normal_sample("normal_thin")
     # feed_normal_sample("normal_thick")
-    feed_normal_sample("h2z")
+    # feed_normal_sample("h2z")

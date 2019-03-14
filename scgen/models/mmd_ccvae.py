@@ -212,7 +212,7 @@ class MMDCCVAE:
             conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=self.init_w)(up9)
             conv10 = Conv2D(3, 1, activation='sigmoid')(conv9)
             print(conv10)
-            conv10 = Reshape((self.x_dim, ))(conv10)
+            conv10 = Reshape(self.x_dim)(conv10)
 
             model = Model(inputs=[z, y], outputs=[conv10, h_mmd], name=name)
             model.summary()
@@ -326,7 +326,7 @@ class MMDCCVAE:
         xy_kernel = MMDCCVAE.compute_kernel(x, y, method=kernel_method, **kwargs)
         return K.mean(x_kernel) + K.mean(y_kernel) - 2 * K.mean(xy_kernel)
 
-    def _loss_function(self, data=np.zeros((10, 6998)), labels=np.zeros((10, 1))):
+    def _loss_function(self, data=np.zeros((10, 256*256*3)), labels=np.zeros((10, 1))):
         """
             Defines the loss function of C-VAE network after constructing the whole
             network. This will define the KL Divergence and Reconstruction loss for
@@ -399,7 +399,7 @@ class MMDCCVAE:
                     mmd_s = self.cvae_model([source_x, source_y, source_y])[1]
                     mmd_d = self.cvae_model([source_x, dest_y, dest_y])[1]
 
-                    mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method, scales=self.scales)
+                    mmd_loss = self.compute_mmd(mmd_s, mmd_d, self.kernel_method)
                     return self.beta * mmd_loss
 
                 return loss
@@ -603,7 +603,7 @@ class MMDCCVAE:
         pseudo_labels = np.ones(shape=train_labels.shape)
 
         if not self.batch_mmd:
-            self._loss_function(train_data.X.A, train_labels)
+            self._loss_function(train_data.X, train_labels)
 
         # if self.kernel_method == "raphy":
         #     med = np.zeros(20)
