@@ -165,7 +165,7 @@ def feed_normal_sample(data_name="normal_thin"):
     elif data_name == "h2z":
         data = sc.read(f"../data/{data_name}.h5ad")
         normal_data = data[data.obs["condition"] == "horse"]
-        image_shape = (256, 256, 3)
+        image_shape = (256 * 256 * 3, )
     print(data.shape)
     os.chdir(f"./results/{data_name}/")
 
