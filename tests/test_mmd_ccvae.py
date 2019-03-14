@@ -162,7 +162,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
             os.chdir("../../../")
 
 
-def feed_normal_sample(data_name="normal_thin"):
+def feed_normal_sample(data_name="normal_thin", digit=1):
     if data_name == "normal_thin":
         data = sc.read(f"../data/{data_name}.h5ad")
         data = data[((data.obs["labels"] == 1) |
@@ -186,12 +186,21 @@ def feed_normal_sample(data_name="normal_thin"):
     elif data_name == "mnist":
         data = sc.read(f"../data/{data_name}.h5ad")
         data.obs["condition"] = data.obs["condition"].astype(np.str)
-        normal_data = data[data.obs["condition"] == '2']
+        normal_data = data[data.obs["condition"] == str(digit)]
+        normal_data.X /= 255.
+        image_shape = (784,)
+    elif data_name == "fashion":
+        data = sc.read(f"../data/{data_name}.h5ad")
+        data.obs["condition"] = data.obs["condition"].astype(np.str)
+        normal_data = data[data.obs["condition"] == '5']
         normal_data.X /= 255.
         image_shape = (784,)
     print(data.shape)
-    os.chdir(f"./results/{data_name}/")
-
+    if data_name == "mnist":
+        os.makedirs(f"./results/{data_name}/{digit} to 7/")
+        os.chdir(f"./results/{data_name}/{digit} to 7/")
+    else:
+        os.chdir(f"./results/{data_name}/")
     network = scgen.MMDCCVAE(x_dimension=image_shape, z_dimension=100, alpha=0.001, beta=100,
                              batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
                              model_path=f"./", arch_style=2)
@@ -233,10 +242,12 @@ def feed_normal_sample(data_name="normal_thin"):
                     ax[i, 1].set_title("Zebra")
             ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
         plt.savefig(f"./sample_images_{data_name}_{j}.pdf")
+    if data_name == "mnist":
+        os.chdir("../../../")
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="fashion",
+    test_train_whole_data_one_celltype_out(data_name="mnist",
                                            z_dim=100,
                                            alpha=0.01,
                                            beta=100,
@@ -244,9 +255,10 @@ if __name__ == '__main__':
                                            n_epochs=1500,
                                            batch_size=1024,
                                            condition_key="condition",
-                                           arch_style=2)
+                                           arch_style=1)
     # feed_normal_sample("normal_thin")
     # feed_normal_sample("normal_thick")
     # feed_normal_sample("h2z")
-    # feed_normal_sample("mnist")
-    feed_normal_sample("fashion")
+    # for i in range(10):
+    #     feed_normal_sample("mnist", digit=i)
+    # feed_normal_sample("fashion")

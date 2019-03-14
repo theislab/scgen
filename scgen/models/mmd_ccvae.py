@@ -160,7 +160,7 @@ class MMDCCVAE:
             h = Dense(self.mmd_dim, kernel_initializer=self.init_w, use_bias=False)(zy)
             h = BatchNormalization(axis=1)(h)
             h_mmd = LeakyReLU(name="mmd")(h)
-            h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=False)(h_mmd)
+            h = Dense(self.x_dim[0], kernel_initializer=self.init_w, use_bias=False)(h_mmd)
             h = BatchNormalization(axis=1)(h)
             h = LeakyReLU()(h)
             h = Reshape(target_shape=self.image_shape)(h)
@@ -169,7 +169,7 @@ class MMDCCVAE:
             h = Conv2DTranspose(64, kernel_size=(4, 4), padding='same')(h)
             h = LeakyReLU()(h)
             h = Conv2DTranspose(1, kernel_size=(4, 4), padding='same', activation="sigmoid")(h)
-            h = Reshape((self.x_dim,))(h)
+            h = Reshape(self.x_dim)(h)
             model = Model(inputs=[z, y], outputs=[h, h_mmd], name=name)
             model.summary()
             return h, h_mmd, model
