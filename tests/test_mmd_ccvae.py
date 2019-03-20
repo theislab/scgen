@@ -5,10 +5,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
+
 import scgen
 
 if not os.getcwd().endswith("tests"):
     os.chdir("./tests")
+
+fashion_mnist_dict = {
+    0: "T-shirt or top",
+    1: "Trouser",
+    2: "Pullover",
+    3: "Dress",
+    4: "Coat",
+    5: "Sandal",
+    6: "Shirt",
+    7: "Sneaker",
+    8: "Bag",
+    9: "Ankle boot"
+}
 
 
 def test_train_whole_data_one_celltype_out(data_name="pbmc",
@@ -162,7 +176,7 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
             os.chdir("../../../")
 
 
-def feed_normal_sample(data_name="normal_thin", digit=1):
+def feed_normal_sample(data_name="normal_thin", **kwargs):
     if data_name == "normal_thin":
         data = sc.read(f"../data/{data_name}.h5ad")
         data = data[((data.obs["labels"] == 1) |
@@ -182,28 +196,37 @@ def feed_normal_sample(data_name="normal_thin", digit=1):
         data = sc.read(f"../data/{data_name}.h5ad")
         normal_data = data[data.obs["condition"] == "horse"]
         normal_data.X /= 255.
-        image_shape = (256 * 256 * 3, )
+        image_shape = (256 * 256 * 3,)
     elif data_name == "mnist":
         data = sc.read(f"../data/{data_name}.h5ad")
         data.obs["condition"] = data.obs["condition"].astype(np.str)
-        normal_data = data[data.obs["condition"] == str(digit)]
+        normal_data = data[data.obs["condition"] == str(kwargs.get("digit"))]
         normal_data.X /= 255.
         image_shape = (784,)
     elif data_name == "fashion":
         data = sc.read(f"../data/{data_name}.h5ad")
         data.obs["condition"] = data.obs["condition"].astype(np.str)
-        normal_data = data[data.obs["condition"] == '5']
+        normal_data = data[data.obs["condition"] == str(kwargs.get("clothe"))]
         normal_data.X /= 255.
         image_shape = (784,)
     print(data.shape)
     if data_name == "mnist":
-        os.makedirs(f"./results/{data_name}/{digit} to 7/")
-        os.chdir(f"./results/{data_name}/{digit} to 7/")
+        os.makedirs(f"./results/{data_name}/cnn/{kwargs.get('digit')} to 7/", exist_ok=True)
+        os.chdir(f"./results/{data_name}/cnn/{kwargs.get('digit')} to 7/")
+        network = scgen.MMDCCVAE(x_dimension=image_shape, z_dimension=100, alpha=0.001, beta=100,
+                                 batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
+                                 model_path=f"../", arch_style=2)
+    elif data_name == "fashion":
+        os.makedirs(f"./results/{data_name}/{fashion_mnist_dict[kwargs.get('clothe')]} to {fashion_mnist_dict[9]}", exist_ok=True)
+        os.chdir(f"./results/{data_name}/{fashion_mnist_dict[kwargs.get('clothe')]} to {fashion_mnist_dict[9]}")
+        network = scgen.MMDCCVAE(x_dimension=image_shape, z_dimension=100, alpha=0.001, beta=100,
+                                 batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
+                                 model_path=f"../", arch_style=2)
     else:
         os.chdir(f"./results/{data_name}/")
-    network = scgen.MMDCCVAE(x_dimension=image_shape, z_dimension=100, alpha=0.001, beta=100,
-                             batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
-                             model_path=f"./", arch_style=2)
+        network = scgen.MMDCCVAE(x_dimension=image_shape, z_dimension=100, alpha=0.001, beta=100,
+                                 batch_mmd=True, kernel="multi-scale-rbf", train_with_fake_labels=False,
+                                 model_path=f"./", arch_style=2)
 
     network.restore_model()
     print("model has been restored!")
@@ -232,33 +255,43 @@ def feed_normal_sample(data_name="normal_thin", digit=1):
             if i == 0:
                 if data_name.endswith("h2z"):
                     ax[i, 0].set_title("Horse")
+                elif data_name == "fashion":
+                    ax[i, 0].set_title(fashion_mnist_dict[kwargs.get("clothe")])
+                elif data_name == "mnist":
+                    ax[i, 0].set_title(str(kwargs.get("digit")))
                 else:
                     ax[i, 0].set_title("Normal")
                 if data_name.endswith("thick"):
                     ax[i, 1].set_title("Thick")
                 elif data_name.endswith("thin"):
                     ax[i, 1].set_title("Thin")
-                else:
+                elif data_name == "h2z":
                     ax[i, 1].set_title("Zebra")
+                elif data_name == "fashion":
+                    ax[i, 1].set_title(fashion_mnist_dict[9])
+                elif data_name == "mnist":
+                    ax[i, 1].set_title("7")
             ax[i, 1].imshow(sample_thick[i], cmap='Greys', vmin=0, vmax=1)
         plt.savefig(f"./sample_images_{data_name}_{j}.pdf")
-    if data_name == "mnist":
-        os.chdir("../../../")
+    if data_name == "mnist" or data_name == "fashion":
+        os.chdir("../../../..1/")
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="mnist",
-                                           z_dim=100,
-                                           alpha=0.01,
-                                           beta=100,
-                                           kernel="multi-scale-rbf",
-                                           n_epochs=1500,
-                                           batch_size=1024,
-                                           condition_key="condition",
-                                           arch_style=1)
+    # test_train_whole_data_one_celltype_out(data_name="mnist",
+    #                                        z_dim=100,
+    #                                        alpha=0.01,
+    #                                        beta=100,
+    #                                        kernel="multi-scale-rbf",
+    #                                        n_epochs=1500,
+    #                                        batch_size=1024,
+    #                                        condition_key="condition",
+    #                                        arch_style=1)
     # feed_normal_sample("normal_thin")
     # feed_normal_sample("normal_thick")
     # feed_normal_sample("h2z")
+    for i in range(10):
+        feed_normal_sample("mnist", digit=i)
     # for i in range(10):
-    #     feed_normal_sample("mnist", digit=i)
+    #     feed_normal_sample("fashion", clothe=i)
     # feed_normal_sample("fashion")
