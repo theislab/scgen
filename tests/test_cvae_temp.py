@@ -57,8 +57,8 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
                              learning_rate=learning_rate,
                              model_path="./")
 
-        network.restore_model()
-        # network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
+        # network.restore_model()
+        network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
         print(f"network_{cell_type} has been trained!")
 
         scgen.visualize_trained_network_results(network, train, cell_type,
@@ -413,7 +413,7 @@ if __name__ == '__main__':
     test_train_whole_data_one_celltype_out(data_name="pbmc",
                                            z_dim=100,
                                            alpha=1.0,
-                                           n_epochs=300,
+                                           n_epochs=150,
                                            batch_size=32,
                                            dropout_rate=0.2,
                                            learning_rate=0.001,
