@@ -92,21 +92,20 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
     all_data = anndata.AnnData()
     for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
         print(f"Reconstructing for {cell_type}")
-        os.chdir(f"./vae_results/{data_name}/{cell_type}")
-        network = scgen.VAEArith(x_dimension=train.X.shape[1],
-                                 z_dimension=100,
-                                 alpha=0.00005,
-                                 dropout_rate=0.2,
-                                 learning_rate=0.001)
+        os.chdir(f"./cvae_results/{data_name}/{cell_type}")
+        network = scgen.CVAE(x_dimension=train.X.shape[1],
+                             z_dimension=100,
+                             alpha=1.0,
+                             dropout_rate=0.2,
+                             learning_rate=0.001,
+                             model_path="./")
         network.restore_model()
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
+        fake_labels = np.ones(shape=(cell_type_data.shape[0], 1))
         cell_type_ctrl_data = train[((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key))]
-        pred, delta = network.predict(adata=cell_type_data,
-                                      conditions={"ctrl": ctrl_key, "stim": stim_key},
-                                      cell_type_key=cell_type_key,
-                                      condition_key=condition_key,
-                                      celltype_to_predict=cell_type)
+        pred = network.predict(data=cell_type_data,
+                                      labels=fake_labels)
 
         pred_adata = anndata.AnnData(pred, obs={condition_key: [f"{cell_type}_pred_stim"] * len(pred),
                                                 cell_type_key: [cell_type] * len(pred)},
@@ -130,7 +129,7 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
         os.chdir("../../../")
         print(f"Finish Reconstructing for {cell_type}")
-    all_data.write_h5ad(f"./vae_results/{data_name}/reconstructed.h5ad")
+    all_data.write_h5ad(f"./cvae_results/{data_name}/{data_name}_reconstructed.h5ad")
 
 
 def score(adata, n_deg=10, n_genes=1000, condition_key="condition", cell_type_key="cell_type",

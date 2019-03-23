@@ -72,7 +72,10 @@ class CVAE:
         """
         with tensorflow.variable_scope("encoder", reuse=tensorflow.AUTO_REUSE):
             xy = tensorflow.concat([self.x, self.y], axis=1)
-            h = tensorflow.layers.dense(inputs=xy, units=64, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.dense(inputs=xy, units=700, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
+            h = tensorflow.nn.leaky_relu(h)
+            h = tensorflow.layers.dense(inputs=h, units=400, kernel_initializer=self.init_w, use_bias=False)
             h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
             h = tensorflow.nn.leaky_relu(h)
             h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
@@ -96,9 +99,12 @@ class CVAE:
         """
         with tensorflow.variable_scope("decoder", reuse=tensorflow.AUTO_REUSE):
             xy = tensorflow.concat([self.z_mean, self.y], axis=1)
-            h = tensorflow.layers.dense(inputs=xy, units=64, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.dense(inputs=xy, units=400, kernel_initializer=self.init_w, use_bias=False)
             h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
             h_mmd = tensorflow.nn.leaky_relu(h)
+            h = tensorflow.layers.dense(inputs=h_mmd, units=700, kernel_initializer=self.init_w, use_bias=False)
+            h = tensorflow.layers.batch_normalization(h, axis=1, training=self.is_training)
+            h = tensorflow.nn.leaky_relu(h)
             h = tensorflow.layers.dropout(h, self.dr_rate, training=self.is_training)
             h = tensorflow.layers.dense(inputs=h, units=self.x_dim, kernel_initializer=self.init_w, use_bias=True)
             h = tensorflow.nn.relu(h)
