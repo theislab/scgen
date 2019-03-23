@@ -11,7 +11,7 @@ network.restore_model()
 # network.train(train, n_epochs=100)
 
 labels, _ = scgen.label_encoder(train)
-latent = network._to_latent(train.X.A, labels=labels)
+latent = network.to_latent(train.X.A, labels=labels)
 adata = sc.AnnData(X=latent, obs={"condition": train.obs["condition"].tolist(), "cell_type": train.obs["cell_type"].tolist()})
 sc.pp.neighbors(adata)
 sc.tl.umap(adata)

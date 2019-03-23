@@ -33,13 +33,13 @@ class CVAE:
 
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
         self.x_dim = x_dimension
-        self.is_training = tensorflow.placeholder(tensorflow.bool, name='training_flag')
         self.z_dim = z_dimension
         self.lr = kwargs.get("learning_rate", 0.001)
         self.alpha = kwargs.get("alpha", 0.01)
-        self.beta = kwargs.get("beta", 1)
         self.dr_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./models/scgen")
+
+        self.is_training = tensorflow.placeholder(tensorflow.bool, name='training_flag')
         self.global_step = tensorflow.Variable(0, name='global_step', trainable=False, dtype=tensorflow.int32)
         self.x = tensorflow.placeholder(tensorflow.float32, shape=[None, self.x_dim], name="data")
         self.z = tensorflow.placeholder(tensorflow.float32, shape=[None, self.z_dim], name="latent")
@@ -201,7 +201,7 @@ class CVAE:
         with tensorflow.control_dependencies(tensorflow.get_collection(tensorflow.GraphKeys.UPDATE_OPS)):
             self.solver = tensorflow.train.AdamOptimizer(learning_rate=self.lr).minimize(self.vae_loss)
 
-    def _to_latent(self, data, labels):
+    def to_latent(self, data, labels):
         """
             Map `data` in to the latent space. This function will feed data
             in encoder part of C-VAE and compute the latent space coordinates
@@ -217,6 +217,8 @@ class CVAE:
                 latent: numpy nd-array
                     returns array containing latent space encoding of 'data'
         """
+        if sparse.issparse(data):
+            data = data.A
         latent = self.sess.run(self.z_mean, feed_dict={self.x: data, self.y: labels,
                                                        self.size: data.shape[0], self.is_training: False})
         return latent
@@ -265,7 +267,7 @@ class CVAE:
         if use_data:
             latent = data
         else:
-            latent = self._to_latent(data, labels)
+            latent = self.to_latent(data, labels)
         rec_data = self.sess.run(self.x_hat, feed_dict={self.z_mean: latent, self.y: labels.reshape(-1, 1),
                                                         self.is_training: False})
         return rec_data

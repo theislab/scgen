@@ -132,7 +132,7 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
     all_data.write_h5ad(f"./vae_results/{data_name}/reconstructed.h5ad")
 
 
-def score(adata, n_deg=10, n_genes=1000, condition_key="condition",
+def score(adata, n_deg=10, n_genes=1000, condition_key="condition", cell_type_key="cell_type",
           conditions={"stim": "stimulated", "ctrl": "control"},
           sortby="median_score"):
     import scanpy as sc
@@ -150,13 +150,19 @@ def score(adata, n_deg=10, n_genes=1000, condition_key="condition",
     # exit()
 
     adata_deg = adata[:, diff_genes].copy()
-    cell_types = adata_deg.obs["cell_type"].cat.categories.tolist()
+    cell_types = adata_deg.obs[cell_type_key].cat.categories.tolist()
     lfc_temp = np.zeros((len(cell_types), n_genes))
     for j, ct in enumerate(cell_types):
-        stim = adata_deg[(adata_deg.obs["cell_type"] == ct) &
-                         (adata_deg.obs[condition_key] == conditions["stim"])].X.mean(0).A1
-        ctrl = adata_deg[(adata_deg.obs["cell_type"] == ct) &
-                         (adata_deg.obs[condition_key] == conditions["ctrl"])].X.mean(0).A1
+        if cell_type_key == "cell_type":  # if data is pbmc
+            stim = adata_deg[(adata_deg.obs[cell_type_key] == ct) &
+                             (adata_deg.obs[condition_key] == conditions["stim"])].X.mean(0).A1
+            ctrl = adata_deg[(adata_deg.obs[cell_type_key] == ct) &
+                             (adata_deg.obs[condition_key] == conditions["ctrl"])].X.mean(0).A1
+        else:
+            stim = adata_deg[(adata_deg.obs[cell_type_key] == ct) &
+                             (adata_deg.obs[condition_key] == conditions["stim"])].X.mean(0)
+            ctrl = adata_deg[(adata_deg.obs[cell_type_key] == ct) &
+                             (adata_deg.obs[condition_key] == conditions["ctrl"])].X.mean(0)
         lfc_temp[j] = np.abs((stim - ctrl)[None, :])
     norm_lfc = lfc_temp / lfc_temp.sum(0).reshape((1, n_genes))
     ent_scores = entropy(norm_lfc)
@@ -167,7 +173,7 @@ def score(adata, n_deg=10, n_genes=1000, condition_key="condition",
     if sortby == "median_score":
         return df_score.sort_values(by=['median_score'], ascending=False).iloc[:n_deg, :]
     else:
-        return df_score.sort_values(by=['entropy_score']).iloc[:n_deg, :]
+        return df_score.sort_values(by=['entropy_score'], ascending=False).iloc[:n_deg, :]
 
 
 def rank_genes(data, diff_names, conditions={}, n_genes=100, start=0):
@@ -188,7 +194,7 @@ def rank_genes(data, diff_names, conditions={}, n_genes=100, start=0):
     return gene_df.index.tolist()[start: start + n_genes]
 
 
-def calc_score(data_name="pbmc", n_genes=100, restore=True):
+def plot_boxplot(data_name="pbmc", n_genes=100, restore=True, score_type="median_score", y_measure="SE"):
     if data_name == "pbmc":
         stim_key = "stimulated"
         ctrl_key = "control"
@@ -210,23 +216,21 @@ def calc_score(data_name="pbmc", n_genes=100, restore=True):
         cell_type_key = "species"
         train = sc.read("../data/train_all_lps6.h5ad")
     conditions = {"ctrl": ctrl_key, "stim": stim_key}
-    recon_data = sc.read(f"./vae_results/{data_name}/reconstructed.h5ad")
-    diff_genes = score(train, n_deg=10 * n_genes, n_genes=1000, conditions=conditions, sortby="median_score")[
-        "genes"].tolist()
-    top_50 = diff_genes[-50:]
-    sc.pl.stacked_violin(recon_data,
-                         var_names=top_50[:10],
-                         groupby="condition",
-                         save=f"_Top_{10}_Median_genes_out_of_50",
-                         swap_axes=True,
-                         show=False)
-    exit()
-    # plot_reg_mean_with_genes("pbmc", gene_list=top_50[:10])
+
+    os.chdir(f"./vae_results/{data_name}/")
+    sc.settings.figdir = os.getcwd()
+
+    recon_data = sc.read(f"./reconstructed.h5ad")
+    diff_genes = score(train, n_deg=10 * n_genes, n_genes=1000, cell_type_key=cell_type_key, conditions=conditions,
+                       sortby=score_type)
+    diff_genes = diff_genes["genes"].tolist()
+    # epsilon = 1e-7
+    os.makedirs(f"./boxplots/Top_{10 * n_genes}/{y_measure}/", exist_ok=True)
     if not restore:
-        all_scores = np.zeros(shape=(7 * 10 * n_genes, 1))
+        n_cell_types = len(train.obs[cell_type_key].unique().tolist())
+        all_scores = np.zeros(shape=(n_cell_types * 10 * n_genes, 1))
         for bin_idx in range(10):
-            for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
-                print(f"Running for {cell_type} ...")
+            for cell_type_idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
                 real_stim = recon_data[(recon_data.obs[cell_type_key] == cell_type) & (
                         recon_data.obs["condition"] == f"{cell_type}_real_stim")]
                 pred_stim = recon_data[(recon_data.obs[cell_type_key] == cell_type) & (
@@ -240,42 +244,97 @@ def calc_score(data_name="pbmc", n_genes=100, restore=True):
                 else:
                     real_stim_avg = np.average(real_stim.X, axis=0)
                     pred_stim_avg = np.average(pred_stim.X, axis=0)
+                if y_measure == "SE":  # (x - xhat) ^ 2
+                    y_measures = np.abs(np.square(real_stim_avg - pred_stim_avg))
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "AE":  # x - xhat
+                    y_measures = np.abs(real_stim_avg - pred_stim_avg)
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "AE:x":  # (x - xhat) / x
+                    y_measures = np.abs(real_stim_avg - pred_stim_avg)
+                    y_measures = np.divide(y_measures, real_stim_avg)
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "SE:x^2":  # (x - xhat) / x^2
+                    y_measures = np.abs(np.square(real_stim_avg - pred_stim_avg))
+                    y_measures = np.divide(y_measures, np.power(real_stim_avg, 2))
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "AE:max(x, 1)":  # (x - xhat) / max(x, 1)
+                    y_measures = np.abs(real_stim_avg - pred_stim_avg)
+                    y_measures = np.divide(y_measures, np.maximum(real_stim_avg, 1.0))
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "SE:max(x, 1)^2":  # (x - xhat)^2 / max(x, 1)^2
+                    y_measures = np.abs(np.square(real_stim_avg - pred_stim_avg))
+                    y_measures = np.divide(y_measures, np.power(np.maximum(real_stim_avg, 1.0), 2))
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "1 - AE:x":  # 1 - ((x - xhat) / x)
+                    y_measures = np.abs(real_stim_avg - pred_stim_avg)
+                    y_measures = np.divide(y_measures, real_stim_avg)
+                    y_measures = np.abs(1.0 - y_measures)
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "1 - SE:x^2":  # 1 - ((x - xhat) / x)^2
+                    y_measures = np.abs(np.square(real_stim_avg - pred_stim_avg))
+                    y_measures = np.divide(y_measures, np.power(real_stim_avg, 2))
+                    y_measures = np.abs(1.0 - y_measures)
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "1 - AE:max(x, 1)":  # 1 - ((x - xhat) / max(x, 1.0))
+                    y_measures = np.abs(real_stim_avg - pred_stim_avg)
+                    y_measures = np.true_divide(y_measures, np.maximum(real_stim_avg, 1.0))
+                    y_measures = np.abs(1.0 - y_measures)
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
+                elif y_measure == "1 - SE:max(x, 1)^2":  # 1 - ((x - xhat) / max(x, 1.0))
+                    y_measures = np.abs(np.square(real_stim_avg - pred_stim_avg))
+                    y_measures = np.true_divide(y_measures, np.power(np.maximum(real_stim_avg, 1.0), 2))
+                    y_measures = np.abs(1.0 - y_measures)
+                    y_measures_reshaped = np.reshape(y_measures, (-1,))
 
-                absolute_values = np.abs(np.square(real_stim_avg - pred_stim_avg))
-                absolute_values = np.reshape(absolute_values, (-1, 1))
-                normalized_abs_values = np.reshape(absolute_values, (-1,))
-
-                start = 7 * n_genes * bin_idx
-                all_scores[start + n_genes * idx:start + n_genes * (idx + 1), 0] = normalized_abs_values
-        np.savetxt(X=all_scores.T, fname=f"./vae_results/all_scores_{n_genes}.txt", delimiter=",")
+                start = n_cell_types * n_genes * bin_idx
+                all_scores[start + n_genes * cell_type_idx:start + n_genes * (cell_type_idx + 1),
+                0] = y_measures_reshaped
+        np.savetxt(X=all_scores.T, fname=f"./boxplots/Top_{10 * n_genes}/{y_measure}/y_measures_{score_type}_{n_genes}_({y_measure}).txt",
+                   delimiter=",")
         all_scores = np.reshape(all_scores, (-1,))
     else:
-        all_scores = np.loadtxt(fname=f"./vae_results/all_scores_{n_genes}.txt", delimiter=",")
+        all_scores = np.loadtxt(fname=f"./boxplots/Top_{10 * n_genes}/{y_measure}/y_measures_{score_type}_{n_genes}_({y_measure}).txt", delimiter=",")
     import seaborn as sns
-    conditions = [f"Bin-{i // (7 * n_genes) + 1}" for i in range(7 * 10 * n_genes)]
-    print(all_scores.shape)
+    conditions = [f"Bin-{i // (n_cell_types * n_genes) + 1}" for i in range(n_cell_types * 10 * n_genes)]
     all_scores_df = pd.DataFrame({"scores": all_scores})
     all_scores_df["conditions"] = conditions
     ax = sns.boxplot(data=all_scores_df, x="conditions", y="scores", whis=np.inf)
-    # ax = sns.swarmplot(x="conditions", y="scores", data=all_scores_df, color=".01")
-    # plt.show()
-    os.chdir(f"./vae_results/{data_name}/")
-    sc.pl.stacked_violin(recon_data,
-                         var_names=diff_genes[:10],
-                         groupby="condition",
-                         save=f"_Top_{10}_Median_genes_From_Top_{10 * n_genes}_DEGs",
-                         swap_axes=True,
-                         show=False)
-    plt.savefig(f"./{data_name}_boxplot_scores_scaled_{n_genes}.pdf")
+    if y_measure == "SE":
+        plt.ylabel("(x - xhat) ^ 2")
+    elif y_measure == "AE":
+        plt.ylabel("x - xhat")
+    elif y_measure == "AE:x":
+        plt.ylabel("(x - xhat) / x")
+    elif y_measure == "SE:x^2":
+        plt.ylabel("((x - xhat) ^ 2) / (x ^ 2)")
+    elif y_measure == "AE:max(x, 1)":
+        plt.ylabel("(x - xhat) / max(x, 1)")
+    elif y_measure == "SE:max(x, 1)^2":
+        plt.ylabel("(x - xhat)^2 / max(x, 1)^2")
+    elif y_measure == "1 - AE:x":
+        plt.ylabel("1 - ((x - xhat) / x)")
+    elif y_measure == "1 - SE:x^2":
+        plt.ylabel("1 - ((x - xhat)^2 / x^2)")
+    elif y_measure == "1 - AE:max(x, 1)":
+        plt.ylabel("1 - ((x - xhat) / max(x, 1))")
+    elif y_measure == "1 - SE:max(x, 1)^2":
+        plt.ylabel("1 - ((x - xhat)^2 / max(x, 1)^2)")
+    os.makedirs(f"./boxplots/Top_{10 * n_genes}/{y_measure}/", exist_ok=True)
+    plt.savefig(f"./boxplots/Top_{10 * n_genes}/{y_measure}/boxplot_{score_type}_{n_genes}_({y_measure}).pdf")
     plt.close()
-    sc.settings.figdir = os.getcwd()
+
     all_scores = np.reshape(all_scores, (-1, 1))
-    adata = anndata.AnnData(X=all_scores, obs={"condition": conditions}, var={"var_names": ["0"]})
-    # sc.pl.violin(adata, keys="0", groupby="condition", save=f"_scores_scaled_{n_genes}.pdf", show=False)
+    # adata = anndata.AnnData(X=all_scores, obs={"condition": conditions}, var={"var_names": ["0"]})
+    # sc.pl.violin(adata,
+    #              keys="0",
+    #              groupby="condition",
+    #              save=f"_scores_{y_measure}_{n_genes}.pdf",
+    #              show=False)
     os.chdir("../../")
 
 
-def violin_plot(data_name="pbmc"):
+def stacked_violin_plot(data_name="pbmc", score_type="median_score"):
     if data_name == "pbmc":
         stim_key = "stimulated"
         ctrl_key = "control"
@@ -297,27 +356,21 @@ def violin_plot(data_name="pbmc"):
         cell_type_key = "species"
         train = sc.read("../data/train_all_lps6.h5ad")
     conditions = {"ctrl": ctrl_key, "stim": stim_key}
-    recon_data = sc.read(f"./vae_results/{data_name}/reconstructed.h5ad")
 
-    for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
-        os.makedirs(f"./vae_results/{data_name}/violin_plots/", exist_ok=True)
-        cell_type_data = train[train.obs[cell_type_key] == cell_type]
-        sc.tl.rank_genes_groups(cell_type_data, groupby="condition", n_genes=10, method="wilcoxon")
-        gene_names = cell_type_data.uns["rank_genes_groups"]['names'][conditions['stim']]
-        gene_lfcs = cell_type_data.uns["rank_genes_groups"]['logfoldchanges'][conditions['stim']]
-        diff_genes_df = pd.DataFrame({"names": gene_names, "lfc": gene_lfcs})
-        diff_genes = diff_genes_df[diff_genes_df['lfc'] > 0.2]["names"]
+    os.chdir(f"./vae_results/{data_name}/")
+    sc.settings.figdir = os.getcwd()
 
-        recon_cell_type = recon_data[(recon_data.obs[cell_type_key] == cell_type)]
-        sc.settings.figdir = f"./vae_results/{data_name}/violin_plots/"
-        # for i in range(10):
-        #         #     sc.pl.violin(recon_cell_type, keys=diff_genes.tolist()[i], groupby="condition",
-        #                  save=f"_{cell_type}_{diff_genes.tolist()[i]}",
-        #                  show=False)
-        sc.pl.stacked_violin(recon_cell_type, var_names=diff_genes.tolist(), groupby="condition",
-                             save=f"_{cell_type}_Top_DE_genes", swap_axes=True,
-                             show=False)
-    # sc.pl.rank_genes_groups_stacked_violin(recon_data, n_genes=10, groupby="condition", save="test.pdf", show=False)
+    recon_data = sc.read(f"./reconstructed.h5ad")
+    diff_genes = score(train, n_deg=500, n_genes=1000, cell_type_key=cell_type_key, conditions=conditions,
+                       sortby=score_type)
+    diff_genes = diff_genes["genes"].tolist()
+    sc.pl.stacked_violin(recon_data,
+                         var_names=diff_genes[:10],
+                         groupby="condition",
+                         save=f"_Top_{10}_{score_type}_genes_out_of_500_{data_name}",
+                         swap_axes=True,
+                         show=False)
+    os.chdir("../../")
 
 
 def plot_reg_mean_with_genes(data_name="pbmc", gene_list=None):
@@ -364,13 +417,12 @@ if __name__ == '__main__':
     # reconstruct_whole_data(data_name="pbmc", condition_key="condition")
     # reconstruct_whole_data(data_name="hpoly", condition_key="condition")
     # reconstruct_whole_data(data_name="salmonella", condition_key="condition")
-    # calc_score(data_name="pbmc", n_genes=20, restore=False)
-    # calc_score(data_name="pbmc", n_genes=25, restore=False)
-    calc_score(data_name="pbmc", n_genes=30, restore=False)
-    # calc_score(data_name="pbmc", n_genes=50, restore=False)
-    # calc_score(data_name="pbmc", n_genes=75, restore=False)
-    # calc_score(data_name="pbmc", n_genes=100, restore=False)
-    # calc_score(data_name="pbmc", n_genes=200, restore=False)
-    # violin_plot(data_name="pbmc")
-    # violin_plot(data_name="hpoly")
-    # violin_plot(data_name="salmonella")
+    for data_name in ["pbmc", "hpoly", "salmonella"]:
+        for score_type in ["median_score", "entropy_score"]:
+            stacked_violin_plot(data_name, score_type)
+            for n_genes in [20, 30, 40, 50, 70, 100]:
+                for y_measure in ["SE", "SE:x^2", "SE:max(x, 1)^2", "1 - SE:x^2", "1 - SE:max(x, 1)^2",
+                                  "AE", "AE:x",   "AE:max(x, 1)",   "1 - AE:x",   "1 - AE:max(x, 1)"]:
+                    print(data_name, n_genes, y_measure)
+                    plot_boxplot(data_name=data_name, n_genes=n_genes, restore=False, score_type=score_type,
+                                 y_measure=y_measure)
