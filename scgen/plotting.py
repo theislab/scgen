@@ -3,7 +3,8 @@ from matplotlib import pyplot
 from scipy import stats, sparse
 
 
-def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf", gene_list=None, show=False):
+def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf", gene_list=None, show=False,
+                  legend=True, title=None):
     """
         Plots mean matching figure for a set of specific genes.
 
@@ -66,8 +67,12 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
             if "y1" in axis_keys.keys():
                 y1_bar = y1[j]
                 pyplot.text(x_bar, y1_bar, i, fontsize=11, color="grey")
-    pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    pyplot.title(f"", fontsize=12)
+    if legend:
+        pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    if title is None:
+        pyplot.title(f"", fontsize=12)
+    else:
+        pyplot.title(title, fontsize=12)
     pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2$=' + f"{r_value ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
@@ -75,7 +80,8 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
     pyplot.close()
 
 
-def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", gene_list=None, show=False):
+def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", gene_list=None, show=False,
+                 legend=True, title=None):
     """
         Plots variance matching figure for a set of specific genes.
 
@@ -138,8 +144,12 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
             if "y1" in axis_keys.keys():
                 y1_bar = y1[j]
                 pyplot.text(x_bar, y1_bar, '*', color="blue", alpha=.5)
-    pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    pyplot.title(f"", fontsize=12)
+    if legend:
+        pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    if title is None:
+        pyplot.title(f"", fontsize=12)
+    else:
+        pyplot.title(title, fontsize=12)
     pyplot.text(max(x) - .2 * max(x), max(y) - .8 * max(y), r'$R^2$=' + f"{r_value ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
