@@ -32,6 +32,7 @@ class CVAE:
     """
 
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
+        tensorflow.reset_default_graph()
         self.x_dim = x_dimension
         self.z_dim = z_dimension
         self.lr = kwargs.get("learning_rate", 0.001)
