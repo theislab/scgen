@@ -406,23 +406,23 @@ def plot_reg_mean_with_genes(data_name="pbmc", gene_list=None):
 
 
 if __name__ == '__main__':
-    # test_train_whole_data_one_celltype_out(data_name="hpoly",
-    #                                        z_dim=100,
-    #                                        alpha=0.00005,
-    #                                        n_epochs=300,
-    #                                        batch_size=32,
-    #                                        dropout_rate=0.2,
-    #                                        learning_rate=0.001,
-    #                                        condition_key="condition")
-    # reconstruct_whole_data(data_name="pbmc", condition_key="condition")
+    test_train_whole_data_one_celltype_out(data_name="species",
+                                           z_dim=100,
+                                           alpha=0.00005,
+                                           n_epochs=300,
+                                           batch_size=32,
+                                           dropout_rate=0.2,
+                                           learning_rate=0.001,
+                                           condition_key="condition")
+    reconstruct_whole_data(data_name="species", condition_key="condition")
     # reconstruct_whole_data(data_name="hpoly", condition_key="condition")
     # reconstruct_whole_data(data_name="salmonella", condition_key="condition")
-    for data_name in ["pbmc", "hpoly", "salmonella"]:
-        for score_type in ["median_score", "entropy_score"]:
-            stacked_violin_plot(data_name, score_type)
-            for n_genes in [20, 30, 40, 50, 70, 100]:
-                for y_measure in ["SE", "SE:x^2", "SE:max(x, 1)^2", "1 - SE:x^2", "1 - SE:max(x, 1)^2",
-                                  "AE", "AE:x",   "AE:max(x, 1)",   "1 - AE:x",   "1 - AE:max(x, 1)"]:
-                    print(data_name, n_genes, y_measure)
-                    plot_boxplot(data_name=data_name, n_genes=n_genes, restore=False, score_type=score_type,
-                                 y_measure=y_measure)
+    # for data_name in ["pbmc", "hpoly", "salmonella"]:
+    #     for score_type in ["median_score", "entropy_score"]:
+    #         stacked_violin_plot(data_name, score_type)
+    #         for n_genes in [20, 30, 40, 50, 70, 100]:
+    #             for y_measure in ["SE", "SE:x^2", "SE:max(x, 1)^2", "1 - SE:x^2", "1 - SE:max(x, 1)^2",
+    #                               "AE", "AE:x",   "AE:max(x, 1)",   "1 - AE:x",   "1 - AE:max(x, 1)"]:
+    #                 print(data_name, n_genes, y_measure)
+    #                 plot_boxplot(data_name=data_name, n_genes=n_genes, restore=False, score_type=score_type,
+    #                              y_measure=y_measure)
