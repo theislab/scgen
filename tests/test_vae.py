@@ -45,6 +45,11 @@ def test_train_whole_data_one_celltype_out(data_name="pbmc",
         ctrl_key = "unst"
         cell_type_key = "species"
         train = sc.read("../data/train_all_lps6.h5ad")
+    elif data_name == "study":
+        stim_key = "stimulated"
+        ctrl_key = "control"
+        cell_type_key = "cell_type"
+        train = sc.read("../data/kang_cross_train.h5ad")
 
     for cell_type in train.obs[cell_type_key].unique().tolist():
         os.makedirs(f"./vae_results/{data_name}/{cell_type}/", exist_ok=True)
@@ -88,6 +93,12 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         ctrl_key = "unst"
         cell_type_key = "species"
         train = sc.read("../data/train_all_lps6.h5ad")
+    elif data_name == "study":
+        stim_key = "stimulated"
+        ctrl_key = "control"
+        cell_type_key = "cell_type"
+        train = sc.read("../data/kang_cross_train.h5ad")
+
     all_data = anndata.AnnData()
     for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
         print(f"Reconstructing for {cell_type}")
