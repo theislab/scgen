@@ -417,7 +417,7 @@ def plot_reg_mean_with_genes(data_name="pbmc", gene_list=None):
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="species",
+    test_train_whole_data_one_celltype_out(data_name="study",
                                            z_dim=100,
                                            alpha=0.00005,
                                            n_epochs=300,
@@ -425,7 +425,7 @@ if __name__ == '__main__':
                                            dropout_rate=0.2,
                                            learning_rate=0.001,
                                            condition_key="condition")
-    reconstruct_whole_data(data_name="species", condition_key="condition")
+    reconstruct_whole_data(data_name="study", condition_key="condition")
     # reconstruct_whole_data(data_name="hpoly", condition_key="condition")
     # reconstruct_whole_data(data_name="salmonella", condition_key="condition")
     # for data_name in ["pbmc", "hpoly", "salmonella"]:
