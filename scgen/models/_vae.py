@@ -267,7 +267,8 @@ class VAEArith:
         interpolation = self.reconstruct(vectors, use_data=True)
         return interpolation
 
-    def predict(self, adata, conditions, cell_type_key, condition_key, adata_to_predict=None, celltype_to_predict=None, obs_key="all"):
+    def predict(self, adata, conditions, cell_type_key, condition_key, adata_to_predict=None, celltype_to_predict=None,
+                obs_key="all", biased=False):
         """
             Predicts the cell type provided by the user in stimulated condition.
 
@@ -299,15 +300,16 @@ class VAEArith:
         if obs_key == "all":
             ctrl_x = adata[adata.obs[condition_key] == conditions["ctrl"], :]
             stim_x = adata[adata.obs[condition_key] == conditions["stim"], :]
-            ctrl_x = balancer(ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key)
-            stim_x = balancer(stim_x, cell_type_key=cell_type_key, condition_key=condition_key)
+            if not biased:
+                ctrl_x = balancer(ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key)
+                stim_x = balancer(stim_x, cell_type_key=cell_type_key, condition_key=condition_key)
         else:
             key = list(obs_key.keys())[0]
             values = obs_key[key]
             subset = adata[adata.obs[key].isin(values)]
             ctrl_x = subset[subset.obs[condition_key] == conditions["ctrl"], :]
             stim_x = subset[subset.obs[condition_key] == conditions["stim"], :]
-            if len(values) > 1:
+            if len(values) > 1 and not biased:
                 ctrl_x = balancer(ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key)
                 stim_x = balancer(stim_x, cell_type_key=cell_type_key, condition_key=condition_key)
         if celltype_to_predict is not None and adata_to_predict is not None:
