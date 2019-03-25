@@ -477,15 +477,87 @@ def train(data_name="study",
     os.chdir("../../../")
 
 
+def test_train_whole_data_some_celltypes_out(data_name="study",
+                                             z_dim=100,
+                                             alpha=0.00005,
+                                             n_epochs=300,
+                                             batch_size=32,
+                                             dropout_rate=0.2,
+                                             learning_rate=0.001,
+                                             condition_key="condition",
+                                             c_out=None,
+                                             c_in=None):
+    if data_name == "pbmc":
+        stim_key = "stimulated"
+        ctrl_key = "control"
+        cell_type_key = "cell_type"
+        train = sc.read("../data/train.h5ad")
+
+    os.makedirs(f"./vae_results/{data_name}/heldout/{len(c_out)}/", exist_ok=True)
+    os.chdir(f"./vae_results/{data_name}/heldout/{len(c_out)}/")
+
+    net_train_data = scgen.data_remover(train, remain_list=c_in, remove_list=c_out,
+                                        cell_type_key=cell_type_key, condition_key=condition_key)
+
+    print(net_train_data)
+
+    network = scgen.VAEArith(x_dimension=net_train_data.X.shape[1],
+                             z_dimension=z_dim,
+                             alpha=alpha,
+                             dropout_rate=dropout_rate,
+                             learning_rate=learning_rate)
+
+    # network.restore_model()
+    network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
+    print(f"network has been trained!")
+    os.chdir("../../../../")
+
+
 if __name__ == '__main__':
-    train(data_name="study",
-          z_dim=100,
-          alpha=0.00005,
-          n_epochs=300,
-          batch_size=32,
-          dropout_rate=0.2,
-          learning_rate=0.001,
-          condition_key="condition")
+    c_in = ['NK', 'B', 'CD14+Mono']
+    c_out = ['CD4T', 'FCGR3A+Mono', 'CD8T', 'Dendritic']
+    test_train_whole_data_some_celltypes_out(data_name="pbmc",
+                                             z_dim=100,
+                                             alpha=0.00005,
+                                             n_epochs=300,
+                                             batch_size=32,
+                                             dropout_rate=0.2,
+                                             learning_rate=0.001,
+                                             condition_key="condition",
+                                             c_out=c_out,
+                                             c_in=c_in)
+    c_in = ['CD14+Mono']
+    c_out = ['CD4T', 'FCGR3A+Mono', 'CD8T', 'NK', 'B', 'Dendritic']
+    test_train_whole_data_some_celltypes_out(data_name="pbmc",
+                                             z_dim=100,
+                                             alpha=0.00005,
+                                             n_epochs=300,
+                                             batch_size=32,
+                                             dropout_rate=0.2,
+                                             learning_rate=0.001,
+                                             condition_key="condition",
+                                             c_out=c_out,
+                                             c_in=c_in)
+    c_in = ['CD8T', 'NK', 'B', 'Dendritic', 'CD14+Mono']
+    c_out = ['CD4T', 'FCGR3A+Mono']
+    test_train_whole_data_some_celltypes_out(data_name="pbmc",
+                                             z_dim=100,
+                                             alpha=0.00005,
+                                             n_epochs=300,
+                                             batch_size=32,
+                                             dropout_rate=0.2,
+                                             learning_rate=0.001,
+                                             condition_key="condition",
+                                             c_out=c_out,
+                                             c_in=c_in)
+    # train(data_name="study",
+    #       z_dim=100,
+    #       alpha=0.00005,
+    #       n_epochs=300,
+    #       batch_size=32,
+    #       dropout_rate=0.2,
+    #       learning_rate=0.001,
+    #       condition_key="condition")
     # test_train_whole_data_one_celltype_out(data_name="study",
     #                                        z_dim=100,
     #                                        alpha=0.00005,
