@@ -412,6 +412,38 @@ def plot_reg_mean_with_genes(data_name="pbmc", gene_list=None):
     exit()
 
 
+def train(data_name="pbmc",
+          z_dim=100,
+          alpha=1.0,
+          n_epochs=150,
+          batch_size=32,
+          dropout_rate=0.2,
+          learning_rate=0.001,
+          condition_key="condition"):
+    if data_name == "pbmc":
+        cell_type_to_monitor = "CD4T"
+        stim_key = "stimulated"
+        ctrl_key = "control"
+        cell_type_key = "cell_type"
+        train = sc.read("../data/train.h5ad")
+
+    os.makedirs(f"./cvae_results/{data_name}/all/", exist_ok=True)
+    os.chdir(f"./cvae_results/{data_name}/all/")
+    net_train_data = train
+    network = scgen.CVAE(x_dimension=net_train_data.X.shape[1],
+                         z_dimension=z_dim,
+                         alpha=alpha,
+                         dropout_rate=dropout_rate,
+                         learning_rate=learning_rate,
+                         model_path="./")
+
+    # network.restore_model()
+    network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
+    print(f"network_{data_name} has been trained!")
+
+    os.chdir("../../../")
+
+
 if __name__ == '__main__':
     # test_train_whole_data_one_celltype_out(data_name="pbmc",
     #                                        z_dim=100,
@@ -421,7 +453,7 @@ if __name__ == '__main__':
     #                                        dropout_rate=0.2,
     #                                        learning_rate=0.001,
     #                                        condition_key="condition")
-    reconstruct_whole_data(data_name="pbmc", condition_key="condition")
+    # reconstruct_whole_data(data_name="pbmc", condition_key="condition")
     # reconstruct_whole_data(data_name="hpoly", condition_key="condition")
     # reconstruct_whole_data(data_name="salmonella", condition_key="condition")
     # for data_name in ["pbmc", "hpoly", "salmonella"]:
@@ -433,3 +465,11 @@ if __name__ == '__main__':
     #                 print(data_name, n_genes, y_measure)
     #                 plot_boxplot(data_name=data_name, n_genes=n_genes, restore=False, score_type=score_type,
     #                              y_measure=y_measure)
+    train(data_name="pbmc",
+          z_dim=100,
+          alpha=1.0,
+          n_epochs=150,
+          batch_size=32,
+          dropout_rate=0.2,
+          learning_rate=0.001,
+          condition_key="condition")
