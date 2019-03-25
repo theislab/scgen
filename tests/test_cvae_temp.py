@@ -434,8 +434,7 @@ def train(data_name="pbmc",
                          z_dimension=z_dim,
                          alpha=alpha,
                          dropout_rate=dropout_rate,
-                         learning_rate=learning_rate,
-                         model_path="./")
+                         learning_rate=learning_rate)
 
     # network.restore_model()
     network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
