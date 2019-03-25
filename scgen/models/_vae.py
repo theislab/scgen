@@ -320,9 +320,13 @@ class VAEArith:
             ctrl_pred = extractor(adata, celltype_to_predict, conditions, cell_type_key, condition_key)[1]
         else:
             ctrl_pred = adata_to_predict
-        eq = min(ctrl_x.X.shape[0], stim_x.X.shape[0])
-        cd_ind = numpy.random.choice(range(ctrl_x.shape[0]), size=eq, replace=False)
-        stim_ind = numpy.random.choice(range(stim_x.shape[0]), size=eq, replace=False)
+        if not biased:
+            eq = min(ctrl_x.X.shape[0], stim_x.X.shape[0])
+            cd_ind = numpy.random.choice(range(ctrl_x.shape[0]), size=eq, replace=False)
+            stim_ind = numpy.random.choice(range(stim_x.shape[0]), size=eq, replace=False)
+        else:
+            cd_ind = numpy.arange(stop=ctrl_x.shape[0])
+            stim_ind = numpy.arange(stop=stim_x.shape[0])
         if sparse.issparse(ctrl_x.X) and sparse.issparse(stim_x.X):
             latent_ctrl = self._avg_vector(ctrl_x.X.A[cd_ind, :])
             latent_sim = self._avg_vector(stim_x.X.A[stim_ind, :])
