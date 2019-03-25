@@ -429,6 +429,5 @@ class CVAE:
                 if patience_cnt > patience:
                     save_path = self.saver.save(self.sess, self.model_to_use)
                     break
-        else:
-            save_path = self.saver.save(self.sess, self.model_to_use)
+        save_path = self.saver.save(self.sess, self.model_to_use)
         log.info(f"Model saved in file: {save_path}. Training finished")

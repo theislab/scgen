@@ -369,12 +369,18 @@ def stacked_violin_plot(data_name="pbmc", score_type="median_score"):
         ctrl_key = "unst"
         cell_type_key = "species"
         train = sc.read("../data/train_all_lps6.h5ad")
+
+    elif data_name == "pca":
+        stim_key = "stimulated"
+        ctrl_key = "control"
+        cell_type_key = "cell_type"
+        train = sc.read("../data/train.h5ad")
     conditions = {"ctrl": ctrl_key, "stim": stim_key}
 
-    os.chdir(f"./vae_results/{data_name}/")
-    sc.settings.figdir = os.getcwd()
+    # os.chdir(f"./vae_results/{data_name}/")
+    # sc.settings.figdir = os.getcwd()
 
-    recon_data = sc.read(f"./reconstructed.h5ad")
+    recon_data = sc.read(f"../data/PCA.h5ad")
     diff_genes = score(train, n_deg=500, n_genes=1000, cell_type_key=cell_type_key, conditions=conditions,
                        sortby=score_type)
     diff_genes = diff_genes["genes"].tolist()
@@ -538,18 +544,18 @@ if __name__ == '__main__':
     #                                          condition_key="condition",
     #                                          c_out=c_out,
     #                                          c_in=c_in)
-    c_in = ['CD8T', 'NK', 'B', 'Dendritic', 'CD14+Mono']
-    c_out = ['CD4T', 'FCGR3A+Mono']
-    test_train_whole_data_some_celltypes_out(data_name="pbmc",
-                                             z_dim=100,
-                                             alpha=0.00005,
-                                             n_epochs=300,
-                                             batch_size=32,
-                                             dropout_rate=0.2,
-                                             learning_rate=0.001,
-                                             condition_key="condition",
-                                             c_out=c_out,
-                                             c_in=c_in)
+    # c_in = ['CD8T', 'NK', 'B', 'Dendritic', 'CD14+Mono']
+    # c_out = ['CD4T', 'FCGR3A+Mono']
+    # test_train_whole_data_some_celltypes_out(data_name="pbmc",
+    #                                          z_dim=100,
+    #                                          alpha=0.00005,
+    #                                          n_epochs=300,
+    #                                          batch_size=32,
+    #                                          dropout_rate=0.2,
+    #                                          learning_rate=0.001,
+    #                                          condition_key="condition",
+    #                                          c_out=c_out,
+    #                                          c_in=c_in)
     # train(data_name="study",
     #       z_dim=100,
     #       alpha=0.00005,
@@ -578,3 +584,5 @@ if __name__ == '__main__':
     #                 print(data_name, n_genes, y_measure)
     #                 plot_boxplot(data_name=data_name, n_genes=n_genes, restore=False, score_type=score_type,
     #                              y_measure=y_measure)
+    stacked_violin_plot(data_name="pca")
+

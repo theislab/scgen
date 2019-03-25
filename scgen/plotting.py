@@ -1,9 +1,11 @@
 import numpy
+import scanpy as sc
 from matplotlib import pyplot
 from scipy import stats, sparse
 
 
-def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf", gene_list=None, show=False,
+def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf", gene_list=None, top_100_genes=None,
+                  show=False,
                   legend=True, title=None):
     """
         Plots mean matching figure for a set of specific genes.
@@ -41,11 +43,20 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
         network.sess.close()
         ```
 
-        """
+    """
     if sparse.issparse(adata.X):
         adata.X = adata.X.A
+    sc.tl.rank_genes_groups(adata, groupby=condition_key, n_genes=100, method="wilcoxon")
+    diff_genes = top_100_genes
     stim = adata[adata.obs[condition_key] == axis_keys["y"]]
     ctrl = adata[adata.obs[condition_key] == axis_keys["x"]]
+    if diff_genes is not None:
+        adata_diff = adata[:, diff_genes.tolist()]
+        stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
+        ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
+        x_diff = numpy.average(ctrl_diff.X, axis=0)
+        y_diff = numpy.average(stim_diff.X, axis=0)
+        m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(x_diff, y_diff)
     if "y1" in axis_keys.keys():
         real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
     x = numpy.average(ctrl.X, axis=0)
@@ -63,24 +74,26 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
             j = adata.var_names.tolist().index(i)
             x_bar = x[j]
             y_bar = y[j]
-            pyplot.text(x_bar, y_bar, i, fontsize=11, color="grey")
+            pyplot.text(x_bar, y_bar, i, fontsize=11, color="black")
+            pyplot.plot(x_bar, y_bar, 'o', color="red", markersize=5)
             if "y1" in axis_keys.keys():
                 y1_bar = y1[j]
-                pyplot.text(x_bar, y1_bar, i, fontsize=11, color="grey")
+                pyplot.text(x_bar, y1_bar, i, fontsize=11, color="black")
     if legend:
         pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     if title is None:
         pyplot.title(f"", fontsize=12)
     else:
         pyplot.title(title, fontsize=12)
-    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2$=' + f"{r_value ** 2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2_{all genes}$=' + f"{r_value ** 2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y) - .95 * max(y), r'$R^2_{Top 100 DEGs}$=' + f"{r_value_diff ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
     pyplot.close()
 
 
-def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", gene_list=None, show=False,
+def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", gene_list=None, top_100_genes=None, show=False,
                  legend=True, title=None):
     """
         Plots variance matching figure for a set of specific genes.
@@ -121,8 +134,17 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
         """
     if sparse.issparse(adata.X):
         adata.X = adata.X.A
+    sc.tl.rank_genes_groups(adata, groupby=condition_key, n_genes=100, method="wilcoxon")
+    diff_genes = top_100_genes
     stim = adata[adata.obs[condition_key] == axis_keys["y"]]
     ctrl = adata[adata.obs[condition_key] == axis_keys["x"]]
+    if diff_genes is not None:
+        adata_diff = adata[:, diff_genes.tolist()]
+        stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
+        ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
+        x_diff = numpy.average(ctrl_diff.X, axis=0)
+        y_diff = numpy.average(stim_diff.X, axis=0)
+        m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(x_diff, y_diff)
     if "y1" in axis_keys.keys():
         real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
     x = numpy.var(ctrl.X, axis=0)
@@ -140,17 +162,19 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
             j = adata.var_names.tolist().index(i)
             x_bar = x[j]
             y_bar = y[j]
-            pyplot.text(x_bar, y_bar, i, fontsize=11, color="grey")
+            pyplot.text(x_bar, y_bar, i, fontsize=11, color="black")
+            pyplot.plot(x_bar, y_bar, 'o', color="red", markersize=5)
             if "y1" in axis_keys.keys():
                 y1_bar = y1[j]
-                pyplot.text(x_bar, y1_bar, '*', color="blue", alpha=.5)
+                pyplot.text(x_bar, y1_bar, '*', color="black", alpha=.5)
     if legend:
         pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     if title is None:
         pyplot.title(f"", fontsize=12)
     else:
         pyplot.title(title, fontsize=12)
-    pyplot.text(max(x) - .2 * max(x), max(y) - .8 * max(y), r'$R^2$=' + f"{r_value ** 2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2_{all genes}$=' + f"{r_value ** 2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y) - .95 * max(y), r'$R^2_{Top 100 DEGs}$=' + f"{r_value_diff ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
