@@ -514,18 +514,18 @@ def test_train_whole_data_some_celltypes_out(data_name="study",
 
 
 if __name__ == '__main__':
-    c_in = ['NK', 'B', 'CD14+Mono']
-    c_out = ['CD4T', 'FCGR3A+Mono', 'CD8T', 'Dendritic']
-    test_train_whole_data_some_celltypes_out(data_name="pbmc",
-                                             z_dim=100,
-                                             alpha=0.00005,
-                                             n_epochs=300,
-                                             batch_size=32,
-                                             dropout_rate=0.2,
-                                             learning_rate=0.001,
-                                             condition_key="condition",
-                                             c_out=c_out,
-                                             c_in=c_in)
+    # c_in = ['NK', 'B', 'CD14+Mono']
+    # c_out = ['CD4T', 'FCGR3A+Mono', 'CD8T', 'Dendritic']
+    # test_train_whole_data_some_celltypes_out(data_name="pbmc",
+    #                                          z_dim=100,
+    #                                          alpha=0.00005,
+    #                                          n_epochs=300,
+    #                                          batch_size=32,
+    #                                          dropout_rate=0.2,
+    #                                          learning_rate=0.001,
+    #                                          condition_key="condition",
+    #                                          c_out=c_out,
+    #                                          c_in=c_in)
     # c_in = ['CD14+Mono']
     # c_out = ['CD4T', 'FCGR3A+Mono', 'CD8T', 'NK', 'B', 'Dendritic']
     # test_train_whole_data_some_celltypes_out(data_name="pbmc",

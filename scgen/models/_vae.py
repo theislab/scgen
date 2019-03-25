@@ -429,10 +429,11 @@ class VAEArith:
                     x_mb = train_data[lower:upper, :].X.A
                 else:
                     x_mb = train_data[lower:upper, :].X
-                _, current_loss_train = self.sess.run([self.solver, self.vae_loss],
-                                                      feed_dict={self.x: x_mb, self.time_step: current_step,
-                                                                 self.size: len(x_mb), self.is_training: True})
-                train_loss += current_loss_train
+                if upper - lower > 1:
+                    _, current_loss_train = self.sess.run([self.solver, self.vae_loss],
+                                                          feed_dict={self.x: x_mb, self.time_step: current_step,
+                                                                     self.size: len(x_mb), self.is_training: True})
+                    train_loss += current_loss_train
             if use_validation:
                 valid_loss = 0
                 for lower in range(0, valid_data.shape[0], batch_size):
