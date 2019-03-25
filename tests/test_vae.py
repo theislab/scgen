@@ -519,6 +519,35 @@ def test_train_whole_data_some_celltypes_out(data_name="study",
     os.chdir("../../../../")
 
 
+def train_cross_study(data_name="study",
+                      z_dim=100,
+                      alpha=0.00005,
+                      n_epochs=300,
+                      batch_size=32,
+                      dropout_rate=0.2,
+                      learning_rate=0.001,
+                      condition_key="condition"):
+    stim_key = "stimulated"
+    ctrl_key = "control"
+    cell_type_key = "cell_type"
+    train = sc.read("../data/kang_cross_train.h5ad")
+
+    os.makedirs(f"./vae_results/{data_name}/all/", exist_ok=True)
+    os.chdir(f"./vae_results/{data_name}/all/")
+    net_train_data = train
+    network = scgen.VAEArith(x_dimension=net_train_data.X.shape[1],
+                             z_dimension=z_dim,
+                             alpha=alpha,
+                             dropout_rate=dropout_rate,
+                             learning_rate=learning_rate)
+
+    # network.restore_model()
+    network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
+    print(f"network_{data_name} has been trained!")
+
+    os.chdir("../../../")
+
+
 if __name__ == '__main__':
     # c_in = ['NK', 'B', 'CD14+Mono']
     # c_out = ['CD4T', 'FCGR3A+Mono', 'CD8T', 'Dendritic']
@@ -584,5 +613,12 @@ if __name__ == '__main__':
     #                 print(data_name, n_genes, y_measure)
     #                 plot_boxplot(data_name=data_name, n_genes=n_genes, restore=False, score_type=score_type,
     #                              y_measure=y_measure)
-    stacked_violin_plot(data_name="pca")
-
+    # stacked_violin_plot(data_name="pca")
+    test_train_whole_data_one_celltype_out(data_name="study",
+                                           z_dim=100,
+                                           alpha=0.00005,
+                                           n_epochs=300,
+                                           batch_size=32,
+                                           dropout_rate=0.2,
+                                           learning_rate=0.001,
+                                           condition_key="condition")

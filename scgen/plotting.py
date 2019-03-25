@@ -64,8 +64,8 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
     m, b, r_value, p_value, std_err = stats.linregress(x, y)
     _p1 = pyplot.scatter(x, y, marker=".", label=f"{axis_keys['x']}-{axis_keys['y']}")
     pyplot.plot(x, m * x + b, "-", color="green")
-    pyplot.xlabel(axis_keys["x"], fontsize=12)
-    pyplot.ylabel(axis_keys["y"], fontsize=12)
+    # pyplot.xlabel(axis_keys["x"], fontsize=12)
+    # pyplot.ylabel(axis_keys["y"], fontsize=12)
     if "y1" in axis_keys.keys():
         y1 = numpy.average(real_stim.X, axis=0)
         _p2 = pyplot.scatter(x, y1, marker="*", c="red", alpha=.5, label=f"{axis_keys['x']}-{axis_keys['y1']}")
@@ -152,8 +152,8 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
     m, b, r_value, p_value, std_err = stats.linregress(x, y)
     _p1 = pyplot.scatter(x, y, marker=".", label=f"{axis_keys['x']}-{axis_keys['y']}")
     pyplot.plot(x, m * x + b, "-", color="green")
-    pyplot.xlabel(axis_keys["x"], fontsize=12)
-    pyplot.ylabel(axis_keys["y"], fontsize=12)
+    # pyplot.xlabel(axis_keys["x"], fontsize=12)
+    # pyplot.ylabel(axis_keys["y"], fontsize=12)
     if "y1" in axis_keys.keys():
         y1 = numpy.var(real_stim.X, axis=0)
         _p2 = pyplot.scatter(x, y1, marker="*", c="grey", alpha=.5, label=f"{axis_keys['x']}-{axis_keys['y1']}")

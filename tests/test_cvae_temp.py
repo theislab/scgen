@@ -91,6 +91,9 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         train = sc.read("../data/train_all_lps6.h5ad")
     all_data = anndata.AnnData()
     for idx, cell_type in enumerate(train.obs[cell_type_key].unique().tolist()):
+        if cell_type != "CD4T":
+            continue
+        idx = 0
         print(f"Reconstructing for {cell_type}")
         os.chdir(f"./cvae_results/{data_name}/{cell_type}")
         network = scgen.CVAE(x_dimension=train.X.shape[1],
@@ -102,14 +105,15 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
         network.restore_model()
 
         cell_type_data = train[train.obs[cell_type_key] == cell_type]
-        fake_labels = np.ones(shape=(cell_type_data.shape[0], 1))
         cell_type_ctrl_data = train[((train.obs[cell_type_key] == cell_type) & (train.obs[condition_key] == ctrl_key))]
-        pred = network.predict(data=cell_type_data,
-                                      labels=fake_labels)
+        fake_labels = np.ones(shape=(cell_type_ctrl_data.shape[0], 1))
+        pred = network.predict(data=cell_type_ctrl_data,
+                               labels=fake_labels)
 
         pred_adata = anndata.AnnData(pred, obs={condition_key: [f"{cell_type}_pred_stim"] * len(pred),
                                                 cell_type_key: [cell_type] * len(pred)},
                                      var={"var_names": cell_type_data.var_names})
+        print(pred_adata)
         ctrl_adata = anndata.AnnData(cell_type_ctrl_data.X,
                                      obs={condition_key: [f"{cell_type}_ctrl"] * len(cell_type_ctrl_data),
                                           cell_type_key: [cell_type] * len(cell_type_ctrl_data)},
@@ -129,7 +133,7 @@ def reconstruct_whole_data(data_name="pbmc", condition_key="condition"):
 
         os.chdir("../../../")
         print(f"Finish Reconstructing for {cell_type}")
-    all_data.write_h5ad(f"./cvae_results/{data_name}/{data_name}_reconstructed.h5ad")
+    all_data.write_h5ad(f"./cvae_results/{data_name}/{data_name}_CD4T_reconstructed.h5ad")
 
 
 def score(adata, n_deg=10, n_genes=1000, condition_key="condition", cell_type_key="cell_type",
@@ -409,14 +413,14 @@ def plot_reg_mean_with_genes(data_name="pbmc", gene_list=None):
 
 
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="pbmc",
-                                           z_dim=100,
-                                           alpha=1.0,
-                                           n_epochs=150,
-                                           batch_size=32,
-                                           dropout_rate=0.2,
-                                           learning_rate=0.001,
-                                           condition_key="condition")
+    # test_train_whole_data_one_celltype_out(data_name="pbmc",
+    #                                        z_dim=100,
+    #                                        alpha=1.0,
+    #                                        n_epochs=150,
+    #                                        batch_size=32,
+    #                                        dropout_rate=0.2,
+    #                                        learning_rate=0.001,
+    #                                        condition_key="condition")
     reconstruct_whole_data(data_name="pbmc", condition_key="condition")
     # reconstruct_whole_data(data_name="hpoly", condition_key="condition")
     # reconstruct_whole_data(data_name="salmonella", condition_key="condition")
