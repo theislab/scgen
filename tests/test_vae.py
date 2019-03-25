@@ -301,11 +301,14 @@ def plot_boxplot(data_name="pbmc", n_genes=100, restore=True, score_type="median
                 start = n_cell_types * n_genes * bin_idx
                 all_scores[start + n_genes * cell_type_idx:start + n_genes * (cell_type_idx + 1),
                 0] = y_measures_reshaped
-        np.savetxt(X=all_scores.T, fname=f"./boxplots/Top_{10 * n_genes}/{y_measure}/y_measures_{score_type}_{n_genes}_({y_measure}).txt",
+        np.savetxt(X=all_scores.T,
+                   fname=f"./boxplots/Top_{10 * n_genes}/{y_measure}/y_measures_{score_type}_{n_genes}_({y_measure}).txt",
                    delimiter=",")
         all_scores = np.reshape(all_scores, (-1,))
     else:
-        all_scores = np.loadtxt(fname=f"./boxplots/Top_{10 * n_genes}/{y_measure}/y_measures_{score_type}_{n_genes}_({y_measure}).txt", delimiter=",")
+        all_scores = np.loadtxt(
+            fname=f"./boxplots/Top_{10 * n_genes}/{y_measure}/y_measures_{score_type}_{n_genes}_({y_measure}).txt",
+            delimiter=",")
     import seaborn as sns
     conditions = [f"Bin-{i // (n_cell_types * n_genes) + 1}" for i in range(n_cell_types * 10 * n_genes)]
     all_scores_df = pd.DataFrame({"scores": all_scores})
@@ -416,16 +419,82 @@ def plot_reg_mean_with_genes(data_name="pbmc", gene_list=None):
     exit()
 
 
+def train(data_name="study",
+          z_dim=100,
+          alpha=0.00005,
+          n_epochs=300,
+          batch_size=32,
+          dropout_rate=0.2,
+          learning_rate=0.001,
+          condition_key="condition"):
+    if data_name == "pbmc":
+        cell_type_to_monitor = "CD4T"
+        stim_key = "stimulated"
+        ctrl_key = "control"
+        cell_type_key = "cell_type"
+        train = sc.read("../data/train.h5ad")
+    elif data_name == "hpoly":
+        cell_type_to_monitor = None
+        stim_key = "Hpoly.Day10"
+        ctrl_key = "Control"
+        cell_type_key = "cell_label"
+        train = sc.read("../data/ch10_train_7000.h5ad")
+    elif data_name == "salmonella":
+        cell_type_to_monitor = None
+        stim_key = "Salmonella"
+        ctrl_key = "Control"
+        cell_type_key = "cell_label"
+        train = sc.read("../data/chsal_train_7000.h5ad")
+    elif data_name == "species":
+        cell_type_to_monitor = "rat"
+        stim_key = "LPS6"
+        ctrl_key = "unst"
+        cell_type_key = "species"
+        train = sc.read("../data/train_all_lps6.h5ad")
+    elif data_name == "study":
+        stim_key = "stimulated"
+        ctrl_key = "control"
+        cell_type_key = "cell_type"
+        train = sc.read("../data/kang_cross_train.h5ad")
+
+    os.makedirs(f"./vae_results/{data_name}/whole/", exist_ok=True)
+    os.chdir(f"./vae_results/{data_name}/whole/")
+    net_train_data = train
+    network = scgen.VAEArith(x_dimension=net_train_data.X.shape[1],
+                             z_dimension=z_dim,
+                             alpha=alpha,
+                             dropout_rate=dropout_rate,
+                             learning_rate=learning_rate)
+
+    # network.restore_model()
+    network.train(net_train_data, n_epochs=n_epochs, batch_size=batch_size)
+    print(f"network has been trained!")
+
+    # scgen.visualize_trained_network_results(network, train, cell_type,
+    #                                         conditions={"ctrl": ctrl_key, "stim": stim_key},
+    #                                         condition_key="condition", cell_type_key=cell_type_key,
+    #                                         path_to_save="./figures/tensorflow/")
+    os.chdir("../../../")
+
+
 if __name__ == '__main__':
-    test_train_whole_data_one_celltype_out(data_name="study",
-                                           z_dim=100,
-                                           alpha=0.00005,
-                                           n_epochs=300,
-                                           batch_size=32,
-                                           dropout_rate=0.2,
-                                           learning_rate=0.001,
-                                           condition_key="condition")
-    reconstruct_whole_data(data_name="study", condition_key="condition")
+    train(data_name="study",
+          z_dim=100,
+          alpha=0.00005,
+          n_epochs=300,
+          batch_size=32,
+          dropout_rate=0.2,
+          learning_rate=0.001,
+          condition_key="condition")
+    # test_train_whole_data_one_celltype_out(data_name="study",
+    #                                        z_dim=100,
+    #                                        alpha=0.00005,
+    #                                        n_epochs=300,
+    #                                        batch_size=32,
+    #                                        dropout_rate=0.2,
+    #                                        learning_rate=0.001,
+    #                                        condition_key="condition")
+    # reconstruct_whole_data(data_name="study", condition_key="condition")
     # reconstruct_whole_data(data_name="hpoly", condition_key="condition")
     # reconstruct_whole_data(data_name="salmonella", condition_key="condition")
     # for data_name in ["pbmc", "hpoly", "salmonella"]:
