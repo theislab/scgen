@@ -2,7 +2,10 @@ import numpy
 import scanpy as sc
 from matplotlib import pyplot
 from scipy import stats, sparse
-
+from adjustText import adjust_text
+import matplotlib
+matplotlib.rc('ytick', labelsize=14)
+matplotlib.rc('xtick', labelsize=14)
 
 def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf", gene_list=None, top_100_genes=None,
                   show=False,
@@ -51,7 +54,9 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
     stim = adata[adata.obs[condition_key] == axis_keys["y"]]
     ctrl = adata[adata.obs[condition_key] == axis_keys["x"]]
     if diff_genes is not None:
-        adata_diff = adata[:, diff_genes.tolist()]
+        if hasattr(diff_genes, "tolist"):
+            diff_genes = diff_genes.tolist()
+        adata_diff = adata[:, diff_genes]
         stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
         ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
         x_diff = numpy.average(ctrl_diff.X, axis=0)
@@ -70,23 +75,26 @@ def reg_mean_plot(adata, condition_key, axis_keys, path_to_save="./reg_mean.pdf"
         y1 = numpy.average(real_stim.X, axis=0)
         _p2 = pyplot.scatter(x, y1, marker="*", c="red", alpha=.5, label=f"{axis_keys['x']}-{axis_keys['y1']}")
     if gene_list is not None:
+        texts = []
         for i in gene_list:
             j = adata.var_names.tolist().index(i)
             x_bar = x[j]
             y_bar = y[j]
-            pyplot.text(x_bar, y_bar, i, fontsize=11, color="black")
+            texts.append(pyplot.text(x_bar, y_bar , i, fontsize=11, color ="black"))
             pyplot.plot(x_bar, y_bar, 'o', color="red", markersize=5)
             if "y1" in axis_keys.keys():
                 y1_bar = y1[j]
                 pyplot.text(x_bar, y1_bar, i, fontsize=11, color="black")
+    adjust_text(texts, x=x, y=y, arrowprops=dict(arrowstyle="->", color='grey', lw=0.5), force_points=(0.0, 0.0))
     if legend:
         pyplot.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     if title is None:
         pyplot.title(f"", fontsize=12)
     else:
         pyplot.title(title, fontsize=12)
-    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2_{all genes}$=' + f"{r_value ** 2:.2f}")
-    pyplot.text(max(x) - max(x) * .25, max(y) - .95 * max(y), r'$R^2_{Top 100 DEGs}$=' + f"{r_value_diff ** 2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2_{all\ genes}$=' + f"{r_value ** 2:.2f}")
+    if diff_genes is not None:
+        pyplot.text(max(x) - max(x) * .25, max(y) - .95 * max(y), r'$R^2_{Top\ 100\ DEGs}$=' + f"{r_value_diff ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
@@ -139,7 +147,9 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
     stim = adata[adata.obs[condition_key] == axis_keys["y"]]
     ctrl = adata[adata.obs[condition_key] == axis_keys["x"]]
     if diff_genes is not None:
-        adata_diff = adata[:, diff_genes.tolist()]
+        if hasattr(diff_genes, "tolist"):
+            diff_genes = diff_genes.tolist()
+        adata_diff = adata[:, diff_genes]
         stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
         ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
         x_diff = numpy.average(ctrl_diff.X, axis=0)
@@ -173,8 +183,9 @@ def reg_var_plot(adata, condition_key, axis_keys, path_to_save="./reg_var.pdf", 
         pyplot.title(f"", fontsize=12)
     else:
         pyplot.title(title, fontsize=12)
-    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2_{all genes}$=' + f"{r_value ** 2:.2f}")
-    pyplot.text(max(x) - max(x) * .25, max(y) - .95 * max(y), r'$R^2_{Top 100 DEGs}$=' + f"{r_value_diff ** 2:.2f}")
+    pyplot.text(max(x) - max(x) * .25, max(y) - .8 * max(y), r'$R^2_{all\ genes}$=' + f"{r_value ** 2:.2f}")
+    if diff_genes is not None:
+        pyplot.text(max(x) - max(x) * .25, max(y) - .95 * max(y), r'$R^2_{Top\ 100\ DEGs}$=' + f"{r_value_diff ** 2:.2f}")
     pyplot.savefig(f"{path_to_save}", bbox_inches='tight', dpi=100)
     if show:
         pyplot.show()
@@ -234,7 +245,7 @@ def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_
         dot_sal[ind] = numpy.dot(delta, vec)
     pyplot.hist(dot_cd, label=conditions["ctrl"], bins=50, )
     pyplot.hist(dot_sal, label=conditions["stim"], bins=50)
-    pyplot.legend(loc=1, prop={'size': 7})
+    # pyplot.legend(loc=1, prop={'size': 7})
     pyplot.axvline(0, color='k', linestyle='dashed', linewidth=1)
     pyplot.title("  ", fontsize=10)
     pyplot.xlabel("  ", fontsize=10)

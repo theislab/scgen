@@ -250,12 +250,12 @@ class VAEArith:
         if sparse.issparse(source_adata.X):
             source_average = source_adata.X.A.mean(axis=0).reshape((1, source_adata.shape[1]))
         else:
-            source_average = source_adata.X.A.mean(axis=0).reshape((1, source_adata.shape[1]))
+            source_average = source_adata.X.mean(axis=0).reshape((1, source_adata.shape[1]))
 
         if sparse.issparse(dest_adata.X):
             dest_average = dest_adata.X.A.mean(axis=0).reshape((1, dest_adata.shape[1]))
         else:
-            dest_average = dest_adata.X.A.mean(axis=0).reshape((1, dest_adata.shape[1]))
+            dest_average = dest_adata.X.mean(axis=0).reshape((1, dest_adata.shape[1]))
         start = self.to_latent(source_average)
         end = self.to_latent(dest_average)
         vectors = numpy.zeros((n_steps, start.shape[1]))
@@ -338,6 +338,23 @@ class VAEArith:
             latent_cd = self.to_latent(ctrl_pred.X.A)
         else:
             latent_cd = self.to_latent(ctrl_pred.X)
+        stim_pred = delta + latent_cd
+        predicted_cells = self.reconstruct(stim_pred, use_data=True)
+        return predicted_cells, delta
+
+    def predict_cross(self, train, data, conditions):
+        cd_x = train.copy()[train.obs["condition"] == conditions["ctrl"], :]
+        cd_x = balancer(cd_x)
+        stim_x = train.copy()[train.obs["condition"] == conditions["stim"], :]
+        stim_x = balancer(stim_x)
+        cd_y = data.copy()
+        eq = min(cd_x.X.shape[0], stim_x.X.shape[0])
+        cd_ind = numpy.random.choice(range(cd_x.shape[0]), size=eq, replace=False)
+        stim_ind = numpy.random.choice(range(stim_x.shape[0]), size=eq, replace=False)
+        lat_cd = self._avg_vector(cd_x.X[cd_ind, :])
+        lat_stim = self._avg_vector(stim_x.X[stim_ind, :])
+        delta = lat_stim - lat_cd
+        latent_cd = self.to_latent(cd_y.X)
         stim_pred = delta + latent_cd
         predicted_cells = self.reconstruct(stim_pred, use_data=True)
         return predicted_cells, delta
