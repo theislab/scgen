@@ -39,7 +39,7 @@ class CVAE:
         self.lr = kwargs.get("learning_rate", 0.001)
         self.alpha = kwargs.get("alpha", 0.01)
         self.dr_rate = kwargs.get("dropout_rate", 0.2)
-        self.model_to_use = kwargs.get("model_path", "./models/scgen")
+        self.model_to_use = kwargs.get("model_path", "./models/cvae")
 
         self.is_training = tensorflow.placeholder(tensorflow.bool, name='training_flag')
         self.global_step = tensorflow.Variable(0, name='global_step', trainable=False, dtype=tensorflow.int32)
@@ -432,4 +432,4 @@ class CVAE:
                     break
         os.makedirs(self.model_to_use, exist_ok=True)
         save_path = self.saver.save(self.sess, self.model_to_use)
-        log.info(f"Model saved in file: {save_path}. Training finished")
+        print(f"Model saved in file: {save_path}. Training finished")
