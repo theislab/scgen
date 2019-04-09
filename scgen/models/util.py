@@ -612,4 +612,3 @@ def visualize_trained_network_results(network, train, cell_type,
                      show=False)
 
         plt.close("all")
-sc.w
