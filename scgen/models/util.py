@@ -3,6 +3,7 @@ from random import shuffle
 
 import anndata
 import numpy as np
+import pandas as pd
 import scanpy as sc
 from matplotlib import pyplot as plt
 from scipy import sparse
@@ -312,7 +313,7 @@ def batch_removal(network, adata):
         if "concat_batch" in all_shared_ann.obs.columns:
             del all_corrected_data.obs["concat_batch"]
         corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True), )
-        corrected.obs = pd.concat(all_shared_ann.obs, all_not_shared_ann.obs)
+        corrected.obs = pd.concat([all_shared_ann.obs, all_not_shared_ann.obs])
         #corrected.obs["cell_type"] = all_shared_ann.obs["cell_type"].tolist() + all_not_shared_ann.obs["cell_type"].tolist()
         #corrected.obs["batch"] = all_shared_ann.obs["batch"].tolist() + all_not_shared_ann.obs["batch"].tolist()
         corrected.var_names = adata.var_names.tolist()
