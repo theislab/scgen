@@ -38,7 +38,7 @@ class VAEArith:
         self.learning_rate = kwargs.get("learning_rate", 0.001)
         self.dropout_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./models/scgen")
-        self.alpha = kwargs.get("alpha", 0.001)
+        self.alpha = kwargs.get("alpha", 0.00005)
         self.is_training = tf.placeholder(tf.bool, name='training_flag')
         self.global_step = tf.Variable(0, name='global_step', trainable=False, dtype=tf.int32)
         self.x = tf.placeholder(tf.float32, shape=[None, self.x_dim], name="data")
