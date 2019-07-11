@@ -52,7 +52,7 @@ class VAEArithKeras:
         self.learning_rate = kwargs.get("learning_rate", 0.001)
         self.dropout_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./models/")
-        self.alpha = kwargs.get("alpha", 0.1)
+        self.alpha = kwargs.get("alpha", 0.00005)
         self.x = Input(shape=(x_dimension,), name="input")
         self.z = Input(shape=(z_dimension,), name="latent")
         self.init_w = keras.initializers.glorot_normal()
