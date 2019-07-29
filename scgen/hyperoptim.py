@@ -45,14 +45,6 @@ if __name__ == '__main__':
     print("Best performing model chosen hyper-parameters:")
     print(best_run)
 
-"""
-    best run for MMD-CVAE:
-    alpha = 0.01, 
-    beta = 1,
-    kernel = rbf,
-    n_epochs = 1500,
-    z_dim = 100
-"""
 
 """
     best run for VAE Arithmetic:
