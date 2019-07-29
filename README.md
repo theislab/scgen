@@ -54,7 +54,7 @@ pip install scgen
 ```
 or install the development version via pip: 
 ```bash
-pip install git+https://github.com/theislab/scGen/scgen.git
+pip install git+https://github.com/theislab/scgen.git
 ```
 
 or you can first install flit and clone this repository:
