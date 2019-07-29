@@ -477,7 +477,9 @@ class VAEArith:
                 if patience_cnt > patience:
                     save_path = self.saver.save(self.sess, self.model_to_use)
                     break
-            print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}")
+                print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}\tValid Loss: {valid_loss / (valid_data.shape[0] // batch_size)}")
+            else:
+                print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}")
         if save:
             os.makedirs(self.model_to_use, exist_ok=True)
             save_path = self.saver.save(self.sess, self.model_to_use)
