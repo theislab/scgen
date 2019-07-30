@@ -76,6 +76,13 @@ On Windows machines you may need to download a C++ compiler if you wish to build
 
 * For batch removal check our [example](https://nbviewer.jupyter.org/github/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
 
-
-###### Reproducing paper results:
+## Reproducing paper results:
 In order to reproduce paper results visit [here](https://github.com/M0hammadL/scGen_reproducibility).
+
+## References
+
+Lotfollahi, Mohammad and Wolf, F. Alexander and Theis, Fabian J.
+**"scGen predicts single-cell perturbation responses."**
+Nature Methods, 2019. `[pdf]`__
+
+.. __: https://rdcu.be/bMlbD
