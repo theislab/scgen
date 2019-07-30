@@ -382,7 +382,7 @@ class VAEArith:
         self.saver.restore(self.sess, self.model_to_use)
 
     def train(self, train_data, use_validation=False, valid_data=None, n_epochs=25, batch_size=32, early_stop_limit=20,
-              threshold=0.0025, initial_run=True, shuffle=True, save=True):
+              threshold=0.0025, initial_run=True, shuffle=True, save=True, verbose=False):
         """
             Trains the network `n_epochs` times with given `train_data`
             and validates the model using validation_data if it was given
@@ -477,9 +477,11 @@ class VAEArith:
                 if patience_cnt > patience:
                     save_path = self.saver.save(self.sess, self.model_to_use)
                     break
-                print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}    Valid Loss: {valid_loss / (valid_data.shape[0] // batch_size)}")
+                if verbose:
+                    print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}    Valid Loss: {valid_loss / (valid_data.shape[0] // batch_size)}")
             else:
-                print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}")
+                if verbose:
+                    print(f"Epoch {it}: Train Loss: {train_loss / (train_data.shape[0] // batch_size)}")
         if save:
             os.makedirs(self.model_to_use, exist_ok=True)
             save_path = self.saver.save(self.sess, self.model_to_use)
