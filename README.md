@@ -6,7 +6,7 @@
 
 ## Introduction
 A tensorflow implementation of scGen. scGen is a generative model to predict single-cell perturbation response across cell types, studies and species
-  [(bioRxiv, 2018)](https://www.biorxiv.org/content/10.1101/478503v2) .
+  [(Nature Methods, 2019)](https://www.nature.com/articles/s41592-019-0494-8) .
 <div float="left">
   <img src="https://www.tensorflow.org/images/tf_logo_transp.png" height="80" >
   <img src="https://s3.amazonaws.com/keras.io/img/keras-logo-2018-large-1200.png" height="80">
@@ -76,6 +76,11 @@ On Windows machines you may need to download a C++ compiler if you wish to build
 
 * For batch removal check our [example](https://nbviewer.jupyter.org/github/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
 
-
-###### Reproducing paper results:
+## Reproducing paper results:
 In order to reproduce paper results visit [here](https://github.com/M0hammadL/scGen_reproducibility).
+
+## References
+
+Lotfollahi, Mohammad and Wolf, F. Alexander and Theis, Fabian J.
+**"scGen predicts single-cell perturbation responses."**
+Nature Methods, 2019. [pdf](https://rdcu.be/bMlbD)
