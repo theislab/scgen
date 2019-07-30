@@ -120,6 +120,7 @@ def reg_mean_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_m
     if show:
         pyplot.show()
     pyplot.close()
+    return r_value ** 2, r_value_diff ** 2
 
 
 def reg_var_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_var.pdf", gene_list=None, top_100_genes=None, show=False,
@@ -226,6 +227,7 @@ def reg_var_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_va
     if show:
         pyplot.show()
     pyplot.close()
+    return r_value**2, r_value_diff**2
 
 
 def binary_classifier(scg_object, adata, delta, condition_key, conditions, path_to_save, fontsize=14):
