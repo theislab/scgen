@@ -14,7 +14,7 @@ matplotlib.rc('ytick', labelsize=14)
 matplotlib.rc('xtick', labelsize=14)
 
 def reg_mean_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_mean.pdf", gene_list=None, top_100_genes=None,
-                  show=False,
+                  show=False, verbose=False,
                   legend=True, title=None,
                   x_coeff=0.30, y_coeff=0.8, fontsize=14, **kwargs):
     """
@@ -71,13 +71,15 @@ def reg_mean_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_m
         x_diff = numpy.average(ctrl_diff.X, axis=0)
         y_diff = numpy.average(stim_diff.X, axis=0)
         m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(x_diff, y_diff)
-        print('top_100 DEGs mean: ', r_value_diff ** 2)
+        if verbose:
+            print('top_100 DEGs mean: ', r_value_diff ** 2)
     if "y1" in axis_keys.keys():
         real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
     x = numpy.average(ctrl.X, axis=0)
     y = numpy.average(stim.X, axis=0)
     m, b, r_value, p_value, std_err = stats.linregress(x, y)
-    print('All genes mean: ', r_value ** 2)
+    if verbose:
+        print('All genes mean: ', r_value ** 2)
     df = pd.DataFrame({axis_keys["x"]: x, axis_keys["y"]: y})
     ax = sns.regplot(x=axis_keys["x"], y=axis_keys["y"], data=df)
     ax.tick_params(labelsize=fontsize)
@@ -121,7 +123,7 @@ def reg_mean_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_m
 
 
 def reg_var_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_var.pdf", gene_list=None, top_100_genes=None, show=False,
-                 legend=True, title=None,
+                 legend=True, title=None, verbose=False,
                  x_coeff=0.30, y_coeff=0.8, fontsize=14, **kwargs):
     """
         Plots variance matching figure for a set of specific genes.
@@ -178,13 +180,15 @@ def reg_var_plot(adata, condition_key, axis_keys, labels, path_to_save="./reg_va
         x_diff = numpy.var(ctrl_diff.X, axis=0)
         y_diff = numpy.var(stim_diff.X, axis=0)
         m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(x_diff, y_diff)
-        print('Top 100 DEGs var: ', r_value_diff ** 2)
+        if verbose:
+            print('Top 100 DEGs var: ', r_value_diff ** 2)
     if "y1" in axis_keys.keys():
         real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
     x = numpy.var(ctrl.X, axis=0)
     y = numpy.var(stim.X, axis=0)
     m, b, r_value, p_value, std_err = stats.linregress(x, y)
-    print('All genes var: ', r_value ** 2)
+    if verbose:
+        print('All genes var: ', r_value ** 2)
     df = pd.DataFrame({axis_keys["x"]: x, axis_keys["y"]: y})
     ax = sns.regplot(x=axis_keys["x"], y=axis_keys["y"], data=df)
     ax.tick_params(labelsize=fontsize)
