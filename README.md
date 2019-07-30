@@ -83,6 +83,4 @@ In order to reproduce paper results visit [here](https://github.com/M0hammadL/sc
 
 Lotfollahi, Mohammad and Wolf, F. Alexander and Theis, Fabian J.
 **"scGen predicts single-cell perturbation responses."**
-Nature Methods, 2019. `[pdf]`__
-
-.. __: https://rdcu.be/bMlbD
+Nature Methods, 2019. [pdf](https://rdcu.be/bMlbD)
