@@ -15,6 +15,7 @@ requires = [
     "future-fstrings",
     "get_version",
     "anndata",
+    "scanpy",
     "tensorflow",
     "numpy",
     "scipy",
