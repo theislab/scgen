@@ -5,7 +5,7 @@ import keras
 import numpy
 import tensorflow as tf
 from keras import backend as K, Model
-from keras.callbacks import CSVLogger, LambdaCallback
+from keras.callbacks import CSVLogger, LambdaCallback, EarlyStopping
 from keras.layers import Input, Dense, BatchNormalization, LeakyReLU, Dropout, Lambda
 from keras.models import load_model
 from scipy import sparse
@@ -422,8 +422,7 @@ class VAEArithKeras:
         self.decoder_model = load_model(os.path.join(self.model_to_use, 'decoder.h5'), compile=False)
         self._loss_function()
 
-    def train(self, train_data, vis_data,
-              validation_data=None,
+    def train(self, train_data, validation_data=None,
               n_epochs=25,
               batch_size=32,
               early_stop_limit=20,
@@ -491,18 +490,22 @@ class VAEArithKeras:
         if shuffle:
             train_data = shuffle_data(train_data)
 
-        def on_epoch_end(epoch, logs):
-            if epoch % checkpoint == 0:
-                path_to_save = os.path.join(kwargs.get("path_to_save"), f"epoch_{epoch}") + "/"
-                scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
-                                                        kwargs.get("conditions"),
-                                                        kwargs.get("condition_key"), kwargs.get("cell_type_key"),
-                                                        path_to_save,
-                                                        plot_umap=False,
-                                                        plot_reg=True)
+        if sparse.issparse(train_data.X):
+            train_data.X = train_data.X.A
+
+
+        # def on_epoch_end(epoch, logs):
+        #     if epoch % checkpoint == 0:
+        #         path_to_save = os.path.join(kwargs.get("path_to_save"), f"epoch_{epoch}") + "/"
+        #         scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
+        #                                                 kwargs.get("conditions"),
+        #                                                 kwargs.get("condition_key"), kwargs.get("cell_type_key"),
+        #                                                 path_to_save,
+        #                                                 plot_umap=False,
+        #                                                 plot_reg=True)
 
         callbacks = [
-            LambdaCallback(on_epoch_end=on_epoch_end),
+            # LambdaCallback(on_epoch_end=on_epoch_end),
             # EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
             CSVLogger(filename="./csv_logger.log")
         ]
