@@ -7,6 +7,7 @@ import scanpy as sc
 from matplotlib import pyplot as plt
 from scipy import sparse
 from sklearn import preprocessing
+import pandas as pd
 
 import scgen
 

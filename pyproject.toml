@@ -19,6 +19,7 @@ requires = [
     "numpy",
     "scipy",
     "pandas",
+    "keras",
     "matplotlib"]
 
 [tool.flit.metadata.requires-extra]
