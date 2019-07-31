@@ -16,6 +16,7 @@ requires = [
     "get_version",
     "anndata",
     "scanpy",
+    "adjustText",
     "tensorflow",
     "numpy",
     "scipy",
