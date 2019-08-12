@@ -302,6 +302,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         corrected = anndata.AnnData(network.reconstruct(all_shared_ann.X, use_data=True))
         corrected.obs = all_shared_ann.obs.copy(deep=True)
         corrected.var_names = adata.var_names.tolist()
+        corrected.obs_names = adata.obs_names.tolist()
         return corrected
     else:
         all_not_shared_ann = anndata.AnnData.concatenate(*not_shared_ct, batch_key="concat_batch")
@@ -311,6 +312,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True), )
         corrected.obs = pd.concat([all_shared_ann.obs, all_not_shared_ann.obs])
         corrected.var_names = adata.var_names.tolist()
+        corrected.obs_names = adata.obs_names.tolist()
         return corrected
 
 
