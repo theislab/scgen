@@ -235,7 +235,7 @@ def shuffle_data(adata, labels=None):
         return anndata.AnnData(x, obs=adata.obs)
 
 
-def batch_removal(network, adata):
+def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type"):
     """
         Removes batch effect of adata
 
@@ -266,26 +266,24 @@ def batch_removal(network, adata):
         latent_all = network.to_latent(adata.X)
     adata_latent = anndata.AnnData(latent_all)
     adata_latent.obs = adata.obs
-    #adata_latent.obs["cell_type"] = adata.obs["cell_type"].tolist()
-    #adata_latent.obs["batch"] = adata.obs["batch"].tolist()
-    unique_cell_types = np.unique(adata_latent.obs["cell_type"])
+    unique_cell_types = np.unique(adata_latent.obs[cell_label_key])
     shared_ct = []
     not_shared_ct = []
     for cell_type in unique_cell_types:
-        temp_cell = adata_latent[adata_latent.obs["cell_type"] == cell_type]
-        if len(np.unique(temp_cell.obs["batch"])) < 2:
-            cell_type_ann = adata_latent[adata_latent.obs["cell_type"] == cell_type]
+        temp_cell = adata_latent[adata_latent.obs[cell_label_key] == cell_type]
+        if len(np.unique(temp_cell.obs[batch_key])) < 2:
+            cell_type_ann = adata_latent[adata_latent.obs[cell_label_key] == cell_type]
             not_shared_ct.append(cell_type_ann)
             continue
-        temp_cell = adata_latent[adata_latent.obs["cell_type"] == cell_type]
+        temp_cell = adata_latent[adata_latent.obs[cell_label_key] == cell_type]
         batch_list = {}
         batch_ind = {}
         max_batch = 0
         max_batch_ind = ""
-        batches = np.unique(temp_cell.obs["batch"])
+        batches = np.unique(temp_cell.obs[batch_key])
         for i in batches:
-            temp = temp_cell[temp_cell.obs["batch"] == i]
-            temp_ind = temp_cell.obs["batch"] == i
+            temp = temp_cell[temp_cell.obs[batch_key] == i]
+            temp_ind = temp_cell.obs[batch_key] == i
             if max_batch < len(temp):
                 max_batch = len(temp)
                 max_batch_ind = i
@@ -303,8 +301,6 @@ def batch_removal(network, adata):
     if len(not_shared_ct) < 1:
         corrected = anndata.AnnData(network.reconstruct(all_shared_ann.X, use_data=True))
         corrected.obs = all_shared_ann.obs
-        #corrected.obs["cell_type"] = all_shared_ann.obs["cell_type"].tolist()
-        #corrected.obs["batch"] = all_shared_ann.obs["batch"].tolist()
         corrected.var_names = adata.var_names.tolist()
         return corrected
     else:
@@ -314,8 +310,6 @@ def batch_removal(network, adata):
             del all_corrected_data.obs["concat_batch"]
         corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True), )
         corrected.obs = pd.concat(all_shared_ann.obs, all_not_shared_ann.obs)
-        #corrected.obs["cell_type"] = all_shared_ann.obs["cell_type"].tolist() + all_not_shared_ann.obs["cell_type"].tolist()
-        #corrected.obs["batch"] = all_shared_ann.obs["batch"].tolist() + all_not_shared_ann.obs["batch"].tolist()
         corrected.var_names = adata.var_names.tolist()
         return corrected
 
