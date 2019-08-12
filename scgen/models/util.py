@@ -265,7 +265,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
     else:
         latent_all = network.to_latent(adata.X)
     adata_latent = anndata.AnnData(latent_all)
-    adata_latent.obs = adata.obs
+    adata_latent.obs = adata.obs.copy(deep=True)
     unique_cell_types = np.unique(adata_latent.obs[cell_label_key])
     shared_ct = []
     not_shared_ct = []
@@ -300,7 +300,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         del all_shared_ann.obs["concat_batch"]
     if len(not_shared_ct) < 1:
         corrected = anndata.AnnData(network.reconstruct(all_shared_ann.X, use_data=True))
-        corrected.obs = all_shared_ann.obs
+        corrected.obs = all_shared_ann.obs.copy(deep=True)
         corrected.var_names = adata.var_names.tolist()
         return corrected
     else:
@@ -309,7 +309,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         if "concat_batch" in all_shared_ann.obs.columns:
             del all_corrected_data.obs["concat_batch"]
         corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True), )
-        corrected.obs = pd.concat(all_shared_ann.obs, all_not_shared_ann.obs)
+        corrected.obs = pd.concat([all_shared_ann.obs, all_not_shared_ann.obs])
         corrected.var_names = adata.var_names.tolist()
         return corrected
 
