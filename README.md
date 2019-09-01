@@ -74,7 +74,7 @@ On Windows machines you may need to download a C++ compiler if you wish to build
 * For perturbation prediction check this [example](https://nbviewer.jupyter.org/github/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_kang.ipynb)
  for interferon (IFN)-β stimulation from [Kang et al.](https://www.nature.com/articles/nbt.4042).
 
-* For batch removal check our [example](https://nbviewer.jupyter.org/github/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
+* For batch removal check our [example](https://github.com/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
 
 ## Reproducing paper results:
 In order to reproduce paper results visit [here](https://github.com/M0hammadL/scGen_reproducibility).
