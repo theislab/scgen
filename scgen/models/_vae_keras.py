@@ -1,22 +1,21 @@
 import logging
 import os
 
+import anndata
 import keras
 import numpy
-import tensorflow as tf
 from keras import backend as K, Model
-from keras.callbacks import CSVLogger, LambdaCallback, EarlyStopping
+from keras.callbacks import CSVLogger, EarlyStopping
 from keras.layers import Input, Dense, BatchNormalization, LeakyReLU, Dropout, Lambda
 from keras.models import load_model
 from scipy import sparse
 
-import scgen
-from .util import balancer, extractor, shuffle_data
+from reptrvae.utils import balancer, extractor, shuffle_data, remove_sparsity
 
 log = logging.getLogger(__file__)
 
 
-class VAEArithKeras:
+class scGen:
     """
         VAE with Arithmetic vector Network class. This class contains the implementation of Variational
         Auto-encoder network with Vector Arithmetics.
@@ -48,13 +47,18 @@ class VAEArithKeras:
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
         self.x_dim = x_dimension
         self.z_dim = z_dimension
+
         self.learning_rate = kwargs.get("learning_rate", 0.001)
         self.dropout_rate = kwargs.get("dropout_rate", 0.2)
         self.model_to_use = kwargs.get("model_path", "./models/")
         self.alpha = kwargs.get("alpha", 0.00005)
+
         self.x = Input(shape=(x_dimension,), name="input")
         self.z = Input(shape=(z_dimension,), name="latent")
+
         self.init_w = keras.initializers.glorot_normal()
+        self.aux_models = {}
+
         self._create_network()
         self._loss_function()
         self.vae_model.summary()
@@ -84,14 +88,6 @@ class VAEArithKeras:
         h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
-        # h = Dense(512, kernel_initializer=self.init_w, use_bias=False)(h)
-        # h = BatchNormalization()(h)
-        # h = LeakyReLU()(h)
-        # h = Dropout(self.dropout_rate)(h)
-        # h = Dense(256, kernel_initializer=self.init_w, use_bias=False)(h)
-        # h = BatchNormalization()(h)
-        # h = LeakyReLU()(h)
-        # h = Dropout(self.dropout_rate)(h)
 
         mean = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
         log_var = Dense(self.z_dim, kernel_initializer=self.init_w)(h)
@@ -118,23 +114,16 @@ class VAEArithKeras:
         """
         h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(self.z)
         h = BatchNormalization(axis=1)(h)
-        h = LeakyReLU()(h)
-        h = Dropout(self.dropout_rate)(h)
+        h_mmd = LeakyReLU()(h)
+        h = Dropout(self.dropout_rate)(h_mmd)
         h = Dense(800, kernel_initializer=self.init_w, use_bias=False)(h)
         h = BatchNormalization(axis=1)(h)
         h = LeakyReLU()(h)
         h = Dropout(self.dropout_rate)(h)
-        # h = Dense(768, kernel_initializer=self.init_w, use_bias=False)(h)
-        # h = BatchNormalization()(h)
-        # h = LeakyReLU()(h)
-        # h = Dropout(self.dropout_rate)(h)
-        # h = Dense(1024, kernel_initializer=self.init_w, use_bias=False)(h)
-        # h = BatchNormalization()(h)
-        # h = LeakyReLU()(h)
-        # h = Dropout(self.dropout_rate)(h)
         h = Dense(self.x_dim, kernel_initializer=self.init_w, use_bias=True)(h)
 
         self.decoder_model = Model(inputs=self.z, outputs=h, name="decoder")
+        self.decoder_mmd_model = Model(self.z, h_mmd, name="decoder_mmd")
         return h
 
     @staticmethod
@@ -178,6 +167,7 @@ class VAEArithKeras:
 
         self.x_hat = self._decoder()
         self.vae_model = Model(inputs=self.x, outputs=self.decoder_model(self.encoder_model(self.x)), name="VAE")
+        self.aux_models['mmd'] = Model(self.x, self.decoder_mmd_model(self.encoder_model(self.x)), name="MMD")
 
     def _loss_function(self):
         """
@@ -196,10 +186,10 @@ class VAEArithKeras:
         """
 
         def vae_loss(y_true, y_pred):
-            return K.mean(recon_loss(y_true, y_pred) + self.alpha * kl_loss(y_true, y_pred))
+            return K.mean(recon_loss(y_true, y_pred) + kl_loss(y_true, y_pred))
 
         def kl_loss(y_true, y_pred):
-            return 0.5 * K.sum(K.exp(self.log_var) + K.square(self.mu) - 1. - self.log_var, axis=1)
+            return self.alpha * (0.5 * K.sum(K.exp(self.log_var) + K.square(self.mu) - 1. - self.log_var, axis=1))
 
         def recon_loss(y_true, y_pred):
             return 0.5 * K.sum(K.square((y_true - y_pred)), axis=1)
@@ -207,24 +197,23 @@ class VAEArithKeras:
         self.vae_optimizer = keras.optimizers.Adam(lr=self.learning_rate)
         self.vae_model.compile(optimizer=self.vae_optimizer, loss=vae_loss, metrics=[kl_loss, recon_loss])
 
-    def to_latent(self, data):
-        """
-            Map `data` in to the latent space. This function will feed data
-            in encoder part of VAE and compute the latent space coordinates
-            for each sample in data.
+    def to_latent(self, adata):
+        adata = remove_sparsity(adata)
 
-            Parameters
-            ----------
-            data:  numpy nd-array
-                Numpy nd-array to be mapped to latent space. `data.X` has to be in shape [n_obs, n_vars].
+        latent = self.encoder_model.predict(adata.X)
+        latent_adata = anndata.AnnData(X=latent)
+        latent_adata.obs = adata.obs.copy(deep=True)
 
-            Returns
-            -------
-            latent: numpy nd-array
-                Returns array containing latent space encoding of 'data'
-        """
-        latent = self.encoder_model.predict(data)
-        return latent
+        return latent_adata
+
+    def to_mmd_layer(self, adata):
+        adata = remove_sparsity(adata)
+
+        mmd_latent = self.aux_models['mmd'].predict(adata.X)
+        mmd_adata = anndata.AnnData(X=mmd_latent)
+        mmd_adata.obs = adata.obs.copy(deep=True)
+
+        return mmd_adata
 
     def _avg_vector(self, data):
         """
@@ -267,89 +256,8 @@ class VAEArithKeras:
         rec_data = self.decoder_model.predict(x=data)
         return rec_data
 
-    def linear_interpolation(self, source_adata, dest_adata, n_steps):
-        """
-            Maps `source_adata` and `dest_adata` into latent space and linearly interpolate
-            `n_steps` points between them.
-
-            Parameters
-            ----------
-            source_adata: `~anndata.AnnData`
-                Annotated data matrix of source cells in gene expression space (`x.X` must be in shape [n_obs, n_vars])
-            dest_adata: `~anndata.AnnData`
-                Annotated data matrix of destinations cells in gene expression space (`y.X` must be in shape [n_obs, n_vars])
-            n_steps: int
-                Number of steps to interpolate points between `source_adata`, `dest_adata`.
-
-            Returns
-            -------
-            interpolation: numpy nd-array
-                Returns the `numpy nd-array` of interpolated points in gene expression space.
-
-            Example
-            --------
-            >>> import anndata
-            >>> import scgen
-            >>> train_data = anndata.read("./data/train.h5ad")
-            >>> validation_data = anndata.read("./data/validation.h5ad")
-            >>> network = scgen.VAEArith(x_dimension= train_data.shape[1], model_path="./models/test" )
-            >>> network.train(train_data=train_data, use_validation=True, validation_data=validation_data, shuffle=True, n_epochs=2)
-            >>> souece = train_data[((train_data.obs["cell_type"] == "CD8T") & (train_data.obs["condition"] == "control"))]
-            >>> destination = train_data[((train_data.obs["cell_type"] == "CD8T") & (train_data.obs["condition"] == "stimulated"))]
-            >>> interpolation = network.linear_interpolation(souece, destination, n_steps=25)
-        """
-        if sparse.issparse(source_adata.X):
-            source_average = source_adata.X.A.mean(axis=0).reshape((1, source_adata.shape[1]))
-        else:
-            source_average = source_adata.X.A.mean(axis=0).reshape((1, source_adata.shape[1]))
-
-        if sparse.issparse(dest_adata.X):
-            dest_average = dest_adata.X.A.mean(axis=0).reshape((1, dest_adata.shape[1]))
-        else:
-            dest_average = dest_adata.X.A.mean(axis=0).reshape((1, dest_adata.shape[1]))
-        start = self.to_latent(source_average)
-        end = self.to_latent(dest_average)
-        vectors = numpy.zeros((n_steps, start.shape[1]))
-        alpha_values = numpy.linspace(0, 1, n_steps)
-        for i, alpha in enumerate(alpha_values):
-            vector = start * (1 - alpha) + end * alpha
-            vectors[i, :] = vector
-        vectors = numpy.array(vectors)
-        interpolation = self.reconstruct(vectors)
-        return interpolation
-
-    def predict(self, adata, conditions, cell_type_key, condition_key, adata_to_predict=None, celltype_to_predict=None, obs_key="all"):
-        """
-            Predicts the cell type provided by the user in stimulated condition.
-
-            Parameters
-            ----------
-            celltype_to_predict: basestring
-                The cell type you want to be predicted.
-
-            obs_key: basestring or dict
-                Dictionary of celltypes you want to be observed for prediction.
-
-            adata_to_predict: `~anndata.AnnData`
-                Adata for unpertubed cells you want to be predicted.
-
-            Returns
-            -------
-            predicted_cells: numpy nd-array
-                `numpy nd-array` of predicted cells in primary space.
-            delta: float
-                Difference between stimulated and control cells in latent space
-
-            Example
-            --------
-            >>> import anndata
-            >>> import scgen
-            >>> train_data = anndata.read("./data/train.h5ad"
-            >>> validation_data = anndata.read("./data/validation.h5ad")
-            >>> network = scgen.VAEArith(x_dimension= train_data.shape[1], model_path="./models/test" )
-            >>> network.train(train_data=train_data, use_validation=True, validation_data=validation_data, shuffle=True, n_epochs=2)
-            >>> prediction, delta = network.predict(adata= train_data, celltype_to_predict= "CD4T", conditions={"ctrl": "control", "stim": "stimulated"})
-        """
+    def predict(self, adata, conditions, cell_type_key, condition_key, adata_to_predict=None, celltype_to_predict=None,
+                obs_key="all"):
         if obs_key == "all":
             ctrl_x = adata[adata.obs["condition"] == conditions["ctrl"], :]
             stim_x = adata[adata.obs["condition"] == conditions["stim"], :]
@@ -391,30 +299,17 @@ class VAEArithKeras:
         return predicted_cells, delta
 
     def restore_model(self):
-        """
-            restores model weights from `model_to_use`.
-
-            Parameters
-            ----------
-            No parameters are needed.
-
-            Returns
-            -------
-            Nothing will be returned.
-
-            Example
-            --------
-            >>> import anndata
-            >>> import scgen
-            >>> train_data = anndata.read("./data/train.h5ad")
-            >>> validation_data = anndata.read("./data/validation.h5ad")
-            >>> network = scgen.VAEArith(x_dimension= train_data.shape[1], model_path="./models/test" )
-            >>> network.restore_model()
-        """
         self.vae_model = load_model(os.path.join(self.model_to_use, 'vae.h5'), compile=False)
         self.encoder_model = load_model(os.path.join(self.model_to_use, 'encoder.h5'), compile=False)
         self.decoder_model = load_model(os.path.join(self.model_to_use, 'decoder.h5'), compile=False)
         self._loss_function()
+
+    def save_model(self):
+        os.makedirs(self.model_to_use, exist_ok=True)
+        self.vae_model.save(os.path.join(self.model_to_use, "vae.h5"), overwrite=True)
+        self.encoder_model.save(os.path.join(self.model_to_use, "encoder.h5"), overwrite=True)
+        self.decoder_model.save(os.path.join(self.model_to_use, "decoder.h5"), overwrite=True)
+        log.info(f"Models are saved in file: {self.model_to_use}. Training finished")
 
     def train(self, train_data, validation_data=None,
               n_epochs=25,
@@ -427,80 +322,15 @@ class VAEArithKeras:
               save=True,
               checkpoint=50,
               **kwargs):
-        """
-            Trains the network `n_epochs` times with given `train_data`
-            and validates the model using validation_data if it was given
-            in the constructor function. This function is using `early stopping`
-            technique to prevent over-fitting.
-
-            Parameters
-            ----------
-            train_data: scanpy AnnData
-                Annotated Data Matrix for training VAE network.
-
-            validation_data: scanpy AnnData
-                Annotated Data Matrix for validating VAE network after each epoch.
-
-            n_epochs: int
-                Number of epochs to iterate and optimize network weights
-
-            batch_size: integer
-                size of each batch of training dataset to be fed to network while training.
-
-            early_stop_limit: int
-                Number of consecutive epochs in which network loss is not going lower.
-                After this limit, the network will stop training.
-
-            threshold: float
-                Threshold for difference between consecutive validation loss values
-                if the difference is upper than this `threshold`, this epoch will not
-                considered as an epoch in early stopping.
-
-            initial_run: bool
-                if `True`: The network will initiate training and log some useful initial messages.
-                if `False`: Network will resume the training using `restore_model` function in order
-                    to restore last model which has been trained with some training dataset.
-
-            shuffle: bool
-                if `True`: shuffles the training dataset
-
-            Returns
-            -------
-            Nothing will be returned
-
-            Example
-            --------
-            ```python
-            import anndata
-            import scgen
-            train_data = anndata.read("./data/train.h5ad"
-            validation_data = anndata.read("./data/validation.h5ad"
-            network = scgen.VAEArith(x_dimension= train_data.shape[1], model_path="./models/test")
-            network.train(train_data=train_data, use_validation=True, valid_data=validation_data, shuffle=True, n_epochs=2)
-            ```
-        """
         if initial_run:
             log.info("----Training----")
         if shuffle:
             train_data = shuffle_data(train_data)
 
-        if sparse.issparse(train_data.X):
-            train_data.X = train_data.X.A
-
-
-        # def on_epoch_end(epoch, logs):
-        #     if epoch % checkpoint == 0:
-        #         path_to_save = os.path.join(kwargs.get("path_to_save"), f"epoch_{epoch}") + "/"
-        #         scgen.visualize_trained_network_results(self, vis_data, kwargs.get("cell_type"),
-        #                                                 kwargs.get("conditions"),
-        #                                                 kwargs.get("condition_key"), kwargs.get("cell_type_key"),
-        #                                                 path_to_save,
-        #                                                 plot_umap=False,
-        #                                                 plot_reg=True)
+        train_data = remove_sparsity(train_data)
 
         callbacks = [
-            # LambdaCallback(on_epoch_end=on_epoch_end),
-            # EarlyStopping(patience=early_stop_limit, monitor='loss', min_delta=threshold),
+            EarlyStopping(patience=early_stop_limit, monitor='val_loss', min_delta=threshold),
             CSVLogger(filename="./csv_logger.log")
         ]
         if validation_data is not None:
@@ -515,6 +345,7 @@ class VAEArithKeras:
         else:
             result = self.vae_model.fit(x=train_data.X,
                                         y=train_data.X,
+                                        validation_split=0.2,
                                         epochs=n_epochs,
                                         batch_size=batch_size,
                                         shuffle=shuffle,
@@ -522,9 +353,5 @@ class VAEArithKeras:
                                         verbose=verbose)
 
         if save is True:
-            os.makedirs(self.model_to_use, exist_ok=True)
-            self.vae_model.save(os.path.join("vae.h5"), overwrite=True)
-            self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
-            self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
-            log.info(f"Models are saved in file: {self.model_to_use}. Training finished")
+            self.save_model()
         return result
