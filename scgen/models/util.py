@@ -243,7 +243,8 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         network: `scgen VAE`
             Variational Auto-encoder class object after training the network.
         adata: `~anndata.AnnData`
-            Annotated data matrix. adata must have `batch` and `cell_type` column in its obs.
+            Annotated data matrix. adata must have `batch_key` and `cell_label_key` which you pass to the function
+             in its obs.
 
         # Returns
             corrected: `~anndata.AnnData`
