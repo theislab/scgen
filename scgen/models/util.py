@@ -195,7 +195,7 @@ def balancer(adata, cell_type_key="cell_type", condition_key="condition"):
     return balanced_data
 
 
-def shuffle_data(adata, labels=None):
+def shuffle_adata(adata):
     """
         Shuffles the `adata`.
 
@@ -221,18 +221,14 @@ def shuffle_data(adata, labels=None):
         train_data, train_labels = shuffle_data(train_data, train_labels)
         ```
     """
+    if sparse.issparse(adata.X):
+        adata.X = adata.X.A
+
     ind_list = [i for i in range(adata.shape[0])]
     shuffle(ind_list)
-    if sparse.issparse(adata.X):
-        x = adata.X.A[ind_list, :]
-    else:
-        x = adata.X[ind_list, :]
-    if labels is not None:
-        labels = labels[ind_list]
-        adata = anndata.AnnData(x, obs={"labels": list(labels)})
-        return adata, labels
-    else:
-        return anndata.AnnData(x, obs=adata.obs)
+    new_adata = adata[ind_list, :]
+    return new_adata
+
 
 
 def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type"):
