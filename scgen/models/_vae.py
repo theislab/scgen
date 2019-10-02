@@ -32,6 +32,7 @@ class VAEArith:
     """
 
     def __init__(self, x_dimension, z_dimension=100, **kwargs):
+        tf.reset_default_graph()
         self.x_dim = x_dimension
         self.z_dim = z_dimension
         self.learning_rate = kwargs.get("learning_rate", 0.001)
