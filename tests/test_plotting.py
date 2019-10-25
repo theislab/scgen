@@ -9,7 +9,8 @@ def test_reg_mean_plot():
     network.train(train_data=train, n_epochs=0)
     unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
     condition = {"ctrl": "control", "stim": "stimulated"}
-    pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+    pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition,
+                                  condition_key="condition",cell_type_key="cell_type")
     pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
     CD4T = train[train.obs["cell_type"] == "CD4T"]
     all_adata = CD4T.concatenate(pred_adata)
@@ -30,7 +31,8 @@ def test_reg_var_plot():
     network.train(train_data=train, n_epochs=0)
     unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
     condition = {"ctrl": "control", "stim": "stimulated"}
-    pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+    pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition,
+                                  condition_key="condition",cell_type_key="cell_type")
     pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
     CD4T = train[train.obs["cell_type"] == "CD4T"]
     all_adata = CD4T.concatenate(pred_adata)
@@ -52,7 +54,8 @@ def test_binary_classifier():
     network.train(train_data=train, n_epochs=0)
     unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
     condition = {"ctrl": "control", "stim": "stimulated"}
-    pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+    pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition,
+                                  condition_key="condition",cell_type_key="cell_type")
     scgen.plotting.binary_classifier(network, train, delta, condition_key="condition",
                                      conditions={"ctrl": "control", "stim": "stimulated"},
                                      path_to_save="tests/binary_classifier.pdf")
