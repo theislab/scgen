@@ -17,7 +17,7 @@ requires = [
     "anndata",
     "scanpy",
     "adjustText",
-    "tensorflow",
+    "tensorflow >=1.13",
     "numpy",
     "scipy",
     "pandas",
