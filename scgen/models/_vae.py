@@ -5,7 +5,7 @@ import numpy
 import tensorflow as tf
 from scipy import sparse
 
-from .util import balancer, extractor, shuffle_adata
+from .util import shuffle_adata, balancer, extractor
 
 log = logging.getLogger(__file__)
 
