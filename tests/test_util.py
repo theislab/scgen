@@ -10,6 +10,3 @@ def test_batch_removal():
     corrected_adata = scgen.batch_removal(network, train)
     print(corrected_adata.obs)
     network.sess.close()
-
-
-test_batch_removal()
