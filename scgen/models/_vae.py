@@ -432,7 +432,7 @@ class VAEArith:
         if use_validation and valid_data is None:
             raise Exception("valid_data is None but use_validation is True.")
         if shuffle:
-            train_data = shuffle_data(train_data)
+            train_data = shuffle_adata(train_data)
         loss_hist = []
         patience = early_stop_limit
         min_delta = threshold
