@@ -292,8 +292,8 @@ class VAEArith:
                 validation_data = anndata.read("./data/validation.h5ad")
                 network = scgen.VAEArith(x_dimension= train_data.shape[1], model_path="./models/test" )
                 network.train(train_data=train_data, use_validation=True, valid_data=validation_data, shuffle=True, n_epochs=2)
-                prediction, delta = network.predict(adata= train_data, celltype_to_predict= "CD4T", conditions={"ctrl": "control", "stim": "stimulated"})
-            ```
+pred, delta = scg.predict(adata= train_new,conditions={"ctrl": "control", "stim":"stimulated"},
+                          cell_type_key="cell_type",condition_key="condition",adata_to_predict=unperturbed_cd4t)            ```
         """
         if obs_key == "all":
             ctrl_x = adata[adata.obs[condition_key] == conditions["ctrl"], :]
