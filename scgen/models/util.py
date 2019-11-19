@@ -292,24 +292,28 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
             batch_list[study].X = delta + batch_list[study].X
             temp_cell[batch_ind[study]].X = batch_list[study].X
         shared_ct.append(temp_cell)
-    all_shared_ann = anndata.AnnData.concatenate(*shared_ct, batch_key="concat_batch")
+    all_shared_ann = anndata.AnnData.concatenate(*shared_ct, batch_key="concat_batch", index_unique=None)
     if "concat_batch" in all_shared_ann.obs.columns:
         del all_shared_ann.obs["concat_batch"]
     if len(not_shared_ct) < 1:
         corrected = anndata.AnnData(network.reconstruct(all_shared_ann.X, use_data=True))
         corrected.obs = all_shared_ann.obs.copy(deep=True)
         corrected.var_names = adata.var_names.tolist()
-        corrected.obs_names = adata.obs_names.tolist()
+        corrected = corrected[adata.obs_names]
+        if adata.raw is not None:
+            corrected.raw = adata.raw.copy()
         return corrected
     else:
-        all_not_shared_ann = anndata.AnnData.concatenate(*not_shared_ct, batch_key="concat_batch")
-        all_corrected_data = anndata.AnnData.concatenate(all_shared_ann, all_not_shared_ann, batch_key="concat_batch")
+        all_not_shared_ann = anndata.AnnData.concatenate(*not_shared_ct, batch_key="concat_batch", index_unique=None)
+        all_corrected_data = anndata.AnnData.concatenate(all_shared_ann, all_not_shared_ann, batch_key="concat_batch",  index_unique=None)
         if "concat_batch" in all_shared_ann.obs.columns:
             del all_corrected_data.obs["concat_batch"]
         corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True), )
         corrected.obs = pd.concat([all_shared_ann.obs, all_not_shared_ann.obs])
         corrected.var_names = adata.var_names.tolist()
-        corrected.obs_names = adata.obs_names.tolist()
+        corrected = corrected[adata.obs_names]
+        if adata.raw is not None:
+            corrected.raw = adata.raw.copy()
         return corrected
 
 
