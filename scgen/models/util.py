@@ -301,7 +301,9 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         corrected.var_names = adata.var_names.tolist()
         corrected = corrected[adata.obs_names]
         if adata.raw is not None:
-            corrected.raw = adata.raw.copy()
+            adata_raw = anndata.AnnData(X=adata.raw.X, var=adata.raw.var)
+            adata_raw.obs_names = adata.obs_names
+            corrected.raw = adata_raw
         return corrected
     else:
         all_not_shared_ann = anndata.AnnData.concatenate(*not_shared_ct, batch_key="concat_batch", index_unique=None)
@@ -313,7 +315,9 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         corrected.var_names = adata.var_names.tolist()
         corrected = corrected[adata.obs_names]
         if adata.raw is not None:
-            corrected.raw = adata.raw.copy()
+            adata_raw = anndata.AnnData(X=adata.raw.X, var=adata.raw.var)
+            adata_raw.obs_names = adata.obs_names
+            corrected.raw = adata_raw
         return corrected
 
 
