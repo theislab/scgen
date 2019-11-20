@@ -230,9 +230,10 @@ def shuffle_adata(adata):
     return new_adata
 
 
+
 def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type"):
     """
-        Removes batch-effects of the data
+        Removes batch effect of adata
 
         # Parameters
         network: `scgen VAE`
@@ -256,8 +257,6 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         corrected_adata = scgen.batch_removal(network, train)
         ```
      """
-    train_index = adata.obs.sort_index()
-    adata = adata[train_index.index,:]
     if sparse.issparse(adata.X):
         latent_all = network.to_latent(adata.X.A)
     else:
@@ -293,7 +292,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
             batch_list[study].X = delta + batch_list[study].X
             temp_cell[batch_ind[study]].X = batch_list[study].X
         shared_ct.append(temp_cell)
-    all_shared_ann = anndata.AnnData.concatenate(*shared_ct, batch_key="concat_batch", index_unique=None)
+    all_shared_ann = anndata.AnnData.concatenate(*shared_ct, batch_key="concat_batch")
     if "concat_batch" in all_shared_ann.obs.columns:
         del all_shared_ann.obs["concat_batch"]
     if len(not_shared_ct) < 1:
@@ -301,21 +300,16 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         corrected.obs = all_shared_ann.obs.copy(deep=True)
         corrected.var_names = adata.var_names.tolist()
         corrected.obs_names = adata.obs_names.tolist()
-        corrected = corrected[train_index.index,:]
-        corrected.raw = adata
         return corrected
     else:
-        all_not_shared_ann = anndata.AnnData.concatenate(*not_shared_ct, batch_key="concat_batch",  index_unique=None)
-        all_corrected_data = anndata.AnnData.concatenate(all_shared_ann, all_not_shared_ann,
-                                                         batch_key="concat_batch", index_unique=None)
+        all_not_shared_ann = anndata.AnnData.concatenate(*not_shared_ct, batch_key="concat_batch")
+        all_corrected_data = anndata.AnnData.concatenate(all_shared_ann, all_not_shared_ann, batch_key="concat_batch")
         if "concat_batch" in all_shared_ann.obs.columns:
             del all_corrected_data.obs["concat_batch"]
         corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True), )
         corrected.obs = pd.concat([all_shared_ann.obs, all_not_shared_ann.obs])
         corrected.var_names = adata.var_names.tolist()
         corrected.obs_names = adata.obs_names.tolist()
-        corrected = corrected[train_index.index,:]
-        corrected.raw = adata
         return corrected
 
 
@@ -530,6 +524,7 @@ def visualize_trained_network_results(network, train, cell_type,
 
     elif isinstance(network, scgen.CVAE):
         true_labels, _ = scgen.label_encoder(train)
+
 
         if sparse.issparse(train.X):
             latent = network.to_latent(train.X.A, labels=true_labels)
