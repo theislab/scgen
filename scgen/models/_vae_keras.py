@@ -478,8 +478,8 @@ class VAEArithKeras:
 
         if save is True:
             os.makedirs(self.model_to_use, exist_ok=True)
-            self.vae_model.save(os.path.join("vae.h5"), overwrite=True)
-            self.encoder_model.save(os.path.join("encoder.h5"), overwrite=True)
-            self.decoder_model.save(os.path.join("decoder.h5"), overwrite=True)
+            self.vae_model.save(os.path.join(self.model_to_use, "vae.h5"), overwrite=True)
+            self.encoder_model.save(os.path.join(self.model_to_use, "encoder.h5"), overwrite=True)
+            self.decoder_model.save(os.path.join(self.model_to_use, "decoder.h5"), overwrite=True)
             log.info(f"Models are saved in file: {self.model_to_use}. Training finished")
         return result
