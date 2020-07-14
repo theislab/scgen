@@ -62,6 +62,7 @@ flit install
 On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
 
 
+* if you plan to use GPU, please consider installling tensorflow-GPU after installing scgen
 
 ## Examples
 
