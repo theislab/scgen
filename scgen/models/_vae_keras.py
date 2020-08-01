@@ -223,7 +223,7 @@ class VAEArithKeras:
         latent_avg = numpy.average(latent, axis=0)
         return latent_avg
 
-    def reconstruct(self, data):
+    def reconstruct(self, data, use_data=False):
         """
             Map back the latent space encoding via the decoder.
             Parameters

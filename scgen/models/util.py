@@ -241,21 +241,15 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         adata: `~anndata.AnnData`
             Annotated data matrix. adata must have `batch_key` and `cell_label_key` which you pass to the function
              in its obs.
+         batch_key: `str` batch label key in  adata.obs
+
+         cell_label_key: `str` cell type label key in adata.obs
+
+         return_latent: `bool` if `True` the returns corrected latent representation
 
         # Returns
             corrected: `~anndata.AnnData`
-                Annotated matrix of corrected data consisting of all cell types whether they have batch effect or not.
-
-        # Example
-        ```python
-        import scgen
-        import anndata
-        train = anndata.read("data/pancreas.h5ad")
-        train.obs["cell_type"] = train.obs["celltype"].tolist()
-        network = scgen.VAEArith(x_dimension=train.shape[1], model_path="./models/batch")
-        network.train(train_data=train, n_epochs=20)
-        corrected_adata = scgen.batch_removal(network, train)
-        ```
+                adata of corrected gene expression in adata.X and corrected latent space in adata.obsm["latent"].
      """
     if sparse.issparse(adata.X):
         latent_all = network.to_latent(adata.X.A)
@@ -304,13 +298,14 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
             adata_raw = anndata.AnnData(X=adata.raw.X, var=adata.raw.var)
             adata_raw.obs_names = adata.obs_names
             corrected.raw = adata_raw
+        corrected.obsm["latent"] = all_shared_ann.X
         return corrected
     else:
         all_not_shared_ann = anndata.AnnData.concatenate(*not_shared_ct, batch_key="concat_batch", index_unique=None)
-        all_corrected_data = anndata.AnnData.concatenate(all_shared_ann, all_not_shared_ann, batch_key="concat_batch",  index_unique=None)
+        all_corrected_data = anndata.AnnData.concatenate(all_shared_ann, all_not_shared_ann, batch_key="concat_batch", index_unique=None)
         if "concat_batch" in all_shared_ann.obs.columns:
             del all_corrected_data.obs["concat_batch"]
-        corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True), )
+        corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True))
         corrected.obs = pd.concat([all_shared_ann.obs, all_not_shared_ann.obs])
         corrected.var_names = adata.var_names.tolist()
         corrected = corrected[adata.obs_names]
@@ -318,6 +313,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
             adata_raw = anndata.AnnData(X=adata.raw.X, var=adata.raw.var)
             adata_raw.obs_names = adata.obs_names
             corrected.raw = adata_raw
+        corrected.obsm["latent"] = all_corrected_data.X
         return corrected
 
 
