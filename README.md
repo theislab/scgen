@@ -61,9 +61,11 @@ flit install
 ```
 
 On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
-
+### Notes for installing:
 * If you plan to use GPU, please consider installing tensorflow-GPU after installing scgen.
-
+* We recommend using tensorflow < 2 and compatible Keras versions and python 3.8, you might have to change
+a few thing to use tf 2.0, for more info see [here]([example]).
+*If you get error such as `No matching distribution found for tensorflow` while installing, please check your python version and install right tf and keras version for that (we recommend to use python <=3.7) 
 ## Examples
 
 * For perturbation prediction check this [example](https://nbviewer.jupyter.org/github/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_kang.ipynb)
