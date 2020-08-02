@@ -290,8 +290,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
     if "concat_batch" in all_shared_ann.obs.columns:
         del all_shared_ann.obs["concat_batch"]
     if len(not_shared_ct) < 1:
-        corrected = anndata.AnnData(network.reconstruct(all_shared_ann.X, use_data=True))
-        corrected.obs = all_shared_ann.obs.copy(deep=True)
+        corrected = sc.AnnData(network.reconstruct(all_shared_ann.X, use_data=True),obs=all_shared_ann.obs)
         corrected.var_names = adata.var_names.tolist()
         corrected = corrected[adata.obs_names]
         if adata.raw is not None:
@@ -305,8 +304,7 @@ def batch_removal(network, adata, batch_key="batch", cell_label_key="cell_type")
         all_corrected_data = anndata.AnnData.concatenate(all_shared_ann, all_not_shared_ann, batch_key="concat_batch", index_unique=None)
         if "concat_batch" in all_shared_ann.obs.columns:
             del all_corrected_data.obs["concat_batch"]
-        corrected = anndata.AnnData(network.reconstruct(all_corrected_data.X, use_data=True))
-        corrected.obs = pd.concat([all_shared_ann.obs, all_not_shared_ann.obs])
+        corrected = sc.AnnData( network.reconstruct(all_corrected_data.X, use_data=True), all_corrected_data.obs)
         corrected.var_names = adata.var_names.tolist()
         corrected = corrected[adata.obs_names]
         if adata.raw is not None:
