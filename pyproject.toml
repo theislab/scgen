@@ -17,11 +17,11 @@ requires = [
     "anndata",
     "scanpy",
     "adjustText",
-    "tensorflow ==1.15",
+    "tensorflow==1.15",
     "numpy",
     "scipy",
     "pandas",
-    "keras",
+    "keras==2.3",
     "matplotlib"]
 
 [tool.flit.metadata.requires-extra]
