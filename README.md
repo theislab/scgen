@@ -6,7 +6,7 @@
 <img align="center" src="./sketch/sketch.png?raw=true">
 
 ## Introduction
-A tensorflow implementation of scGen. scGen is a generative model to predict single-cell perturbation response across cell types, studies and species
+A pyTorch implementation of scGen. scGen is a generative model to predict single-cell perturbation response across cell types, studies and species
   [(Nature Methods, 2019)](https://www.nature.com/articles/s41592-019-0494-8) .
 
 ## Getting Started
@@ -43,35 +43,19 @@ HVG. However, this is optional and highly depend on your application and computa
 ## Installation
 
 ### Installation with pip
-To install the latest version from PyPI, simply use the following bash script:
+To install the latest version scGen pyTorch PyPI via pip:
 ```bash
-pip install scgen
-```
-or install the development version via pip: 
-```bash
-pip install git+https://github.com/theislab/scgen.git
-```
-
-or you can first install flit and clone this repository:
-```bash
-pip install flit
-git clone https://github.com/theislab/scGen
-cd scgen
-flit install
+pip install git+https://github.com/theislab/scgen.git@pytorch
 ```
 
 On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
-### Notes for installing:
-* If you plan to use GPU, please consider installing tensorflow-GPU after installing scgen.
-* We recommend using tensorflow < 2 and compatible Keras versions and python 3.8, you might have to change
-a few thing to use tf 2.0, for more info see [here]([example]).
-*If you get error such as `No matching distribution found for tensorflow` while installing, please check your python version and install right tf and keras version for that (we recommend to use python <=3.7) 
+
 ## Examples
 
-* For perturbation prediction check this [example](https://nbviewer.jupyter.org/github/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_kang.ipynb)
+* For perturbation prediction check this [example](https://github.com/theislab/scgen/blob/pytorch/notebooks/scgen_perturbation_prediction.ipynb)
  for interferon (IFN)-β stimulation from [Kang et al.](https://www.nature.com/articles/nbt.4042).
 
-* For batch-removal check our [example](https://nbviewer.jupyter.org/github/M0hammadL/scGen_notebooks/blob/master/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
+* For batch-removal check our [example](https://github.com/theislab/scgen/blob/pytorch/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
 
 ## Reproducing paper results
 In order to reproduce paper results visit [here](https://github.com/M0hammadL/scGen_reproducibility).
