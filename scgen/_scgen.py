@@ -193,7 +193,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         decoded = []
         for tensors in scdl:
             _, generative_outputs = self.module(tensors, compute_loss=False)
-            px = generative_outputs["px"]
+            px = generative_outputs["px"].cpu()
             decoded.append(px)
 
         return torch.cat(decoded).numpy()
