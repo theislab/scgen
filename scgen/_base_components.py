@@ -1,9 +1,8 @@
 from typing import Iterable
 
 import torch
-from torch import nn as nn
-
 from scvi.nn import FCLayers
+from torch import nn as nn
 
 
 # Decoder SCGEN
@@ -77,5 +76,3 @@ class DecoderSCGEN(nn.Module):
         """
         p = self.decoder(x, *cat_list)
         return p
-
-

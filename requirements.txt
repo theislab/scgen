@@ -5,4 +5,4 @@ scanpy
 matplotlib
 adjustText
 anndata
-scvi-tools
+scvi-tools>=0.9.0
