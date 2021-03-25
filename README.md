@@ -52,10 +52,10 @@ On Windows machines you may need to download a C++ compiler if you wish to build
 
 ## Examples
 
-* For perturbation prediction check this [example](https://nbviewer.jupyter.org/github.com/theislab/scgen/blob/pytorch/notebooks/scgen_perturbation_prediction.ipynb)
+* For perturbation prediction check this [example](https://github.com/theislab/scgen/blob/pytorch/notebooks/scgen_perturbation_prediction.ipynb)
  for interferon (IFN)-β stimulation from [Kang et al.](https://www.nature.com/articles/nbt.4042).
 
-* For batch-removal check our [example](https://nbviewer.jupyter.org/github.com/theislab/scgen/blob/pytorch/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
+* For batch-removal check our [example](https://github.com/theislab/scgen/blob/pytorch/notebooks/scgen_batch_removal.ipynb) on integrating four pancreas datasets.
 
 ## Reproducing paper results
 In order to reproduce paper results visit [here](https://github.com/M0hammadL/scGen_reproducibility).
