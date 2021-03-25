@@ -53,6 +53,7 @@ class SCGENVAE(BaseModuleClass):
         self.n_layers = n_layers
         self.n_latent = n_latent
         self.log_variational = log_variational
+        self.latent_distribution = "normal"
 
         use_batch_norm_encoder = use_batch_norm == "encoder" or use_batch_norm == "both"
         use_layer_norm_encoder = use_layer_norm == "encoder" or use_layer_norm == "both"

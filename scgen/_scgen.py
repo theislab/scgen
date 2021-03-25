@@ -56,7 +56,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         self.module = SCGENVAE(
             n_input=self.summary_stats["n_vars"],
-            n_batch=self.summary_stats["n_batch"],
             n_hidden=n_hidden,
             n_latent=n_latent,
             n_layers=n_layers,
@@ -200,7 +199,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         return torch.cat(decoded).numpy()
 
     @torch.no_grad()
-    def batch_removal(self, adata: AnnData) -> AnnData:
+    def batch_removal(self, adata: Optional[AnnData] = None) -> AnnData:
         """
         Removes batch effects.
 
