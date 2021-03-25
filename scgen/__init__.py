@@ -1,8 +1,7 @@
 """ScGen - Predicting single cell perturbations"""
 
-from .models import *
-from .read_load import load_file
-from . import plotting
+from ._scgenvae import SCGENVAE
+from ._scgen import SCGEN
 
 
 __author__ = ', '.join([
