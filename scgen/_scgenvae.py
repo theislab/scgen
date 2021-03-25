@@ -34,6 +34,8 @@ class SCGENVAE(BaseModuleClass):
         Dropout rate for neural networks
     use_layer_norm
         Whether to use layer norm in layers
+    kl_weight
+        Weight for kl divergence
     """
 
     def __init__(
@@ -48,12 +50,14 @@ class SCGENVAE(BaseModuleClass):
         latent_distribution: str = "normal",
         use_batch_norm: Literal["encoder", "decoder", "none", "both"] = "none",
         use_layer_norm: Literal["encoder", "decoder", "none", "both"] = "both",
+        kl_weight: float = 0.000005,
     ):
         super().__init__()
         self.n_layers = n_layers
         self.n_latent = n_latent
         self.log_variational = log_variational
         self.latent_distribution = "normal"
+        self.kl_weight = kl_weight
 
         use_batch_norm_encoder = use_batch_norm == "encoder" or use_batch_norm == "both"
         use_layer_norm_encoder = use_layer_norm == "encoder" or use_layer_norm == "both"
@@ -115,7 +119,6 @@ class SCGENVAE(BaseModuleClass):
         tensors,
         inference_outputs,
         generative_outputs,
-        kl_weight: float = 0.000005,
     ):
 
         x = tensors[_CONSTANTS.X_KEY]
@@ -128,7 +131,7 @@ class SCGENVAE(BaseModuleClass):
             Normal(0, 1),
         ).sum(dim=1)
         rl = self.get_reconstruction_loss(p, x)
-        loss = (0.5 * rl + 0.5 * (kld * kl_weight)).mean()
+        loss = (0.5 * rl + 0.5 * (kld * self.kl_weight)).mean()
         return LossRecorder(loss, rl, kld, kl_global=0.0)
 
     @torch.no_grad()
