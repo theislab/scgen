@@ -1,10 +1,10 @@
-version: 2
+version: 1
 build:
   image: latest
 sphinx:
   configuration: docs/conf.py
 python:
-  version: 3.7
+  version: 3.6
   install:
   - method: pip
     path: .
