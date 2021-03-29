@@ -9,7 +9,6 @@ from adjustText import adjust_text
 from anndata import AnnData
 from matplotlib import pyplot
 from scipy import sparse, stats
-from scvi._compat import Literal
 from scvi.model.base import BaseModelClass, UnsupervisedTrainingMixin, VAEMixin
 
 from ._scgenvae import SCGENVAE
@@ -168,10 +167,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         stim_pred = delta + latent_cd
         predicted_cells = (
-            self.module.generative(torch.Tensor(stim_pred))["px"]
-            .cpu()
-            .detach()
-            .numpy()
+            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().numpy()
         )
 
         predicted_adata = AnnData(
@@ -333,43 +329,45 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     ):
         """
         Plots mean matching figure for a set of specific genes.
-        # Parameters
-            adata: `~anndata.AnnData`
-                AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
-                AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
-                corresponding to batch and cell type metadata, respectively.
-            axis_keys: dict
-                dictionary of axes labels.
-            path_to_save: basestring
-                path to save the plot.
-            gene_list: list
-                list of gene names to be plotted.
-            show: bool
-                if `True`: will show to the plot after saving it.
-        # Example
-        ```python
-        import anndata
-        import scgen
-        import scanpy as sc
-        train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
-        network.train(train_data=train, n_epochs=0)
-        unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
-        condition = {"ctrl": "control", "stim": "stimulated"}
-        pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
-        pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
-        CD4T = train[train.obs["cell_type"] == "CD4T"]
-        all_adata = CD4T.concatenate(pred_adata)
-        scgen.plotting.reg_mean_plot(
-            all_adata,
-            condition_key="condition",
-            axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
-            gene_list=["ISG15", "CD3D"],
-            path_to_save="tests/reg_mean.pdf",
-            show=False
-        )
-        network.sess.close()
-        ```
+
+        Parameters
+        ----------
+        adata: `~anndata.AnnData`
+            AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
+            AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
+            corresponding to batch and cell type metadata, respectively.
+        axis_keys: dict
+            dictionary of axes labels.
+        path_to_save: basestring
+            path to save the plot.
+        gene_list: list
+            list of gene names to be plotted.
+        show: bool
+            if `True`: will show to the plot after saving it.
+
+        Examples
+        --------
+        >>> import anndata
+        >>> import scgen
+        >>> import scanpy as sc
+        >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+        >>> scgen.data.setup_anndata(train)
+        >>> network = scgen.SCGEN(train)
+        >>> network.train(max_epochs=100)
+        >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
+        >>> condition = {"ctrl": "control", "stim": "stimulated"}
+        >>> pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+        >>> pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
+        >>> CD4T = train[train.obs["cell_type"] == "CD4T"]
+        >>> all_adata = CD4T.concatenate(pred_adata)
+        >>> network.reg_mean_plot(
+        >>>     all_adata,
+        >>>     condition_key="condition",
+        >>>     axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
+        >>>     gene_list=["ISG15", "CD3D"],
+        >>>     path_to_save="tests/reg_mean.pdf",
+        >>>     show=False
+        >>> )
         """
         import seaborn as sns
 
@@ -398,8 +396,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             )
             if verbose:
                 print("top_100 DEGs mean: ", r_value_diff ** 2)
-        if "y1" in axis_keys.keys():
-            real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
         x = numpy.average(ctrl.X, axis=0)
         y = numpy.average(stim.X, axis=0)
         m, b, r_value, p_value, std_err = stats.linregress(x, y)
@@ -412,13 +408,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             start, stop, step = kwargs.get("range")
             ax.set_xticks(numpy.arange(start, stop, step))
             ax.set_yticks(numpy.arange(start, stop, step))
-        # _p1 = pyplot.scatter(x, y, marker=".", label=f"{axis_keys['x']}-{axis_keys['y']}")
-        # pyplot.plot(x, m * x + b, "-", color="green")
         ax.set_xlabel(labels["x"], fontsize=fontsize)
         ax.set_ylabel(labels["y"], fontsize=fontsize)
-        # if "y1" in axis_keys.keys():
-        # y1 = numpy.average(real_stim.X, axis=0)
-        # _p2 = pyplot.scatter(x, y1, marker="*", c="red", alpha=.5, label=f"{axis_keys['x']}-{axis_keys['y1']}")
         if gene_list is not None:
             texts = []
             for i in gene_list:
@@ -441,7 +432,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         if legend:
             pyplot.legend(loc="center left", bbox_to_anchor=(1, 0.5))
         if title is None:
-            pyplot.title(f"", fontsize=fontsize)
+            pyplot.title("", fontsize=fontsize)
         else:
             pyplot.title(title, fontsize=fontsize)
         ax.text(
@@ -568,7 +559,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         ax.set_ylabel(labels["y"], fontsize=fontsize)
         if "y1" in axis_keys.keys():
             y1 = numpy.var(real_stim.X, axis=0)
-            _p2 = pyplot.scatter(
+            _ = pyplot.scatter(
                 x,
                 y1,
                 marker="*",
@@ -589,7 +580,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         if legend:
             pyplot.legend(loc="center left", bbox_to_anchor=(1, 0.5))
         if title is None:
-            pyplot.title(f"", fontsize=12)
+            pyplot.title("", fontsize=12)
         else:
             pyplot.title(title, fontsize=12)
         ax.text(

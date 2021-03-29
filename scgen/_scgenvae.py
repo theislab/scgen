@@ -1,5 +1,3 @@
-from typing import Iterable, Optional
-
 import numpy as np
 import torch
 from scvi import _CONSTANTS

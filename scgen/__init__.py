@@ -4,26 +4,11 @@ from scvi.data import setup_anndata
 from ._scgenvae import SCGENVAE
 from ._scgen import SCGEN
 
-
-__author__ = ', '.join([
-    'Mohammad  Lotfollahi',
-    'Mohsen Naghipourfar'
-])
-
-__email__ = ', '.join([
-    'Mohammad.lotfollahi@helmholtz-muenchen.de',
-    'mohsen.naghipourfar@gmail.com'
-])
-
-from get_version import get_version
-__version__ = get_version(__file__)
-del get_version
-
-'''
 import logging
 
 from rich.console import Console
 from rich.logging import RichHandler
+
 # https://github.com/python-poetry/poetry/pull/2366#issuecomment-652418094
 # https://github.com/python-poetry/poetry/issues/144#issuecomment-623927302
 try:
@@ -31,7 +16,7 @@ try:
 except ModuleNotFoundError:
     import importlib_metadata
 
-package_name = "scgen-pytorch"
+package_name = "scgen"
 __version__ = importlib_metadata.version(package_name)
 
 logger = logging.getLogger(__name__)
@@ -51,4 +36,3 @@ logger.addHandler(ch)
 logger.propagate = False
 
 __all__ = ["setup_anndata", "SCGEN", "SCGENVAE"]
-'''

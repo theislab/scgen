@@ -3,9 +3,7 @@ import numpy as np
 from scipy import sparse
 
 
-def extractor(
-    data, cell_type, conditions, cell_type_key, condition_key
-):
+def extractor(data, cell_type, conditions, cell_type_key, condition_key):
     """
     Returns a list of `data` files while filtering for a specific `cell_type`.
     # Parameters

@@ -2,9 +2,7 @@
 API
 ===
 
-.. currentmodule:: mypackage
-
-.. note:: External functions can be imported from other packages like `scvi-tools` and be displayed on your docs website. As an example, `setup_anndata` here is directly from `scvi-tools`.
+.. currentmodule:: scgen
 
 Data
 ~~~~
@@ -13,20 +11,18 @@ Data
 
    setup_anndata
 
-MyModel
-~~~~~~~
+SCGEN
+~~~~~
 
 .. autosummary::
    :toctree: reference/
 
-   MyModel
-   MyPyroModel
+   SCGEN
 
-MyModule
+SCGENVAE
 ~~~~~~~~
 .. autosummary::
    :toctree: reference/
    :template: class_no_inherited.rst
 
-   MyModule
-   MyPyroModule
+   SCGENVAE

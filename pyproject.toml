@@ -10,19 +10,20 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
   "Natural Language :: English",
-  "Programming Language :: Python :: 3.6",
   "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-description = "scGen pytorch respository."
+description = "ScGen - Predicting single cell perturbations."
 description-file = 'README.md'
 documentation = "https://scvi-tools.org"
 homepage = "https://github.com/theislab/scgen"
 license = "MIT"
-name = "scgen-pytorch"
+name = "scgen"
 packages = [
   {include = "scgen"},
 ]
