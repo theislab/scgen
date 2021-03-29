@@ -39,15 +39,15 @@ class SCGENVAE(BaseModuleClass):
     def __init__(
         self,
         n_input: int,
-        n_hidden: int = 128,
+        n_hidden: int = 800,
         n_latent: int = 10,
-        n_layers: int = 1,
+        n_layers: int = 2,
         n_continuous_cov: int = 0,
         dropout_rate: float = 0.1,
         log_variational: bool = False,
         latent_distribution: str = "normal",
-        use_batch_norm: Literal["encoder", "decoder", "none", "both"] = "none",
-        use_layer_norm: Literal["encoder", "decoder", "none", "both"] = "both",
+        use_batch_norm: Literal["encoder", "decoder", "none", "both"] = "both",
+        use_layer_norm: Literal["encoder", "decoder", "none", "both"] = "none",
         kl_weight: float = 0.000005,
     ):
         super().__init__()
