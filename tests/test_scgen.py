@@ -1,4 +1,3 @@
-import scanpy as sc
 import scvi
 from scgen import SCGEN
 
@@ -12,7 +11,7 @@ def test_scgen():
     )
 
     # batch Removal
-    corrected_adata = model.batch_removal()
+    model.batch_removal()
 
     # # test prediction
     # pred_adata, _ = model.predict(
