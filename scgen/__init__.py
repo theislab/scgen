@@ -1,14 +1,29 @@
 """ScGen - Predicting single cell perturbations"""
 
+from scvi.data import setup_anndata
+from ._scgenvae import SCGENVAE
+from ._scgen import SCGEN
+
+
+__author__ = ', '.join([
+    'Mohammad  Lotfollahi',
+    'Mohsen Naghipourfar'
+])
+
+__email__ = ', '.join([
+    'Mohammad.lotfollahi@helmholtz-muenchen.de',
+    'mohsen.naghipourfar@gmail.com'
+])
+
+from get_version import get_version
+__version__ = get_version(__file__)
+del get_version
+
+'''
 import logging
 
 from rich.console import Console
 from rich.logging import RichHandler
-from scvi.data import setup_anndata
-
-from ._scgenvae import SCGENVAE
-from ._scgen import SCGEN
-
 # https://github.com/python-poetry/poetry/pull/2366#issuecomment-652418094
 # https://github.com/python-poetry/poetry/issues/144#issuecomment-623927302
 try:
@@ -36,4 +51,4 @@ logger.addHandler(ch)
 logger.propagate = False
 
 __all__ = ["setup_anndata", "SCGEN", "SCGENVAE"]
-
+'''
