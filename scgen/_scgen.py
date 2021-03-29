@@ -75,8 +75,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
     def predict(
         self,
-        cell_type_key,
-        condition_key,
         conditions=None,
         adata_to_predict=None,
         celltype_to_predict=None,
@@ -101,9 +99,17 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         delta: float
             Difference between stimulated and control cells in latent space
         """
+        # use keys registered from `setup_anndata()`
+        cell_type_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_labels"][
+            "original_key"
+        ]
+        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
+            "original_key"
+        ]
+
         if obs_key == "all":
-            ctrl_x = self.adata[self.adata.obs["condition"] == conditions["ctrl"], :]
-            stim_x = self.adata[self.adata.obs["condition"] == conditions["stim"], :]
+            ctrl_x = self.adata[self.adata.obs[condition_key] == conditions["ctrl"], :]
+            stim_x = self.adata[self.adata.obs[condition_key] == conditions["stim"], :]
             ctrl_x = balancer(
                 ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key
             )
@@ -114,8 +120,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             key = list(obs_key.keys())[0]
             values = obs_key[key]
             subset = self.adata[self.adata.obs[key].isin(values)]
-            ctrl_x = subset[subset.obs["condition"] == conditions["ctrl"], :]
-            stim_x = subset[subset.obs["condition"] == conditions["stim"], :]
+            ctrl_x = subset[subset.obs[condition_key] == conditions["ctrl"], :]
+            stim_x = subset[subset.obs[condition_key] == conditions["stim"], :]
             if len(values) > 1:
                 ctrl_x = balancer(
                     ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key
@@ -162,7 +168,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         stim_pred = delta + latent_cd
         predicted_cells = (
-            self.module.generative(torch.Tensor(stim_pred), None)["px"]
+            self.module.generative(torch.Tensor(stim_pred))["px"]
             .cpu()
             .detach()
             .numpy()
@@ -311,7 +317,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     def reg_mean_plot(
         self,
         adata,
-        condition_key,
         axis_keys,
         labels,
         path_to_save="./reg_mean.pdf",
@@ -330,9 +335,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         Plots mean matching figure for a set of specific genes.
         # Parameters
             adata: `~anndata.AnnData`
-                Annotated Data Matrix.
-            condition_key: basestring
-                Condition state to be used.
+                AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
+                AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
+                corresponding to batch and cell type metadata, respectively.
             axis_keys: dict
                 dictionary of axes labels.
             path_to_save: basestring
@@ -355,8 +360,14 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
         CD4T = train[train.obs["cell_type"] == "CD4T"]
         all_adata = CD4T.concatenate(pred_adata)
-        scgen.plotting.reg_mean_plot(all_adata, condition_key="condition", axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
-                                    gene_list=["ISG15", "CD3D"], path_to_save="tests/reg_mean.pdf", show=False)
+        scgen.plotting.reg_mean_plot(
+            all_adata,
+            condition_key="condition",
+            axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
+            gene_list=["ISG15", "CD3D"],
+            path_to_save="tests/reg_mean.pdf",
+            show=False
+        )
         network.sess.close()
         ```
         """
@@ -364,8 +375,13 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         sns.set()
         sns.set(color_codes=True)
+
         if sparse.issparse(adata.X):
             adata.X = adata.X.A
+        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
+            "original_key"
+        ]
+
         diff_genes = top_100_genes
         stim = adata[adata.obs[condition_key] == axis_keys["y"]]
         ctrl = adata[adata.obs[condition_key] == axis_keys["x"]]
@@ -454,7 +470,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     def reg_var_plot(
         self,
         adata,
-        condition_key,
         axis_keys,
         labels,
         path_to_save="./reg_var.pdf",
@@ -473,9 +488,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         Plots variance matching figure for a set of specific genes.
         # Parameters
             adata: `~anndata.AnnData`
-                Annotated Data Matrix.
-            condition_key: basestring
-                Condition state to be used.
+                AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
+                AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
+                corresponding to batch and cell type metadata, respectively.
             axis_keys: dict
                 dictionary of axes labels.
             path_to_save: basestring
@@ -507,8 +522,13 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         sns.set()
         sns.set(color_codes=True)
+
         if sparse.issparse(adata.X):
             adata.X = adata.X.A
+        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
+            "original_key"
+        ]
+
         sc.tl.rank_genes_groups(
             adata, groupby=condition_key, n_genes=100, method="wilcoxon"
         )
@@ -600,7 +620,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         scg_object,
         adata,
         delta,
-        condition_key,
         conditions,
         path_to_save,
         fontsize=14,
@@ -614,11 +633,11 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             scg_object: `~scgen.models.VAEArith`
                 one of scGen models object.
             adata: `~anndata.AnnData`
-                Annotated Data Matrix.
+                AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
+                AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
+                corresponding to batch and cell type metadata, respectively.
             delta: float
                 Difference between stimulated and control cells in latent space
-            condition_key: basestring
-                Condition state to be used.
             conditions: dict
                 dictionary of conditions.
             path_to_save: basestring
@@ -642,8 +661,10 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         """
         # matplotlib.rcParams.update(matplotlib.rcParamsDefault)
         pyplot.close("all")
-        if sparse.issparse(adata.X):
-            adata.X = adata.X.A
+        adata = self._validate_anndata(adata)
+        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
+            "original_key"
+        ]
         cd = adata[adata.obs[condition_key] == conditions["ctrl"], :]
         stim = adata[adata.obs[condition_key] == conditions["stim"], :]
         all_latent_cd = scg_object.to_latent(cd.X)

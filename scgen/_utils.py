@@ -4,7 +4,7 @@ from scipy import sparse
 
 
 def extractor(
-    data, cell_type, conditions, cell_type_key="cell_type", condition_key="condition"
+    data, cell_type, conditions, cell_type_key, condition_key
 ):
     """
     Returns a list of `data` files while filtering for a specific `cell_type`.
@@ -44,7 +44,7 @@ def extractor(
     return [training, condtion_1, condtion_2, cell_with_both_condition]
 
 
-def balancer(adata, cell_type_key="cell_type", condition_key="condition"):
+def balancer(adata, cell_type_key, condition_key):
 
     """
     Makes cell type population equal.
@@ -85,7 +85,7 @@ def balancer(adata, cell_type_key="cell_type", condition_key="condition"):
         all_data_condition.append(temp_cc)
     balanced_data = anndata.AnnData(np.concatenate(all_data_x))
     balanced_data.obs[cell_type_key] = np.concatenate(all_data_label)
-    balanced_data.obs[condition_key] = np.concatenate(all_data_label)
+    balanced_data.obs[condition_key] = np.concatenate(all_data_condition)
     class_names = np.unique(balanced_data.obs[cell_type_key])
     class_pop = {}
     for cls in class_names:
