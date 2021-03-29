@@ -1,24 +1,8 @@
-from pathlib import Path
-from setuptools import setup, find_packages
+#!/usr/bin/env python
 
-long_description = Path('README.md').read_text('utf-8')
+# This is a shim to hopefully allow Github to detect the package, build is done with poetry
 
-try:
-    from scgen import __author__, __email__
-except ImportError:  # Deps not yet installed
-    __author__ = __email__ = ''
+import setuptools
 
-setup(
-    name='scGen',
-    version='1.1.4',
-    description='An example of a python package from pre-existing code',
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url='https://github.com/theislab/scgen/tree/pytorch',
-    author=__author__,
-    author_email=__email__,
-    license='MIT',
-    packages=find_packages(),
-    zip_safe=False,
-    install_requires=[l.strip() for l in Path('requirements.txt').read_text('utf-8').splitlines()],
-)
+if __name__ == "__main__":
+    setuptools.setup(name="scgen-pytorch")

@@ -1,3 +1,3 @@
-New in 0.1.0 (2020-03-29)
+New in 0.1.0 (2020-01-25)
 -------------------------
-Initial release scGen Pytorch. Complies with `scvi-tools>=0.9.0a0`.
+Initial release of the skeleton. Complies with `scvi-tools>=0.9.0a0`.
