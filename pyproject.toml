@@ -19,8 +19,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 description = "ScGen - Predicting single cell perturbations."
-description-file = 'README.md'
-documentation = "https://scvi-tools.org"
+documentation = "https://scgen.readthedocs.io"
 homepage = "https://github.com/theislab/scgen"
 license = "MIT"
 name = "scgen"
@@ -28,7 +27,7 @@ packages = [
   {include = "scgen"},
 ]
 readme = "README.md"
-version = "1.0.0"
+version = "2.0.0"
 
 [tool.poetry.dependencies]
 anndata = ">=0.7.5"
