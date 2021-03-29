@@ -1,54 +1,67 @@
-import numpy as np
 import anndata
+import numpy as np
 from scipy import sparse
 
 
-def extractor(data, cell_type, conditions, cell_type_key="cell_type", condition_key="condition"):
+def extractor(
+    data, cell_type, conditions, cell_type_key="cell_type", condition_key="condition"
+):
     """
-        Returns a list of `data` files while filtering for a specific `cell_type`.
-        # Parameters
-        data: `~anndata.AnnData`
-            Annotated data matrix
-        cell_type: basestring
-            specific cell type to be extracted from `data`.
-        conditions: dict
-            dictionary of stimulated/control of `data`.
-        # Returns
-            list of `data` files while filtering for a specific `cell_type`.
-        # Example
-        ```python
-        import scgen
-        import anndata
-        train_data = anndata.read("./data/train.h5ad")
-        test_data = anndata.read("./data/test.h5ad")
-        train_data_extracted_list = extractor(train_data, "CD4T", conditions={"ctrl": "control", "stim": "stimulated"})
-        ```
+    Returns a list of `data` files while filtering for a specific `cell_type`.
+    # Parameters
+    data: `~anndata.AnnData`
+        Annotated data matrix
+    cell_type: basestring
+        specific cell type to be extracted from `data`.
+    conditions: dict
+        dictionary of stimulated/control of `data`.
+    # Returns
+        list of `data` files while filtering for a specific `cell_type`.
+    # Example
+    ```python
+    import scgen
+    import anndata
+    train_data = anndata.read("./data/train.h5ad")
+    test_data = anndata.read("./data/test.h5ad")
+    train_data_extracted_list = extractor(train_data, "CD4T", conditions={"ctrl": "control", "stim": "stimulated"})
+    ```
     """
     cell_with_both_condition = data[data.obs[cell_type_key] == cell_type]
-    condtion_1 = data[(data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == conditions["ctrl"])]
-    condtion_2 = data[(data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == conditions["stim"])]
-    training = data[~((data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == conditions["stim"]))]
+    condtion_1 = data[
+        (data.obs[cell_type_key] == cell_type)
+        & (data.obs[condition_key] == conditions["ctrl"])
+    ]
+    condtion_2 = data[
+        (data.obs[cell_type_key] == cell_type)
+        & (data.obs[condition_key] == conditions["stim"])
+    ]
+    training = data[
+        ~(
+            (data.obs[cell_type_key] == cell_type)
+            & (data.obs[condition_key] == conditions["stim"])
+        )
+    ]
     return [training, condtion_1, condtion_2, cell_with_both_condition]
 
 
 def balancer(adata, cell_type_key="cell_type", condition_key="condition"):
 
     """
-        Makes cell type population equal.
-        # Parameters
-        adata: `~anndata.AnnData`
-            Annotated data matrix.
-        # Returns
-            balanced_data: `~anndata.AnnData`
-                Equal cell type population Annotated data matrix.
-        # Example
-        ```python
-        import scgen
-        import anndata
-        train_data = anndata.read("./train_kang.h5ad")
-        train_ctrl = train_data[train_data.obs["condition"] == "control", :]
-        train_ctrl = balancer(train_ctrl)
-        ```
+    Makes cell type population equal.
+    # Parameters
+    adata: `~anndata.AnnData`
+        Annotated data matrix.
+    # Returns
+        balanced_data: `~anndata.AnnData`
+            Equal cell type population Annotated data matrix.
+    # Example
+    ```python
+    import scgen
+    import anndata
+    train_data = anndata.read("./train_kang.h5ad")
+    train_ctrl = train_data[train_data.obs["condition"] == "control", :]
+    train_ctrl = balancer(train_ctrl)
+    ```
     """
     class_names = np.unique(adata.obs[cell_type_key])
     class_pop = {}
