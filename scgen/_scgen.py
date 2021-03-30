@@ -19,7 +19,7 @@ font = {"family": "Arial", "size": 14}
 
 class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     """
-    Implementation of scGen model.
+    Implementation of scGen model for batch removal and perturbation prediction.
 
     Parameters
     ----------

@@ -43,7 +43,7 @@ class SCGENVAE(BaseModuleClass):
         latent_distribution: str = "normal",
         use_batch_norm: Literal["encoder", "decoder", "none", "both"] = "both",
         use_layer_norm: Literal["encoder", "decoder", "none", "both"] = "none",
-        kl_weight: float = 0.000005,
+        kl_weight: float = 0.00005,
     ):
         super().__init__()
         self.n_layers = n_layers
