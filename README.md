@@ -48,6 +48,12 @@ To install the latest version scGen via pip:
 pip install scgen
 ```
 
+or install the development version via pip:
+```bash
+pip install git+https://github.com/theislab/scgen.git
+```
+
+
 On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
 
 ## Examples
