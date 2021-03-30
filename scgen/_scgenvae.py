@@ -24,10 +24,6 @@ class SCGENVAE(BaseModuleClass):
         Dimensionality of the latent space
     n_layers
         Number of hidden layers used for encoder and decoder NNs
-    n_continuous_cov
-        Number of continuous covarites
-    n_cats_per_cov
-        Number of categories for each extra categorical covariate
     dropout_rate
         Dropout rate for neural networks
     use_layer_norm
@@ -42,7 +38,6 @@ class SCGENVAE(BaseModuleClass):
         n_hidden: int = 800,
         n_latent: int = 10,
         n_layers: int = 2,
-        n_continuous_cov: int = 0,
         dropout_rate: float = 0.1,
         log_variational: bool = False,
         latent_distribution: str = "normal",
@@ -72,7 +67,7 @@ class SCGENVAE(BaseModuleClass):
             activation_fn=torch.nn.LeakyReLU,
         )
 
-        n_input_decoder = n_latent + n_continuous_cov
+        n_input_decoder = n_latent
         self.decoder = DecoderSCGEN(
             n_input_decoder,
             n_input,

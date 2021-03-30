@@ -1,8 +1,0 @@
-numpy
-pandas
-torch
-scanpy
-matplotlib
-adjustText
-anndata
-scvi-tools>=0.9.0

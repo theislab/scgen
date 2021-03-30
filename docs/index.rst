@@ -14,5 +14,6 @@ We recommend building your own package by first using this repository as a `temp
 
    installation
    api/index
+   tutorials/index
    release_notes/index
    references
