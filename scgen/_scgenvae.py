@@ -74,6 +74,7 @@ class SCGENVAE(BaseModuleClass):
             n_layers=n_layers,
             n_hidden=n_hidden,
             activation_fn=torch.nn.LeakyReLU,
+            dropout_rate=dropout_rate,
         )
 
     def _get_inference_input(self, tensors):
