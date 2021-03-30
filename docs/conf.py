@@ -189,3 +189,21 @@ mathjax_config = {
         "processEscapes": True,
     },
 }
+
+nbsphinx_prolog = r"""
+.. raw:: html
+
+{% set docname = env.doc2path(env.docname, base=None).split("/")[-1] %}
+
+.. raw:: html
+
+    <div class="admonition note">
+    <p class="admonition-title">Note</p>
+    <p>
+      This page was generated from
+      <a class="reference external" href="https://github.com/theislab/scgen/docs/tutorials/">{{ docname|e }}</a>.
+      Interactive online version:
+      <span style="white-space: nowrap;"><a href="https://colab.research.google.com/github/theislab/scgen/blob/master/docs/tutorials/{{ docname|e }}"><img alt="Colab badge" src="https://colab.research.google.com/assets/colab-badge.svg" style="vertical-align:text-bottom"></a>.</span>
+    </p>
+    </div>
+"""
