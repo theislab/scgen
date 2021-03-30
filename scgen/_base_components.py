@@ -47,13 +47,14 @@ class DecoderSCGEN(nn.Module):
         super().__init__()
         self.decoder = FCLayers(
             n_in=n_input,
-            n_out=n_output,
+            n_out=n_hidden,
             n_cat_list=n_cat_list,
             n_layers=n_layers,
             n_hidden=n_hidden,
             dropout_rate=dropout_rate,
             **kwargs,
         )
+        self.linear_out = nn.Linear(n_hidden, n_output)
 
     def forward(self, x: torch.Tensor, *cat_list: int):
         """
@@ -75,5 +76,5 @@ class DecoderSCGEN(nn.Module):
             Mean and variance tensors of shape ``(n_output,)``
 
         """
-        p = self.decoder(x, *cat_list)
+        p = self.linear_out(self.decoder(x, *cat_list))
         return p
