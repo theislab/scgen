@@ -187,6 +187,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         indices: Optional[Sequence[int]] = None,
         batch_size: Optional[int] = None,
     ) -> np.ndarray:
+        """Get decoded expression."""
         if self.is_trained_ is False:
             raise RuntimeError("Please train the model first.")
 
@@ -479,37 +480,38 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     ):
         """
         Plots variance matching figure for a set of specific genes.
-        # Parameters
-            adata: `~anndata.AnnData`
-                AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
-                AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
-                corresponding to batch and cell type metadata, respectively.
-            axis_keys: dict
-                dictionary of axes labels.
-            path_to_save: basestring
-                path to save the plot.
-            gene_list: list
-                list of gene names to be plotted.
-            show: bool
-                if `True`: will show to the plot after saving it.
-        # Example
-        ```python
-        import anndata
-        import scgen
-        import scanpy as sc
-        train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
-        network.train(train_data=train, n_epochs=0)
-        unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
-        condition = {"ctrl": "control", "stim": "stimulated"}
-        pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
-        pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
-        CD4T = train[train.obs["cell_type"] == "CD4T"]
-        all_adata = CD4T.concatenate(pred_adata)
-        scgen.plotting.reg_var_plot(all_adata, condition_key="condition", axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
-                                    gene_list=["ISG15", "CD3D"], path_to_save="tests/reg_var4.pdf", show=False)
-        network.sess.close()
-        ```
+
+        Parameters
+        ----------
+        adata: `~anndata.AnnData`
+            AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
+            AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
+            corresponding to batch and cell type metadata, respectively.
+        axis_keys: dict
+            dictionary of axes labels.
+        path_to_save: basestring
+            path to save the plot.
+        gene_list: list
+            list of gene names to be plotted.
+        show: bool
+            if `True`: will show to the plot after saving it.
+
+        Examples
+        --------
+        >>> import anndata
+        >>> import scgen
+        >>> import scanpy as sc
+        >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+        >>> network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
+        >>> network.train(train_data=train, n_epochs=0)
+        >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
+        >>> condition = {"ctrl": "control", "stim": "stimulated"}
+        >>> pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+        >>> pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
+        >>> CD4T = train[train.obs["cell_type"] == "CD4T"]
+        >>> all_adata = CD4T.concatenate(pred_adata)
+        >>> scgen.plotting.reg_var_plot(all_adata, condition_key="condition", axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
+        >>>                             gene_list=["ISG15", "CD3D"], path_to_save="tests/reg_var4.pdf", show=False)
         """
         import seaborn as sns
 
