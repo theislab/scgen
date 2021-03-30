@@ -19,6 +19,8 @@ font = {"family": "Arial", "size": 14}
 
 class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     """
+    Implementation of scGen model.
+
     Parameters
     ----------
     adata
@@ -616,39 +618,43 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         fontsize=14,
     ):
         """
+        Latent space classifier.
+
         Builds a linear classifier based on the dot product between
         the difference vector and the latent representation of each
         cell and plots the dot product results between delta and latent
         representation.
-        # Parameters
-            scg_object: `~scgen.models.VAEArith`
-                one of scGen models object.
-            adata: `~anndata.AnnData`
-                AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
-                AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
-                corresponding to batch and cell type metadata, respectively.
-            delta: float
-                Difference between stimulated and control cells in latent space
-            conditions: dict
-                dictionary of conditions.
-            path_to_save: basestring
-                path to save the plot.
-        # Example
-        ```python
-        import anndata
-        import scgen
-        import scanpy as sc
-        train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
-        network.train(train_data=train, n_epochs=0)
-        unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
-        condition = {"ctrl": "control", "stim": "stimulated"}
-        pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
-        scgen.plotting.binary_classifier(network, train, delta, condtion_key="condition",
-                                        conditions={"ctrl": "control", "stim": "stimulated"},
-                                        path_to_save="tests/binary_classifier.pdf")
-        network.sess.close()
-        ```
+
+
+        Parameters
+        ----------
+        scg_object: `~scgen.models.VAEArith`
+            one of scGen models object.
+        adata: `~anndata.AnnData`
+            AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
+            AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
+            corresponding to batch and cell type metadata, respectively.
+        delta: float
+            Difference between stimulated and control cells in latent space
+        conditions: dict
+            dictionary of conditions.
+        path_to_save: basestring
+            path to save the plot.
+
+        Examples
+        --------
+        >>> import anndata
+        >>> import scgen
+        >>> import scanpy as sc
+        >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
+        >>> network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
+        >>> network.train(train_data=train, n_epochs=0)
+        >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
+        >>> condition = {"ctrl": "control", "stim": "stimulated"}
+        >>> pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
+        >>> scgen.plotting.binary_classifier(network, train, delta, condtion_key="condition",
+        >>>                                 conditions={"ctrl": "control", "stim": "stimulated"},
+        >>>                                 path_to_save="tests/binary_classifier.pdf")
         """
         # matplotlib.rcParams.update(matplotlib.rcParamsDefault)
         pyplot.close("all")

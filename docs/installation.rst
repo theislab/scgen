@@ -13,11 +13,11 @@ conda prerequisites
 
 2. Create a new conda environment::
 
-    conda create -n scvi-env python=3.7
+    conda create -n scgen-env python=3.7
 
 3. Activate your environment::
 
-    source activate scvi-env
+    source activate scgen-env
 
 pip prerequisites:
 ##################
@@ -30,18 +30,18 @@ pip prerequisites:
 .. _Python: https://www.python.org/downloads/
 .. _PyTorch: http://pytorch.org
 
-my_package installation
+scGen installation
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Install my_package in one of the following ways:
+Install scgen in one of the following ways:
 
 Through **pip**::
 
-    pip install <my_package>
+    pip install scgen
 
 Through pip with packages to run notebooks. This installs scanpy, etc.::
 
-    pip install <my_package>[tutorials]
+    pip install scgen[tutorials]
 
 Nightly version - clone this repo and run::
 
