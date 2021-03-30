@@ -6,7 +6,7 @@
 <img align="center" src="./sketch/sketch.png?raw=true">
 
 ## Introduction
-A pyTorch implementation of scGen. scGen is a generative model to predict single-cell perturbation response across cell types, studies and species
+A PyTorch implementation of scGen. scGen is a generative model to predict single-cell perturbation response across cell types, studies and species
   [(Nature Methods, 2019)](https://www.nature.com/articles/s41592-019-0494-8) .
 
 ## Getting Started
@@ -24,7 +24,7 @@ the method. Note that `batch_removal` does not require all cell types to be pres
 you have dataset specific cell type it will preserved as before.
 
 * We assume there exist two conditions in you dataset (e.g. control and perturbed). You can train the model and with
-your data and predict the perturbation for the cell type/species of interest. 
+your data and predict the perturbation for the cell type/species of interest.
 
 * We recommend to use normalized data for the training. A simple example for normalization pipeline using scanpy:
 
@@ -43,9 +43,9 @@ HVG. However, this is optional and highly depend on your application and computa
 ## Installation
 
 ### Installation with pip
-To install the latest version scGen pyTorch PyPI via pip:
+To install the latest version scGen via pip:
 ```bash
-pip install git+https://github.com/theislab/scgen.git@pytorch
+pip install scgen
 ```
 
 On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
