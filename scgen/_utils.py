@@ -44,12 +44,10 @@ def extractor(
     """
     cell_with_both_condition = data[data.obs[cell_type_key] == cell_type]
     condition_1 = data[
-        (data.obs[cell_type_key] == cell_type)
-        & (data.obs[condition_key] == ctrl_key)
+        (data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == ctrl_key)
     ]
     condition_2 = data[
-        (data.obs[cell_type_key] == cell_type)
-        & (data.obs[condition_key] == stim_key)
+        (data.obs[cell_type_key] == cell_type) & (data.obs[condition_key] == stim_key)
     ]
     training = data[
         ~(

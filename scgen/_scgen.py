@@ -134,7 +134,13 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             )
         if celltype_to_predict is not None:
             ctrl_pred = extractor(
-                self.adata, celltype_to_predict, condition_key, cell_type_key, ctrl_key, stim_key)[1]
+                self.adata,
+                celltype_to_predict,
+                condition_key,
+                cell_type_key,
+                ctrl_key,
+                stim_key,
+            )[1]
         else:
             ctrl_pred = adata_to_predict
 
