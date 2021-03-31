@@ -76,7 +76,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
     def predict(
         self,
-        conditions=None,
+        ctrl_key=None,
+        stim_key=None,
         adata_to_predict=None,
         celltype_to_predict=None,
         obs_key="all",
@@ -86,13 +87,16 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         Parameters
         ----------
+        ctrl_key: basestring
+            key for `control` part of the `data` found in `condition_key`.
+        stim_key: basestring
+            key for `stimulated` part of the `data` found in `condition_key`.
+        adata_to_predict: `~anndata.AnnData`
+            Adata for unperturbed cells you want to be predicted.
         celltype_to_predict: basestring
             The cell type you want to be predicted.
         obs_key: basestring or dict
             Dictionary of celltypes you want to be observed for prediction.
-        adata_to_predict: `~anndata.AnnData`
-            Adata for unpertubed cells you want to be predicted.
-
         Returns
         -------
         predicted_cells: numpy nd-array
@@ -109,27 +113,19 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         ]
 
         if obs_key == "all":
-            ctrl_x = self.adata[self.adata.obs[condition_key] == conditions["ctrl"], :]
-            stim_x = self.adata[self.adata.obs[condition_key] == conditions["stim"], :]
-            ctrl_x = balancer(
-                ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key
-            )
-            stim_x = balancer(
-                stim_x, cell_type_key=cell_type_key, condition_key=condition_key
-            )
+            ctrl_x = self.adata[self.adata.obs[condition_key] == ctrl_key, :]
+            stim_x = self.adata[self.adata.obs[condition_key] == stim_key, :]
+            ctrl_x = balancer(ctrl_x, condition_key, cell_type_key)
+            stim_x = balancer(stim_x, condition_key, cell_type_key)
         else:
             key = list(obs_key.keys())[0]
             values = obs_key[key]
             subset = self.adata[self.adata.obs[key].isin(values)]
-            ctrl_x = subset[subset.obs[condition_key] == conditions["ctrl"], :]
-            stim_x = subset[subset.obs[condition_key] == conditions["stim"], :]
+            ctrl_x = subset[subset.obs[condition_key] == ctrl_key, :]
+            stim_x = subset[subset.obs[condition_key] == stim_key, :]
             if len(values) > 1:
-                ctrl_x = balancer(
-                    ctrl_x, cell_type_key=cell_type_key, condition_key=condition_key
-                )
-                stim_x = balancer(
-                    stim_x, cell_type_key=cell_type_key, condition_key=condition_key
-                )
+                ctrl_x = balancer(ctrl_x, condition_key, cell_type_key)
+                stim_x = balancer(stim_x, condition_key, cell_type_key)
         if celltype_to_predict is not None and adata_to_predict is not None:
             raise Exception("Please provide either a cell type or adata not both!")
         if celltype_to_predict is None and adata_to_predict is None:
@@ -138,12 +134,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             )
         if celltype_to_predict is not None:
             ctrl_pred = extractor(
-                self.adata,
-                celltype_to_predict,
-                conditions,
-                cell_type_key,
-                condition_key,
-            )[1]
+                self.adata, celltype_to_predict, condition_key, cell_type_key, ctrl_key, stim_key)[1]
         else:
             ctrl_pred = adata_to_predict
 
@@ -320,8 +311,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         labels,
         path_to_save="./reg_mean.pdf",
         gene_list=None,
-        top_100_genes=None,
         show=False,
+        top_100_genes=None,
         verbose=False,
         legend=True,
         title=None,
@@ -340,32 +331,41 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
             corresponding to batch and cell type metadata, respectively.
         axis_keys: dict
-            dictionary of axes labels.
+            Dictionary of `adata.obs` keys that are used by the axes of the plot. Has to be in the following form:
+             `{"x": "Key for x-axis", "y": "Key for y-axis"}`.
+        labels: dict
+            Dictionary of axes labels of the form `{"x": "x-axis-name", "y": "y-axis name"}`.
         path_to_save: basestring
             path to save the plot.
         gene_list: list
             list of gene names to be plotted.
         show: bool
             if `True`: will show to the plot after saving it.
-
         Examples
         --------
         >>> import anndata
         >>> import scgen
         >>> import scanpy as sc
         >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        >>> scgen.data.setup_anndata(train)
+        >>> scgen.setup_anndata(train)
         >>> network = scgen.SCGEN(train)
-        >>> network.train(max_epochs=100)
+        >>> network.train()
         >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
-        >>> condition = {"ctrl": "control", "stim": "stimulated"}
-        >>> pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
-        >>> pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
+        >>> pred, delta = network.predict(
+        >>>     adata=train,
+        >>>     adata_to_predict=unperturbed_data,
+        >>>     ctrl_key="control",
+        >>>     stim_key="stimulated"
+        >>>)
+        >>> pred_adata = anndata.AnnData(
+        >>>     pred,
+        >>>     obs={"condition": ["pred"] * len(pred)},
+        >>>     var={"var_names": train.var_names},
+        >>>)
         >>> CD4T = train[train.obs["cell_type"] == "CD4T"]
         >>> all_adata = CD4T.concatenate(pred_adata)
         >>> network.reg_mean_plot(
         >>>     all_adata,
-        >>>     condition_key="condition",
         >>>     axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
         >>>     gene_list=["ISG15", "CD3D"],
         >>>     path_to_save="tests/reg_mean.pdf",
@@ -480,7 +480,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     ):
         """
         Plots variance matching figure for a set of specific genes.
-
         Parameters
         ----------
         adata: `~anndata.AnnData`
@@ -488,30 +487,46 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
             corresponding to batch and cell type metadata, respectively.
         axis_keys: dict
-            dictionary of axes labels.
+            Dictionary of `adata.obs` keys that are used by the axes of the plot. Has to be in the following form:
+             `{"x": "Key for x-axis", "y": "Key for y-axis"}`.
+        labels: dict
+            Dictionary of axes labels of the form `{"x": "x-axis-name", "y": "y-axis name"}`.
         path_to_save: basestring
             path to save the plot.
         gene_list: list
             list of gene names to be plotted.
         show: bool
             if `True`: will show to the plot after saving it.
-
         Examples
         --------
         >>> import anndata
         >>> import scgen
         >>> import scanpy as sc
         >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        >>> network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
-        >>> network.train(train_data=train, n_epochs=0)
+        >>> scgen.setup_anndata(train)
+        >>> network = scgen.SCGEN(train)
+        >>> network.train()
         >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
-        >>> condition = {"ctrl": "control", "stim": "stimulated"}
-        >>> pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
-        >>> pred_adata = anndata.AnnData(pred, obs={"condition": ["pred"] * len(pred)}, var={"var_names": train.var_names})
+        >>> pred, delta = network.predict(
+        >>>     adata=train,
+        >>>     adata_to_predict=unperturbed_data,
+        >>>     ctrl_key="control",
+        >>>     stim_key="stimulated"
+        >>>)
+        >>> pred_adata = anndata.AnnData(
+        >>>     pred,
+        >>>     obs={"condition": ["pred"] * len(pred)},
+        >>>     var={"var_names": train.var_names},
+        >>>)
         >>> CD4T = train[train.obs["cell_type"] == "CD4T"]
         >>> all_adata = CD4T.concatenate(pred_adata)
-        >>> scgen.plotting.reg_var_plot(all_adata, condition_key="condition", axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
-        >>>                             gene_list=["ISG15", "CD3D"], path_to_save="tests/reg_var4.pdf", show=False)
+        >>> network.reg_var_plot(
+        >>>     all_adata,
+        >>>     axis_keys={"x": "control", "y": "pred", "y1": "stimulated"},
+        >>>     gene_list=["ISG15", "CD3D"],
+        >>>     path_to_save="tests/reg_var4.pdf",
+        >>>     show=False
+        >>>)
         """
         import seaborn as sns
 
@@ -615,7 +630,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         scg_object,
         adata,
         delta,
-        conditions,
+        ctrl_key,
+        stim_key,
         path_to_save,
         fontsize=14,
     ):
@@ -638,10 +654,14 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             corresponding to batch and cell type metadata, respectively.
         delta: float
             Difference between stimulated and control cells in latent space
-        conditions: dict
-            dictionary of conditions.
+        ctrl_key: basestring
+            key for `control` part of the `data` found in `condition_key`.
+        stim_key: basestring
+            key for `stimulated` part of the `data` found in `condition_key`.
         path_to_save: basestring
             path to save the plot.
+        fontsize: integer
+            Set the font size of the plot.
 
         Examples
         --------
@@ -649,14 +669,24 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         >>> import scgen
         >>> import scanpy as sc
         >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        >>> network = scgen.VAEArith(x_dimension=train.shape[1], model_path="../models/test")
-        >>> network.train(train_data=train, n_epochs=0)
+        >>> scgen.setup_anndata(train)
+        >>> network = scgen.SCGEN(train)
+        >>> network.train()
         >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
-        >>> condition = {"ctrl": "control", "stim": "stimulated"}
-        >>> pred, delta = network.predict(adata=train, adata_to_predict=unperturbed_data, conditions=condition)
-        >>> scgen.plotting.binary_classifier(network, train, delta, condtion_key="condition",
-        >>>                                 conditions={"ctrl": "control", "stim": "stimulated"},
-        >>>                                 path_to_save="tests/binary_classifier.pdf")
+        >>> pred, delta = network.predict(
+        >>>     adata=train,
+        >>>     adata_to_predict=unperturbed_data,
+        >>>     ctrl_key="control",
+        >>>     stim_key="stimulated"
+        >>>)
+        >>> network.binary_classifier(
+        >>>     network,
+        >>>     train,
+        >>>     delta,
+        >>>     ctrl_key="control",
+        >>>     stim_key="stimulated",
+        >>>     path_to_save="tests/binary_classifier.pdf"
+        >>>     )
         """
         # matplotlib.rcParams.update(matplotlib.rcParamsDefault)
         pyplot.close("all")
@@ -664,8 +694,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
             "original_key"
         ]
-        cd = adata[adata.obs[condition_key] == conditions["ctrl"], :]
-        stim = adata[adata.obs[condition_key] == conditions["stim"], :]
+        cd = adata[adata.obs[condition_key] == ctrl_key, :]
+        stim = adata[adata.obs[condition_key] == stim_key, :]
         all_latent_cd = scg_object.to_latent(cd.X)
         all_latent_stim = scg_object.to_latent(stim.X)
         dot_cd = numpy.zeros((len(all_latent_cd)))
@@ -676,10 +706,10 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             dot_sal[ind] = numpy.dot(delta, vec)
         pyplot.hist(
             dot_cd,
-            label=conditions["ctrl"],
+            label=ctrl_key,
             bins=50,
         )
-        pyplot.hist(dot_sal, label=conditions["stim"], bins=50)
+        pyplot.hist(dot_sal, label=stim_key, bins=50)
         # pyplot.legend(loc=1, prop={'size': 7})
         pyplot.axvline(0, color="k", linestyle="dashed", linewidth=1)
         pyplot.title("  ", fontsize=fontsize)
