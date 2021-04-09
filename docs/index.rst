@@ -12,7 +12,7 @@ scGen is a generative model to predict single-cell perturbation response across 
 
 Getting Started
 ~~~~~~~~~~~~~
-*What you can do with scGen:
+* What you can do with scGen:
 
 * Train on a dataset wih multiple cell types and conditions and predict the the perturbation effect on the cell type
 which you only have in one condition. This scenario can be extended to multiple species where you want to predict
@@ -43,14 +43,16 @@ HVG. However, this is optional and highly depend on your application and computa
 Installation
 ~~~~~~~~~~~~~
 To install the latest version scGen via pip:
-```bash
+
+``
 pip install scgen
-```
+``
 
 or install the development version via pip:
-```bash
+
+``
 pip install git+https://github.com/theislab/scgen.git
-```
+``
 
 
 On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
@@ -63,8 +65,8 @@ Reproducing paper results
 ~~~~~~~~~~~~~
 In order to reproduce paper results visit `here <https://github.com/M0hammadL/scGen_reproducibility>`_.
 
-## References
-
+References
+~~~~~~~~~~~~~
 Lotfollahi, Mohammad and Wolf, F. Alexander and Theis, Fabian J.
 **"scGen predicts single-cell perturbation responses."**
 Nature Methods, 2019. `pdf <https://rdcu.be/bMlbD>`_.
