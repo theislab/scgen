@@ -92,14 +92,13 @@ def balancer(
     class_names = np.unique(adata.obs[cell_type_key])
     class_pop = {}
     for cls in class_names:
-        class_pop[cls] = adata.copy()[adata.obs[cell_type_key] == cls].shape[0]
+        class_pop[cls] = adata[adata.obs[cell_type_key] == cls].shape[0]
     max_number = np.max(list(class_pop.values()))
     index_all = []
-    print("MAX NUMBER")
     for cls in class_names:
-        index_cls = np.argwhere(adata.obs[cell_type_key] == cls)
+        class_index = np.array(adata.obs[cell_type_key] == cls)
+        index_cls = np.nonzero(class_index)[0]
         index_cls_r = index_cls[np.random.choice(len(index_cls), max_number)]
-        print("FOR CLASS", cls, "LEN OF INDEX SET", len(index_cls_r), "SHAPE", index_cls.shape)
         index_all.append(index_cls_r)
 
     balanced_data = adata[np.concatenate(index_all)].copy()

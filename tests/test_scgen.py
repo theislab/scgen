@@ -1,14 +1,11 @@
 import scvi
 import scanpy as sc
-from scgen import SCGEN
+from scgen.scgen import SCGEN
 
 
 def test_scgen():
 
     adata = scvi.data.synthetic_iid()
-    print(adata)
-    print(adata.obs['batch'].unique())
-    print(adata.obs['labels'].unique())
     model = SCGEN(adata)
     model.train(
         max_epochs=1, batch_size=32, early_stopping=True, early_stopping_patience=25
@@ -19,16 +16,18 @@ def test_scgen():
 
     # predict
     pred, delta = model.predict(
-        ctrl_key="batch_0",
-        stim_key="batch_1",
-        celltype_to_predict="label_0"
+        ctrl_key="batch_0", stim_key="batch_1", celltype_to_predict="label_0"
     )
     pred.obs["batch"] = "pred"
 
     # reg mean and reg var
-    ctrl_adata = adata[((adata.obs["labels"] == "label_0") & (adata.obs["batch"] == "batch_0"))]
-    stim_adata = adata[((adata.obs["labels"] == "label_0") & (adata.obs["batch"] == "batch_1"))]
-    eval_adata = ctrl_adata.concatenate(stim_adata, pred)
+    ctrl_adata = adata[
+        ((adata.obs["labels"] == "label_0") & (adata.obs["batch"] == "batch_0"))
+    ]
+    stim_adata = adata[
+        ((adata.obs["labels"] == "label_0") & (adata.obs["batch"] == "batch_1"))
+    ]
+    eval_adata = ctrl_adata.concatenate(stim_adata, pred, batch_key="concat_batches")
     label_0 = adata[adata.obs["labels"] == "label_0"]
     sc.tl.rank_genes_groups(label_0, groupby="batch", method="wilcoxon")
     diff_genes = label_0.uns["rank_genes_groups"]["names"]["batch_1"]
@@ -40,7 +39,5 @@ def test_scgen():
         labels={"x": "predicted", "y": "ground truth"},
         path_to_save="./reg_mean1.pdf",
         show=False,
-        legend=False
+        legend=False,
     )
-
-test_scgen()
