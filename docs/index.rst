@@ -55,17 +55,3 @@ You can also post bug reports and feature requests in
 `GitHub issues
 <https://github.com/M0hammadL/scGen/issues>`_. Please Make sure read our
 guidelines first.
-
-
-
-.. raw:: html
-
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/computer-24px.svg" class="card-img-top" alt="installation with scvi action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">Installation</h5>
-                    <p class="card-text">New to <em>scvi-tools</em>? Check out the installation guide.
-                    </p>
