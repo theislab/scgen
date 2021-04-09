@@ -1,6 +1,6 @@
 import scvi
 import scanpy as sc
-from scgen.scgen import SCGEN
+from scgen import SCGEN
 
 
 def test_scgen():
@@ -37,7 +37,9 @@ def test_scgen():
         axis_keys={"x": "pred", "y": "batch_1"},
         gene_list=diff_genes[:10],
         labels={"x": "predicted", "y": "ground truth"},
-        path_to_save="./reg_mean1.pdf",
+        save=False,
         show=False,
         legend=False,
     )
+
+test_scgen()

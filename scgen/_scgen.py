@@ -316,6 +316,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         axis_keys,
         labels,
         path_to_save="./reg_mean.pdf",
+        save=True,
         gene_list=None,
         show=False,
         top_100_genes=None,
@@ -343,6 +344,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             Dictionary of axes labels of the form `{"x": "x-axis-name", "y": "y-axis name"}`.
         path_to_save: basestring
             path to save the plot.
+        save: boolean
+            Specify if the plot should be saved or not.
         gene_list: list
             list of gene names to be plotted.
         show: bool
@@ -458,7 +461,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 + f"{r_value_diff ** 2:.2f}",
                 fontsize=kwargs.get("textsize", fontsize),
             )
-        pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
+        if save:
+            pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
         if show:
             pyplot.show()
         pyplot.close()
@@ -473,6 +477,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         axis_keys,
         labels,
         path_to_save="./reg_var.pdf",
+        save=True,
         gene_list=None,
         top_100_genes=None,
         show=False,
@@ -499,6 +504,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             Dictionary of axes labels of the form `{"x": "x-axis-name", "y": "y-axis name"}`.
         path_to_save: basestring
             path to save the plot.
+        save: boolean
+            Specify if the plot should be saved or not.
         gene_list: list
             list of gene names to be plotted.
         show: bool
@@ -622,7 +629,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 + f"{r_value_diff ** 2:.2f}",
                 fontsize=kwargs.get("textsize", fontsize),
             )
-        pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
+
+        if save:
+            pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
         if show:
             pyplot.show()
         pyplot.close()
@@ -639,6 +648,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         ctrl_key,
         stim_key,
         path_to_save,
+        save=True,
         fontsize=14,
     ):
         """
@@ -666,6 +676,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             key for `stimulated` part of the `data` found in `condition_key`.
         path_to_save: basestring
             path to save the plot.
+        save: boolean
+            Specify if the plot should be saved or not.
         fontsize: integer
             Set the font size of the plot.
 
@@ -725,5 +737,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         pyplot.yticks(fontsize=fontsize)
         ax = pyplot.gca()
         ax.grid(False)
-        pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
+        if save:
+            pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
         pyplot.show()
