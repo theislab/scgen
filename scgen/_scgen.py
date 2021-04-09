@@ -491,6 +491,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     ):
         """
         Plots variance matching figure for a set of specific genes.
+
         Parameters
         ----------
         adata: `~anndata.AnnData`
@@ -510,6 +511,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             list of gene names to be plotted.
         show: bool
             if `True`: will show to the plot after saving it.
+
         Examples
         --------
         >>> import anndata
