@@ -1,4 +1,4 @@
-version: 1
+version: w
 build:
   image: latest
 sphinx:
