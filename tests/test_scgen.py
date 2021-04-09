@@ -41,5 +41,3 @@ def test_scgen():
         show=False,
         legend=False,
     )
-
-test_scgen()
