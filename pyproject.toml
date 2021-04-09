@@ -61,7 +61,7 @@ sphinx-material = {version = "*", optional = true}
 typing_extensions = {version = "*", python = "<3.8"}
 
 [tool.poetry.extras]
-dev = ["black", "pytest", "flake8", "codecov", "scanpy", "loompy", "jupyter", "nbformat", "nbconvert", "pre-commit", "isort"]
+dev = ["black", "pytest", "flake8", "codecov", "loompy", "jupyter", "nbformat", "nbconvert", "pre-commit", "isort"]
 docs = [
   "sphinx",
   "scanpydoc",
