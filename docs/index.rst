@@ -2,7 +2,7 @@
 scGen documentation
 ===================
 .. image:: ./sketch.png
-  :width: 400
+  :width: 800
   :alt: scGen Architecture
 
 Introduction
