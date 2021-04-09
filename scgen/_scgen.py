@@ -115,8 +115,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         if restrict_arithmetic_to == "all":
             ctrl_x = self.adata[self.adata.obs[condition_key] == ctrl_key, :]
             stim_x = self.adata[self.adata.obs[condition_key] == stim_key, :]
-            ctrl_x = balancer(ctrl_x, condition_key, cell_type_key)
-            stim_x = balancer(stim_x, condition_key, cell_type_key)
+            ctrl_x = balancer(ctrl_x, cell_type_key)
+            stim_x = balancer(stim_x, cell_type_key)
         else:
             key = list(restrict_arithmetic_to.keys())[0]
             values = restrict_arithmetic_to[key]
@@ -124,8 +124,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             ctrl_x = subset[subset.obs[condition_key] == ctrl_key, :]
             stim_x = subset[subset.obs[condition_key] == stim_key, :]
             if len(values) > 1:
-                ctrl_x = balancer(ctrl_x, condition_key, cell_type_key)
-                stim_x = balancer(stim_x, condition_key, cell_type_key)
+                ctrl_x = balancer(ctrl_x, cell_type_key)
+                stim_x = balancer(stim_x, cell_type_key)
         if celltype_to_predict is not None and adata_to_predict is not None:
             raise Exception("Please provide either a cell type or adata not both!")
         if celltype_to_predict is None and adata_to_predict is None:

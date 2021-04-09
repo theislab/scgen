@@ -1,6 +1,4 @@
-import anndata
 import numpy as np
-from scipy import sparse
 
 
 def extractor(
@@ -60,7 +58,6 @@ def extractor(
 
 def balancer(
     adata,
-    condition_key,
     cell_type_key,
 ):
 
@@ -71,8 +68,6 @@ def balancer(
     ----------
     adata: `~anndata.AnnData`
         Annotated data matrix.
-    condition_key: basestring
-        key for `.obs` of `data` where conditions can be found.
     cell_type_key: basestring
         key for `.obs` of `data` where cell types can be found.
     Returns

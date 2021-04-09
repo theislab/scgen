@@ -32,7 +32,7 @@ def test_scgen():
     sc.tl.rank_genes_groups(label_0, groupby="batch", method="wilcoxon")
     diff_genes = label_0.uns["rank_genes_groups"]["names"]["batch_1"]
 
-    r2_value = model.reg_mean_plot(
+    model.reg_mean_plot(
         eval_adata,
         axis_keys={"x": "pred", "y": "batch_1"},
         gene_list=diff_genes[:10],
