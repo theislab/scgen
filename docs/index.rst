@@ -30,8 +30,7 @@ What you can do with scGen:
     sc.pp.normalize_per_cell(adata)
     sc.pp.log1p(adata)
 
-* We further recommend to use highly variable genes (HVG). For the most examples in the paper we used top ~7000
-HVG. However, this is optional and highly depend on your application and computational power.
+* We further recommend to use highly variable genes (HVG). For the most examples in the paper we used top ~7000 HVG. However, this is optional and highly depend on your application and computational power.
 
 Installation
 ~~~~~~~~~~~~~
