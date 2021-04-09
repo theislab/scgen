@@ -31,7 +31,7 @@ your data and predict the perturbation for the cell type/species of interest.
 ``` python
 import scanpy as sc
 adata = sc.read(data)
-sc.pp.normalize_per_cell(adata)
+sc.pp.normalize_total(adata)
 sc.pp.log1p(adata)
 ```
 * We further recommend to use highly variable genes (HVG). For the most examples in the paper we used top ~7000
