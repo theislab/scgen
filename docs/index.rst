@@ -36,7 +36,7 @@ Installation
 ~~~~~~~~~~~~~
 To install the latest version scGen via pip:
 
-```pip install scgen```
+``pip install scgen``
 
 or install the development version via pip:
 
