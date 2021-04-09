@@ -94,39 +94,13 @@ def balancer(
     for cls in class_names:
         class_pop[cls] = adata.copy()[adata.obs[cell_type_key] == cls].shape[0]
     max_number = np.max(list(class_pop.values()))
-    balanced_data = None
-    all_data_x = []
-    all_data_label = []
-    all_data_condition = []
-    print('STARTING BALANCED DATA')
+    index_all = []
+    print("MAX NUMBER")
     for cls in class_names:
-        temp = adata[adata.obs[cell_type_key] == cls]
-        index = np.random.choice(range(len(temp)), max_number)
-        if balanced_data is None:
-            balanced_data = temp[index].copy()
-        else:
-            balanced_data = balanced_data.concatenate(temp[index].copy(), batch_key="balancer_batches")
-            balanced_data.obs_names_make_unique()
-        '''
-        if sparse.issparse(temp.X):
-            temp_x = temp.X.A[index]
-        else:
-            temp_x = temp.X[index]
-        all_data_x.append(temp_x)
-        temp_ct = np.repeat(cls, max_number)
-        all_data_label.append(temp_ct)
-        temp_cc = np.repeat(np.unique(temp.obs[condition_key]), max_number)
-        all_data_condition.append(temp_cc)
-        '''
-    print('FINISHED BALANCED DATA')
-    print(balanced_data)
-    '''
-    balanced_data = anndata.AnnData(np.concatenate(all_data_x))
-    balanced_data.obs[cell_type_key] = np.concatenate(all_data_label)
-    balanced_data.obs[condition_key] = np.concatenate(all_data_condition)
-    class_names = np.unique(balanced_data.obs[cell_type_key])
-    class_pop = {}
-    for cls in class_names:
-        class_pop[cls] = len(balanced_data[balanced_data.obs[cell_type_key] == cls])
-    '''
+        index_cls = np.argwhere(adata.obs[cell_type_key] == cls)
+        index_cls_r = index_cls[np.random.choice(len(index_cls), max_number)]
+        print("FOR CLASS", cls, "LEN OF INDEX SET", len(index_cls_r), "SHAPE", index_cls.shape)
+        index_all.append(index_cls_r)
+
+    balanced_data = adata[np.concatenate(index_all)].copy()
     return balanced_data
