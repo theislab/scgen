@@ -11,7 +11,7 @@ scGen is a generative model to predict single-cell perturbation response across 
 
 Getting Started
 ~~~~~~~~~~~~~
-* What you can do with scGen:
+What you can do with scGen:
 
 * Train on a dataset wih multiple cell types and conditions and predict the the perturbation effect on the cell type which you only have in one condition. This scenario can be extended to multiple species where you want to predict the effect of a specific species using another or all the species.
 
