@@ -1,6 +1,6 @@
 import scvi
 import scanpy as sc
-from scgen._scgen import SCGEN
+from scgen import SCGEN
 
 
 def test_scgen():

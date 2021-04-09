@@ -98,6 +98,7 @@ def balancer(
     all_data_x = []
     all_data_label = []
     all_data_condition = []
+    print('STARTING BALANCED DATA')
     for cls in class_names:
         temp = adata[adata.obs[cell_type_key] == cls]
         index = np.random.choice(range(len(temp)), max_number)
@@ -105,6 +106,7 @@ def balancer(
             balanced_data = temp[index].copy()
         else:
             balanced_data = balanced_data.concatenate(temp[index].copy(), batch_key="balancer_batches")
+            balanced_data.obs_names_make_unique()
         '''
         if sparse.issparse(temp.X):
             temp_x = temp.X.A[index]
@@ -116,6 +118,8 @@ def balancer(
         temp_cc = np.repeat(np.unique(temp.obs[condition_key]), max_number)
         all_data_condition.append(temp_cc)
         '''
+    print('FINISHED BALANCED DATA')
+    print(balanced_data)
     '''
     balanced_data = anndata.AnnData(np.concatenate(all_data_x))
     balanced_data.obs[cell_type_key] = np.concatenate(all_data_label)
