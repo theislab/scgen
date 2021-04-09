@@ -94,12 +94,15 @@ def balancer(
     for cls in class_names:
         class_pop[cls] = adata.copy()[adata.obs[cell_type_key] == cls].shape[0]
     max_number = np.max(list(class_pop.values()))
+    all_adata = []
     all_data_x = []
     all_data_label = []
     all_data_condition = []
     for cls in class_names:
-        temp = adata.copy()[adata.obs[cell_type_key] == cls]
+        temp = adata[adata.obs[cell_type_key] == cls]
         index = np.random.choice(range(len(temp)), max_number)
+        all_adata.append(temp[index].copy())
+        '''
         if sparse.issparse(temp.X):
             temp_x = temp.X.A[index]
         else:
@@ -109,6 +112,9 @@ def balancer(
         all_data_label.append(temp_ct)
         temp_cc = np.repeat(np.unique(temp.obs[condition_key]), max_number)
         all_data_condition.append(temp_cc)
+        '''
+    balanced_data = anndata.AnnData.concatenate(all_adata, batch_key="balancer_batches")
+    '''
     balanced_data = anndata.AnnData(np.concatenate(all_data_x))
     balanced_data.obs[cell_type_key] = np.concatenate(all_data_label)
     balanced_data.obs[condition_key] = np.concatenate(all_data_condition)
@@ -116,4 +122,5 @@ def balancer(
     class_pop = {}
     for cls in class_names:
         class_pop[cls] = len(balanced_data[balanced_data.obs[cell_type_key] == cls])
+    '''
     return balanced_data

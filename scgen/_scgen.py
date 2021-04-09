@@ -80,7 +80,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         stim_key=None,
         adata_to_predict=None,
         celltype_to_predict=None,
-        obs_key="all",
+        restrict_arithmetic_to="all",
     ) -> AnnData:
         """
         Predicts the cell type provided by the user in stimulated condition.
@@ -95,7 +95,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             Adata for unperturbed cells you want to be predicted.
         celltype_to_predict: basestring
             The cell type you want to be predicted.
-        obs_key: basestring or dict
+        restrict_arithmetic_to: basestring or dict
             Dictionary of celltypes you want to be observed for prediction.
         Returns
         -------
@@ -112,14 +112,14 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             "original_key"
         ]
 
-        if obs_key == "all":
+        if restrict_arithmetic_to == "all":
             ctrl_x = self.adata[self.adata.obs[condition_key] == ctrl_key, :]
             stim_x = self.adata[self.adata.obs[condition_key] == stim_key, :]
             ctrl_x = balancer(ctrl_x, condition_key, cell_type_key)
             stim_x = balancer(stim_x, condition_key, cell_type_key)
         else:
-            key = list(obs_key.keys())[0]
-            values = obs_key[key]
+            key = list(restrict_arithmetic_to.keys())[0]
+            values = restrict_arithmetic_to[key]
             subset = self.adata[self.adata.obs[key].isin(values)]
             ctrl_x = subset[subset.obs[condition_key] == ctrl_key, :]
             stim_x = subset[subset.obs[condition_key] == stim_key, :]
