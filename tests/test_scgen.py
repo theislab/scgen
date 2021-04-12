@@ -1,11 +1,18 @@
 import scvi
 import scanpy as sc
 from scgen import SCGEN
+from scgen import setup_anndata
 
 
 def test_scgen():
 
-    adata = scvi.data.synthetic_iid()
+    adata = scvi.data.synthetic_iid(run_setup_anndata=False)
+    setup_anndata(
+        adata,
+        batch_key="batch",
+        labels_key="labels",
+    )
+
     model = SCGEN(adata)
     model.train(
         max_epochs=1, batch_size=32, early_stopping=True, early_stopping_patience=25

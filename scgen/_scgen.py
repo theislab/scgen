@@ -233,7 +233,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         adata_latent = AnnData(latent_all)
         adata_latent.obs = adata.obs.copy(deep=True)
-        adata_latent.obsm = adata.obsm.copy()
         unique_cell_types = np.unique(adata_latent.obs[cell_label_key])
         shared_ct = []
         not_shared_ct = []
@@ -282,7 +281,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 .cpu()
                 .numpy(),
                 obs=all_shared_ann.obs,
-                obsm=all_shared_ann.obsm,
             )
             corrected.var_names = adata.var_names.tolist()
             corrected = corrected[adata.obs_names]
@@ -312,7 +310,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 .cpu()
                 .numpy(),
                 obs=all_corrected_data.obs,
-                obsm=all_corrected_data.obsm,
             )
             corrected.var_names = adata.var_names.tolist()
             corrected = corrected[adata.obs_names]
