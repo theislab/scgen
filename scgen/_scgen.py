@@ -173,7 +173,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             X=predicted_cells,
             obs=ctrl_pred.obs.copy(),
             var=ctrl_pred.var.copy(),
-            obsm=ctrl_pred.obsm.copy()
+            obsm=ctrl_pred.obsm.copy(),
         )
         return predicted_adata, delta
 
@@ -238,14 +238,18 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         shared_ct = []
         not_shared_ct = []
         for cell_type in unique_cell_types:
-            temp_cell = adata_latent[adata_latent.obs[cell_label_key] == cell_type]
+            temp_cell = adata_latent[
+                adata_latent.obs[cell_label_key] == cell_type
+            ].copy()
             if len(np.unique(temp_cell.obs[batch_key])) < 2:
                 cell_type_ann = adata_latent[
                     adata_latent.obs[cell_label_key] == cell_type
                 ]
                 not_shared_ct.append(cell_type_ann)
                 continue
-            temp_cell = adata_latent[adata_latent.obs[cell_label_key] == cell_type]
+            temp_cell = adata_latent[
+                adata_latent.obs[cell_label_key] == cell_type
+            ].copy()
             batch_list = {}
             batch_ind = {}
             max_batch = 0
@@ -278,16 +282,18 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 .cpu()
                 .numpy(),
                 obs=all_shared_ann.obs,
+                obsm=all_shared_ann.obsm,
             )
             corrected.var_names = adata.var_names.tolist()
-            corrected.obsm = adata.obsm.copy()
             corrected = corrected[adata.obs_names]
             if adata.raw is not None:
                 adata_raw = AnnData(X=adata.raw.X, var=adata.raw.var)
                 adata_raw.obs_names = adata.obs_names
                 corrected.raw = adata_raw
             corrected.obsm["latent"] = all_shared_ann.X
-            corrected.obsm["corrected_latent"] = self.get_latent_representation(corrected)
+            corrected.obsm["corrected_latent"] = self.get_latent_representation(
+                corrected
+            )
             return corrected
         else:
             all_not_shared_ann = AnnData.concatenate(
@@ -305,17 +311,19 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 self.module.generative(torch.Tensor(all_corrected_data.X))["px"]
                 .cpu()
                 .numpy(),
-                all_corrected_data.obs,
+                obs=all_corrected_data.obs,
+                obsm=all_corrected_data.obsm,
             )
             corrected.var_names = adata.var_names.tolist()
-            corrected.obsm = adata.obsm.copy()
             corrected = corrected[adata.obs_names]
             if adata.raw is not None:
                 adata_raw = AnnData(X=adata.raw.X, var=adata.raw.var)
                 adata_raw.obs_names = adata.obs_names
                 corrected.raw = adata_raw
             corrected.obsm["latent"] = all_corrected_data.X
-            corrected.obsm["corrected_latent"] = self.get_latent_representation(corrected)
+            corrected.obsm["corrected_latent"] = self.get_latent_representation(
+                corrected
+            )
             return corrected
 
     def reg_mean_plot(
