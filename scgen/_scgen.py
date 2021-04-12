@@ -170,7 +170,10 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         )
 
         predicted_adata = AnnData(
-            X=predicted_cells, obs=ctrl_pred.obs.copy(), var=ctrl_pred.var.copy()
+            X=predicted_cells,
+            obs=ctrl_pred.obs.copy(),
+            var=ctrl_pred.var.copy(),
+            obsm=ctrl_pred.obsm.copy()
         )
         return predicted_adata, delta
 
@@ -230,6 +233,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         adata_latent = AnnData(latent_all)
         adata_latent.obs = adata.obs.copy(deep=True)
+        adata_latent.obsm = adata.obsm.copy()
         unique_cell_types = np.unique(adata_latent.obs[cell_label_key])
         shared_ct = []
         not_shared_ct = []
@@ -276,12 +280,14 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 obs=all_shared_ann.obs,
             )
             corrected.var_names = adata.var_names.tolist()
+            corrected.obsm = adata.obsm.copy()
             corrected = corrected[adata.obs_names]
             if adata.raw is not None:
                 adata_raw = AnnData(X=adata.raw.X, var=adata.raw.var)
                 adata_raw.obs_names = adata.obs_names
                 corrected.raw = adata_raw
             corrected.obsm["latent"] = all_shared_ann.X
+            corrected.obsm["corrected_latent"] = self.get_latent_representation(corrected)
             return corrected
         else:
             all_not_shared_ann = AnnData.concatenate(
@@ -302,12 +308,14 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 all_corrected_data.obs,
             )
             corrected.var_names = adata.var_names.tolist()
+            corrected.obsm = adata.obsm.copy()
             corrected = corrected[adata.obs_names]
             if adata.raw is not None:
                 adata_raw = AnnData(X=adata.raw.X, var=adata.raw.var)
                 adata_raw.obs_names = adata.obs_names
                 corrected.raw = adata_raw
             corrected.obsm["latent"] = all_corrected_data.X
+            corrected.obsm["corrected_latent"] = self.get_latent_representation(corrected)
             return corrected
 
     def reg_mean_plot(
