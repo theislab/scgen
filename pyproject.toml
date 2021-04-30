@@ -65,7 +65,7 @@ dev = ["black", "pytest", "flake8", "codecov", "loompy", "jupyter", "nbformat", 
 docs = [
   "sphinx",
   "scanpydoc",
-  "nbsphinx",git s
+  "nbsphinx",
   "nbsphinx-link",
   "ipython",
   "pydata-sphinx-theme",
