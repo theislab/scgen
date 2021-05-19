@@ -53,9 +53,6 @@ or install the development version via pip:
 pip install git+https://github.com/theislab/scgen.git
 ```
 
-
-On Windows machines you may need to download a C++ compiler if you wish to build from source yourself.
-
 ## Examples
 
 See examples at our [documentation site](https://scgen.readthedocs.io/).
