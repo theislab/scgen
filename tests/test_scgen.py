@@ -1,7 +1,7 @@
-import scvi
 import scanpy as sc
-from scgen import SCGEN
-from scgen import setup_anndata
+import scvi
+
+from scgen import SCGEN, setup_anndata
 
 
 def test_scgen():
