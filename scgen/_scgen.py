@@ -147,11 +147,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         eq = min(ctrl_x.X.shape[0], stim_x.X.shape[0])
         cd_ind = np.random.choice(range(ctrl_x.shape[0]), size=eq, replace=False)
         stim_ind = np.random.choice(range(stim_x.shape[0]), size=eq, replace=False)
-
         ctrl_adata = ctrl_x[cd_ind, :].copy()
         stim_adata = stim_x[stim_ind, :].copy()
-
-        
         if sparse.issparse(ctrl_adata.X) and sparse.issparse(stim_adata.X):
             ctrl_adata.X = ctrl_adata.X.A
             stim_adata.X = stim_adata.X.A
