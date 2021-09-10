@@ -150,7 +150,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         ctrl_adata = ctrl_x[cd_ind, :]
         stim_adata = stim_x[stim_ind, :]
-
+        ctrl_adata = ctrl_adata.copy()
+        stim_adata= stim_adata.copy()
+        
         if sparse.issparse(ctrl_adata.X) and sparse.issparse(stim_adata.X):
             ctrl_adata.X = ctrl_adata.X.A
             stim_adata.X = stim_adata.X.A
