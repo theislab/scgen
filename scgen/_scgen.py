@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, List
 
 import numpy
 import numpy as np
@@ -10,6 +10,8 @@ from anndata import AnnData
 from matplotlib import pyplot
 from scipy import sparse, stats
 from scvi.model.base import BaseModelClass, UnsupervisedTrainingMixin, VAEMixin
+from scvi.data import setup_anndata
+from scvi._docs import setup_anndata_dsp
 
 from ._scgenvae import SCGENVAE
 from ._utils import balancer, extractor
@@ -24,7 +26,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     Parameters
     ----------
     adata
-        AnnData object that has been registered via :func:`~scgen.setup_anndata`.
+        AnnData object that has been registered via :meth:`~scgen.SCGEN.setup_anndata`.
     n_hidden
         Number of nodes per hidden layer.
     n_latent
@@ -367,7 +369,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         >>> import scgen
         >>> import scanpy as sc
         >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        >>> scgen.setup_anndata(train)
+        >>> scgen.SCGEN.setup_anndata(train)
         >>> network = scgen.SCGEN(train)
         >>> network.train()
         >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
@@ -529,7 +531,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         >>> import scgen
         >>> import scanpy as sc
         >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        >>> scgen.setup_anndata(train)
+        >>> scgen.SCGEN.setup_anndata(train)
         >>> network = scgen.SCGEN(train)
         >>> network.train()
         >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
@@ -700,7 +702,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         >>> import scgen
         >>> import scanpy as sc
         >>> train = sc.read("./tests/data/train.h5ad", backup_url="https://goo.gl/33HtVh")
-        >>> scgen.setup_anndata(train)
+        >>> scgen.SCGEN.setup_anndata(train)
         >>> network = scgen.SCGEN(train)
         >>> network.train()
         >>> unperturbed_data = train[((train.obs["cell_type"] == "CD4T") & (train.obs["condition"] == "control"))]
@@ -753,3 +755,41 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         if save:
             pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
         pyplot.show()
+
+    @staticmethod
+    @setup_anndata_dsp.dedent
+    def setup_anndata(
+        adata: AnnData,
+        batch_key: Optional[str] = None,
+        labels_key: Optional[str] = None,
+        layer: Optional[str] = None,
+        categorical_covariate_keys: Optional[List[str]] = None,
+        continuous_covariate_keys: Optional[List[str]] = None,
+        copy: bool = False,
+    ) -> Optional[AnnData]:
+        """
+        %(summary)s.
+
+        Parameters
+        ----------
+        %(param_adata)s
+        %(param_batch_key)s
+        %(param_labels_key)s
+        %(param_layer)s
+        %(param_cat_cov_keys)s
+        %(param_cont_cov_keys)s
+        %(param_copy)s
+        
+        Returns
+        -------
+        %(returns)s
+        """
+        return setup_anndata(
+            adata,
+            batch_key=batch_key,
+            labels_key=labels_key,
+            layer=layer,
+            categorical_covariate_keys=categorical_covariate_keys,
+            continuous_covariate_keys=continuous_covariate_keys,
+            copy=copy,
+        )
