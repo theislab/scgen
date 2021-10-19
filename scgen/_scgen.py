@@ -779,7 +779,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         %(param_cat_cov_keys)s
         %(param_cont_cov_keys)s
         %(param_copy)s
-        
+
         Returns
         -------
         %(returns)s
