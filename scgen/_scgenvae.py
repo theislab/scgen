@@ -128,7 +128,7 @@ class SCGENVAE(BaseModuleClass):
         ).sum(dim=1)
         rl = self.get_reconstruction_loss(p, x)
         loss = (0.5 * rl + 0.5 * (kld * self.kl_weight)).mean()
-        return LossRecorder(loss, rl, kld, kl_global=0.0)
+        return LossRecorder(loss, rl, kld)
 
     @torch.no_grad()
     def sample(
