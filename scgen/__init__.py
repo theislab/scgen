@@ -1,6 +1,5 @@
 """ScGen - Predicting single cell perturbations"""
 
-from scvi.data import setup_anndata
 from ._scgenvae import SCGENVAE
 from ._scgen import SCGEN
 
@@ -35,4 +34,4 @@ logger.addHandler(ch)
 # this prevents double outputs
 logger.propagate = False
 
-__all__ = ["setup_anndata", "SCGEN", "SCGENVAE"]
+__all__ = ["SCGEN", "SCGENVAE"]

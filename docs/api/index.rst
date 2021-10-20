@@ -4,13 +4,6 @@ API
 
 .. currentmodule:: scgen
 
-Data
-~~~~
-.. autosummary::
-   :toctree: reference/
-
-   setup_anndata
-
 SCGEN
 ~~~~~
 

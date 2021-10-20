@@ -1,13 +1,12 @@
 import scvi
 import scanpy as sc
 from scgen import SCGEN
-from scgen import setup_anndata
 
 
 def test_scgen():
 
     adata = scvi.data.synthetic_iid(run_setup_anndata=False)
-    setup_anndata(
+    SCGEN.setup_anndata(
         adata,
         batch_key="batch",
         labels_key="labels",
