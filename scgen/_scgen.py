@@ -11,7 +11,7 @@ from matplotlib import pyplot
 from scipy import sparse, stats
 from scvi.model.base import BaseModelClass, UnsupervisedTrainingMixin, VAEMixin
 from scvi.data import setup_anndata
-from scvi._docs import setup_anndata_dsp
+from scvi.utils import setup_anndata_dsp
 
 from ._scgenvae import SCGENVAE
 from ._utils import balancer, extractor
