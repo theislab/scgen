@@ -225,7 +225,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         adata = self._validate_anndata(adata)
         latent_all = self.get_latent_representation(adata)
         # use keys registered from `setup_anndata()`
-        cell_type_key = self.adata_manager.get_state_registry(
+        cell_label_key = self.adata_manager.get_state_registry(
             REGISTRY_KEYS.LABELS_KEY
         ).original_key
         condition_key = self.adata_manager.get_state_registry(
