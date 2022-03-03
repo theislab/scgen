@@ -228,7 +228,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         cell_label_key = self.adata_manager.get_state_registry(
             REGISTRY_KEYS.LABELS_KEY
         ).original_key
-        condition_key = self.adata_manager.get_state_registry(
+        batch_key = self.adata_manager.get_state_registry(
             REGISTRY_KEYS.BATCH_KEY
         ).original_key
 
