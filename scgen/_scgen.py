@@ -397,9 +397,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         if sparse.issparse(adata.X):
             adata.X = adata.X.A
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         diff_genes = top_100_genes
         stim = adata[adata.obs[condition_key] == axis_keys["y"]]
@@ -559,9 +559,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         if sparse.issparse(adata.X):
             adata.X = adata.X.A
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         sc.tl.rank_genes_groups(
             adata, groupby=condition_key, n_genes=100, method="wilcoxon"
@@ -720,9 +720,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         # matplotlib.rcParams.update(matplotlib.rcParamsDefault)
         pyplot.close("all")
         adata = self._validate_anndata(adata)
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
         cd = adata[adata.obs[condition_key] == ctrl_key, :]
         stim = adata[adata.obs[condition_key] == stim_key, :]
         all_latent_cd = scg_object.to_latent(cd.X)
