@@ -150,18 +150,13 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         eq = min(ctrl_x.X.shape[0], stim_x.X.shape[0])
         cd_ind = np.random.choice(range(ctrl_x.shape[0]), size=eq, replace=False)
         stim_ind = np.random.choice(range(stim_x.shape[0]), size=eq, replace=False)
-        ctrl_adata = ctrl_x[cd_ind, :].copy()
-        stim_adata = stim_x[stim_ind, :].copy()
-        if sparse.issparse(ctrl_adata.X) and sparse.issparse(stim_adata.X):
-            ctrl_adata.X = ctrl_adata.X.A
-            stim_adata.X = stim_adata.X.A
+        ctrl_adata = ctrl_x[cd_ind, :]
+        stim_adata = stim_x[stim_ind, :]
 
         latent_ctrl = self._avg_vector(ctrl_adata)
         latent_stim = self._avg_vector(stim_adata)
 
         delta = latent_stim - latent_ctrl
-        if sparse.issparse(ctrl_pred.X):
-            ctrl_pred.X = ctrl_pred.X.A
 
         latent_cd = self.get_latent_representation(ctrl_pred)
 
@@ -762,7 +757,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     def setup_anndata(
         cls,
         adata: AnnData,
-        layer: Optional[str] = None,
         batch_key: Optional[str] = None,
         labels_key: Optional[str] = None,
         **kwargs,
@@ -772,13 +766,16 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         Parameters
         ----------
-        %(param_layer)s
         %(param_batch_key)s
         %(param_labels_key)s
+
+        Notes
+        -----
+        scGen expects the expression data to come from `adata.X`
         """
         setup_method_args = cls._get_setup_method_args(**locals())
         anndata_fields = [
-            LayerField(REGISTRY_KEYS.X_KEY, layer, is_count_data=True),
+            LayerField(REGISTRY_KEYS.X_KEY, None, is_count_data=False),
             CategoricalObsField(REGISTRY_KEYS.BATCH_KEY, batch_key),
             CategoricalObsField(REGISTRY_KEYS.LABELS_KEY, labels_key),
         ]
