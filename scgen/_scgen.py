@@ -1,6 +1,5 @@
 from typing import Optional, Sequence
 
-import numpy
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -102,8 +101,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             Dictionary of celltypes you want to be observed for prediction.
         Returns
         -------
-        predicted_cells: numpy nd-array
-            `numpy nd-array` of predicted cells in primary space.
+        predicted_cells: np nd-array
+            `np nd-array` of predicted cells in primary space.
         delta: float
             Difference between stimulated and control cells in latent space
         """
@@ -162,7 +161,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         stim_pred = delta + latent_cd
         predicted_cells = (
-            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().numpy()
+            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().np()
         )
 
         predicted_adata = AnnData(
@@ -197,7 +196,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             px = generative_outputs["px"].cpu()
             decoded.append(px)
 
-        return torch.cat(decoded).numpy()
+        return torch.cat(decoded).np()
 
     @torch.no_grad()
     def batch_removal(self, adata: Optional[AnnData] = None) -> AnnData:
@@ -275,7 +274,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             corrected = AnnData(
                 self.module.generative(torch.Tensor(all_shared_ann.X))["px"]
                 .cpu()
-                .numpy(),
+                .np(),
                 obs=all_shared_ann.obs,
             )
             corrected.var_names = adata.var_names.tolist()
@@ -304,7 +303,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             corrected = AnnData(
                 self.module.generative(torch.Tensor(all_corrected_data.X))["px"]
                 .cpu()
-                .numpy(),
+                .np(),
                 obs=all_corrected_data.obs,
             )
             corrected.var_names = adata.var_names.tolist()
@@ -395,8 +394,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         sns.set()
         sns.set(color_codes=True)
 
-        if sparse.issparse(adata.X):
-            adata.X = adata.X.A
         condition_key = self.adata_manager.get_state_registry(
             REGISTRY_KEYS.BATCH_KEY
         ).original_key
@@ -410,15 +407,15 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             adata_diff = adata[:, diff_genes]
             stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
             ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
-            x_diff = numpy.average(ctrl_diff.X, axis=0)
-            y_diff = numpy.average(stim_diff.X, axis=0)
+            x_diff = np.asarray(np.mean(ctrl_diff.X, axis=0)).ravel()
+            y_diff = np.asarray(np.mean(stim_diff.X, axis=0)).ravel()
             m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(
                 x_diff, y_diff
             )
             if verbose:
                 print("top_100 DEGs mean: ", r_value_diff**2)
-        x = numpy.average(ctrl.X, axis=0)
-        y = numpy.average(stim.X, axis=0)
+        x = np.asarray(np.mean(ctrl.X, axis=0)).ravel()
+        y = np.asarray(np.mean(stim.X, axis=0)).ravel()
         m, b, r_value, p_value, std_err = stats.linregress(x, y)
         if verbose:
             print("All genes mean: ", r_value**2)
@@ -427,8 +424,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         ax.tick_params(labelsize=fontsize)
         if "range" in kwargs:
             start, stop, step = kwargs.get("range")
-            ax.set_xticks(numpy.arange(start, stop, step))
-            ax.set_yticks(numpy.arange(start, stop, step))
+            ax.set_xticks(np.arange(start, stop, step))
+            ax.set_yticks(np.arange(start, stop, step))
         ax.set_xlabel(labels["x"], fontsize=fontsize)
         ax.set_ylabel(labels["y"], fontsize=fontsize)
         if gene_list is not None:
@@ -557,8 +554,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         sns.set()
         sns.set(color_codes=True)
 
-        if sparse.issparse(adata.X):
-            adata.X = adata.X.A
         condition_key = self.adata_manager.get_state_registry(
             REGISTRY_KEYS.BATCH_KEY
         ).original_key
@@ -575,8 +570,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             adata_diff = adata[:, diff_genes]
             stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
             ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
-            x_diff = numpy.var(ctrl_diff.X, axis=0)
-            y_diff = numpy.var(stim_diff.X, axis=0)
+            x_diff = np.asarray(np.var(ctrl_diff.X, axis=0)).ravel()
+            y_diff = np.asarray(np.var(stim_diff.X, axis=0)).ravel()
             m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(
                 x_diff, y_diff
             )
@@ -584,8 +579,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 print("Top 100 DEGs var: ", r_value_diff**2)
         if "y1" in axis_keys.keys():
             real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
-        x = numpy.var(ctrl.X, axis=0)
-        y = numpy.var(stim.X, axis=0)
+        x = np.asarray(np.var(ctrl.X, axis=0)).ravel()
+        y = np.asarray(np.var(stim.X, axis=0)).ravel()
         m, b, r_value, p_value, std_err = stats.linregress(x, y)
         if verbose:
             print("All genes var: ", r_value**2)
@@ -594,14 +589,14 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         ax.tick_params(labelsize=fontsize)
         if "range" in kwargs:
             start, stop, step = kwargs.get("range")
-            ax.set_xticks(numpy.arange(start, stop, step))
-            ax.set_yticks(numpy.arange(start, stop, step))
+            ax.set_xticks(np.arange(start, stop, step))
+            ax.set_yticks(np.arange(start, stop, step))
         # _p1 = pyplot.scatter(x, y, marker=".", label=f"{axis_keys['x']}-{axis_keys['y']}")
         # pyplot.plot(x, m * x + b, "-", color="green")
         ax.set_xlabel(labels["x"], fontsize=fontsize)
         ax.set_ylabel(labels["y"], fontsize=fontsize)
         if "y1" in axis_keys.keys():
-            y1 = numpy.var(real_stim.X, axis=0)
+            y1 = np.asarray(np.var(real_stim.X, axis=0)).ravel()
             _ = pyplot.scatter(
                 x,
                 y1,
@@ -653,7 +648,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
     def binary_classifier(
         self,
-        scg_object,
         adata,
         delta,
         ctrl_key,
@@ -673,8 +667,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         Parameters
         ----------
-        scg_object: `~scgen.models.VAEArith`
-            one of scGen models object.
         adata: `~anndata.AnnData`
             AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
             AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
@@ -725,14 +717,14 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         ).original_key
         cd = adata[adata.obs[condition_key] == ctrl_key, :]
         stim = adata[adata.obs[condition_key] == stim_key, :]
-        all_latent_cd = scg_object.to_latent(cd.X)
-        all_latent_stim = scg_object.to_latent(stim.X)
-        dot_cd = numpy.zeros((len(all_latent_cd)))
-        dot_sal = numpy.zeros((len(all_latent_stim)))
+        all_latent_cd = self.get_latent_representation(cd.X)
+        all_latent_stim = self.get_latent_representation(stim.X)
+        dot_cd = np.zeros((len(all_latent_cd)))
+        dot_sal = np.zeros((len(all_latent_stim)))
         for ind, vec in enumerate(all_latent_cd):
-            dot_cd[ind] = numpy.dot(delta, vec)
+            dot_cd[ind] = np.dot(delta, vec)
         for ind, vec in enumerate(all_latent_stim):
-            dot_sal[ind] = numpy.dot(delta, vec)
+            dot_sal[ind] = np.dot(delta, vec)
         pyplot.hist(
             dot_cd,
             label=ctrl_key,
