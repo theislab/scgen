@@ -9,6 +9,7 @@ from adjustText import adjust_text
 from anndata import AnnData
 from matplotlib import pyplot
 from scipy import sparse, stats
+from scvi import REGISTRY_KEYS
 from scvi.data import AnnDataManager
 from scvi.data.fields import (
     CategoricalJointObsField,
@@ -113,12 +114,12 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             Difference between stimulated and control cells in latent space
         """
         # use keys registered from `setup_anndata()`
-        cell_type_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_labels"][
-            "original_key"
-        ]
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        cell_type_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.LABELS_KEY
+        ).original_key
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         if restrict_arithmetic_to == "all":
             ctrl_x = self.adata[self.adata.obs[condition_key] == ctrl_key, :]
@@ -230,12 +231,12 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         adata = self._validate_anndata(adata)
         latent_all = self.get_latent_representation(adata)
         # use keys registered from `setup_anndata()`
-        cell_label_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_labels"][
-            "original_key"
-        ]
-        batch_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        cell_type_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.LABELS_KEY
+        ).original_key
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         adata_latent = AnnData(latent_all)
         adata_latent.obs = adata.obs.copy(deep=True)
