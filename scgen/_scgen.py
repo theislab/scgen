@@ -11,13 +11,7 @@ from matplotlib import pyplot
 from scipy import sparse, stats
 from scvi import REGISTRY_KEYS
 from scvi.data import AnnDataManager
-from scvi.data.fields import (
-    CategoricalJointObsField,
-    CategoricalObsField,
-    LayerField,
-    NumericalJointObsField,
-    NumericalObsField,
-)
+from scvi.data.fields import CategoricalObsField, LayerField
 from scvi.model.base import BaseModelClass, UnsupervisedTrainingMixin, VAEMixin
 from scvi.utils import setup_anndata_dsp
 
