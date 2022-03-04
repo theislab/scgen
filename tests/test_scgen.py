@@ -5,7 +5,7 @@ from scgen import SCGEN
 
 def test_scgen():
 
-    adata = scvi.data.synthetic_iid(run_setup_anndata=False)
+    adata = scvi.data.synthetic_iid()
     SCGEN.setup_anndata(
         adata,
         batch_key="batch",

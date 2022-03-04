@@ -1,6 +1,5 @@
-from typing import Optional, Sequence, List
+from typing import Optional, Sequence
 
-import numpy
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -9,8 +8,10 @@ from adjustText import adjust_text
 from anndata import AnnData
 from matplotlib import pyplot
 from scipy import sparse, stats
+from scvi import REGISTRY_KEYS
+from scvi.data import AnnDataManager
+from scvi.data.fields import CategoricalObsField, LayerField
 from scvi.model.base import BaseModelClass, UnsupervisedTrainingMixin, VAEMixin
-from scvi.data import setup_anndata
 from scvi.utils import setup_anndata_dsp
 
 from ._scgenvae import SCGENVAE
@@ -55,10 +56,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         **model_kwargs,
     ):
         super(SCGEN, self).__init__(adata)
-        self.adata = adata
 
         self.module = SCGENVAE(
-            n_input=self.summary_stats["n_vars"],
+            n_input=self.summary_stats.n_vars,
             n_hidden=n_hidden,
             n_latent=n_latent,
             n_layers=n_layers,
@@ -101,18 +101,18 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             Dictionary of celltypes you want to be observed for prediction.
         Returns
         -------
-        predicted_cells: numpy nd-array
-            `numpy nd-array` of predicted cells in primary space.
+        predicted_cells: np nd-array
+            `np nd-array` of predicted cells in primary space.
         delta: float
             Difference between stimulated and control cells in latent space
         """
         # use keys registered from `setup_anndata()`
-        cell_type_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_labels"][
-            "original_key"
-        ]
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        cell_type_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.LABELS_KEY
+        ).original_key
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         if restrict_arithmetic_to == "all":
             ctrl_x = self.adata[self.adata.obs[condition_key] == ctrl_key, :]
@@ -149,24 +149,19 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         eq = min(ctrl_x.X.shape[0], stim_x.X.shape[0])
         cd_ind = np.random.choice(range(ctrl_x.shape[0]), size=eq, replace=False)
         stim_ind = np.random.choice(range(stim_x.shape[0]), size=eq, replace=False)
-        ctrl_adata = ctrl_x[cd_ind, :].copy()
-        stim_adata = stim_x[stim_ind, :].copy()
-        if sparse.issparse(ctrl_adata.X) and sparse.issparse(stim_adata.X):
-            ctrl_adata.X = ctrl_adata.X.A
-            stim_adata.X = stim_adata.X.A
+        ctrl_adata = ctrl_x[cd_ind, :]
+        stim_adata = stim_x[stim_ind, :]
 
         latent_ctrl = self._avg_vector(ctrl_adata)
         latent_stim = self._avg_vector(stim_adata)
 
         delta = latent_stim - latent_ctrl
-        if sparse.issparse(ctrl_pred.X):
-            ctrl_pred.X = ctrl_pred.X.A
 
         latent_cd = self.get_latent_representation(ctrl_pred)
 
         stim_pred = delta + latent_cd
         predicted_cells = (
-            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().numpy()
+            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().np()
         )
 
         predicted_adata = AnnData(
@@ -201,7 +196,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             px = generative_outputs["px"].cpu()
             decoded.append(px)
 
-        return torch.cat(decoded).numpy()
+        return torch.cat(decoded).np()
 
     @torch.no_grad()
     def batch_removal(self, adata: Optional[AnnData] = None) -> AnnData:
@@ -224,12 +219,12 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         adata = self._validate_anndata(adata)
         latent_all = self.get_latent_representation(adata)
         # use keys registered from `setup_anndata()`
-        cell_label_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_labels"][
-            "original_key"
-        ]
-        batch_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        cell_label_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.LABELS_KEY
+        ).original_key
+        batch_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         adata_latent = AnnData(latent_all)
         adata_latent.obs = adata.obs.copy(deep=True)
@@ -279,7 +274,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             corrected = AnnData(
                 self.module.generative(torch.Tensor(all_shared_ann.X))["px"]
                 .cpu()
-                .numpy(),
+                .np(),
                 obs=all_shared_ann.obs,
             )
             corrected.var_names = adata.var_names.tolist()
@@ -308,7 +303,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             corrected = AnnData(
                 self.module.generative(torch.Tensor(all_corrected_data.X))["px"]
                 .cpu()
-                .numpy(),
+                .np(),
                 obs=all_corrected_data.obs,
             )
             corrected.var_names = adata.var_names.tolist()
@@ -399,11 +394,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         sns.set()
         sns.set(color_codes=True)
 
-        if sparse.issparse(adata.X):
-            adata.X = adata.X.A
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         diff_genes = top_100_genes
         stim = adata[adata.obs[condition_key] == axis_keys["y"]]
@@ -414,25 +407,25 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             adata_diff = adata[:, diff_genes]
             stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
             ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
-            x_diff = numpy.average(ctrl_diff.X, axis=0)
-            y_diff = numpy.average(stim_diff.X, axis=0)
+            x_diff = np.asarray(np.mean(ctrl_diff.X, axis=0)).ravel()
+            y_diff = np.asarray(np.mean(stim_diff.X, axis=0)).ravel()
             m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(
                 x_diff, y_diff
             )
             if verbose:
-                print("top_100 DEGs mean: ", r_value_diff ** 2)
-        x = numpy.average(ctrl.X, axis=0)
-        y = numpy.average(stim.X, axis=0)
+                print("top_100 DEGs mean: ", r_value_diff**2)
+        x = np.asarray(np.mean(ctrl.X, axis=0)).ravel()
+        y = np.asarray(np.mean(stim.X, axis=0)).ravel()
         m, b, r_value, p_value, std_err = stats.linregress(x, y)
         if verbose:
-            print("All genes mean: ", r_value ** 2)
+            print("All genes mean: ", r_value**2)
         df = pd.DataFrame({axis_keys["x"]: x, axis_keys["y"]: y})
         ax = sns.regplot(x=axis_keys["x"], y=axis_keys["y"], data=df)
         ax.tick_params(labelsize=fontsize)
         if "range" in kwargs:
             start, stop, step = kwargs.get("range")
-            ax.set_xticks(numpy.arange(start, stop, step))
-            ax.set_yticks(numpy.arange(start, stop, step))
+            ax.set_xticks(np.arange(start, stop, step))
+            ax.set_yticks(np.arange(start, stop, step))
         ax.set_xlabel(labels["x"], fontsize=fontsize)
         ax.set_ylabel(labels["y"], fontsize=fontsize)
         if gene_list is not None:
@@ -480,9 +473,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             pyplot.show()
         pyplot.close()
         if diff_genes is not None:
-            return r_value ** 2, r_value_diff ** 2
+            return r_value**2, r_value_diff**2
         else:
-            return r_value ** 2
+            return r_value**2
 
     def reg_var_plot(
         self,
@@ -561,11 +554,9 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         sns.set()
         sns.set(color_codes=True)
 
-        if sparse.issparse(adata.X):
-            adata.X = adata.X.A
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
 
         sc.tl.rank_genes_groups(
             adata, groupby=condition_key, n_genes=100, method="wilcoxon"
@@ -579,33 +570,33 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             adata_diff = adata[:, diff_genes]
             stim_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["y"]]
             ctrl_diff = adata_diff[adata_diff.obs[condition_key] == axis_keys["x"]]
-            x_diff = numpy.var(ctrl_diff.X, axis=0)
-            y_diff = numpy.var(stim_diff.X, axis=0)
+            x_diff = np.asarray(np.var(ctrl_diff.X, axis=0)).ravel()
+            y_diff = np.asarray(np.var(stim_diff.X, axis=0)).ravel()
             m, b, r_value_diff, p_value_diff, std_err_diff = stats.linregress(
                 x_diff, y_diff
             )
             if verbose:
-                print("Top 100 DEGs var: ", r_value_diff ** 2)
+                print("Top 100 DEGs var: ", r_value_diff**2)
         if "y1" in axis_keys.keys():
             real_stim = adata[adata.obs[condition_key] == axis_keys["y1"]]
-        x = numpy.var(ctrl.X, axis=0)
-        y = numpy.var(stim.X, axis=0)
+        x = np.asarray(np.var(ctrl.X, axis=0)).ravel()
+        y = np.asarray(np.var(stim.X, axis=0)).ravel()
         m, b, r_value, p_value, std_err = stats.linregress(x, y)
         if verbose:
-            print("All genes var: ", r_value ** 2)
+            print("All genes var: ", r_value**2)
         df = pd.DataFrame({axis_keys["x"]: x, axis_keys["y"]: y})
         ax = sns.regplot(x=axis_keys["x"], y=axis_keys["y"], data=df)
         ax.tick_params(labelsize=fontsize)
         if "range" in kwargs:
             start, stop, step = kwargs.get("range")
-            ax.set_xticks(numpy.arange(start, stop, step))
-            ax.set_yticks(numpy.arange(start, stop, step))
+            ax.set_xticks(np.arange(start, stop, step))
+            ax.set_yticks(np.arange(start, stop, step))
         # _p1 = pyplot.scatter(x, y, marker=".", label=f"{axis_keys['x']}-{axis_keys['y']}")
         # pyplot.plot(x, m * x + b, "-", color="green")
         ax.set_xlabel(labels["x"], fontsize=fontsize)
         ax.set_ylabel(labels["y"], fontsize=fontsize)
         if "y1" in axis_keys.keys():
-            y1 = numpy.var(real_stim.X, axis=0)
+            y1 = np.asarray(np.var(real_stim.X, axis=0)).ravel()
             _ = pyplot.scatter(
                 x,
                 y1,
@@ -651,13 +642,12 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             pyplot.show()
         pyplot.close()
         if diff_genes is not None:
-            return r_value ** 2, r_value_diff ** 2
+            return r_value**2, r_value_diff**2
         else:
-            return r_value ** 2
+            return r_value**2
 
     def binary_classifier(
         self,
-        scg_object,
         adata,
         delta,
         ctrl_key,
@@ -677,8 +667,6 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         Parameters
         ----------
-        scg_object: `~scgen.models.VAEArith`
-            one of scGen models object.
         adata: `~anndata.AnnData`
             AnnData object with equivalent structure to initial AnnData. If `None`, defaults to the
             AnnData object used to initialize the model. Must have been setup with `batch_key` and `labels_key`,
@@ -724,19 +712,19 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         # matplotlib.rcParams.update(matplotlib.rcParamsDefault)
         pyplot.close("all")
         adata = self._validate_anndata(adata)
-        condition_key = self.scvi_setup_dict_["categorical_mappings"]["_scvi_batch"][
-            "original_key"
-        ]
+        condition_key = self.adata_manager.get_state_registry(
+            REGISTRY_KEYS.BATCH_KEY
+        ).original_key
         cd = adata[adata.obs[condition_key] == ctrl_key, :]
         stim = adata[adata.obs[condition_key] == stim_key, :]
-        all_latent_cd = scg_object.to_latent(cd.X)
-        all_latent_stim = scg_object.to_latent(stim.X)
-        dot_cd = numpy.zeros((len(all_latent_cd)))
-        dot_sal = numpy.zeros((len(all_latent_stim)))
+        all_latent_cd = self.get_latent_representation(cd.X)
+        all_latent_stim = self.get_latent_representation(stim.X)
+        dot_cd = np.zeros((len(all_latent_cd)))
+        dot_sal = np.zeros((len(all_latent_stim)))
         for ind, vec in enumerate(all_latent_cd):
-            dot_cd[ind] = numpy.dot(delta, vec)
+            dot_cd[ind] = np.dot(delta, vec)
         for ind, vec in enumerate(all_latent_stim):
-            dot_sal[ind] = numpy.dot(delta, vec)
+            dot_sal[ind] = np.dot(delta, vec)
         pyplot.hist(
             dot_cd,
             label=ctrl_key,
@@ -756,40 +744,35 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             pyplot.savefig(f"{path_to_save}", bbox_inches="tight", dpi=100)
         pyplot.show()
 
-    @staticmethod
+    @classmethod
     @setup_anndata_dsp.dedent
     def setup_anndata(
+        cls,
         adata: AnnData,
         batch_key: Optional[str] = None,
         labels_key: Optional[str] = None,
-        layer: Optional[str] = None,
-        categorical_covariate_keys: Optional[List[str]] = None,
-        continuous_covariate_keys: Optional[List[str]] = None,
-        copy: bool = False,
-    ) -> Optional[AnnData]:
+        **kwargs,
+    ):
         """
         %(summary)s.
 
         Parameters
         ----------
-        %(param_adata)s
         %(param_batch_key)s
         %(param_labels_key)s
-        %(param_layer)s
-        %(param_cat_cov_keys)s
-        %(param_cont_cov_keys)s
-        %(param_copy)s
 
-        Returns
-        -------
-        %(returns)s
+        Notes
+        -----
+        scGen expects the expression data to come from `adata.X`
         """
-        return setup_anndata(
-            adata,
-            batch_key=batch_key,
-            labels_key=labels_key,
-            layer=layer,
-            categorical_covariate_keys=categorical_covariate_keys,
-            continuous_covariate_keys=continuous_covariate_keys,
-            copy=copy,
+        setup_method_args = cls._get_setup_method_args(**locals())
+        anndata_fields = [
+            LayerField(REGISTRY_KEYS.X_KEY, None, is_count_data=False),
+            CategoricalObsField(REGISTRY_KEYS.BATCH_KEY, batch_key),
+            CategoricalObsField(REGISTRY_KEYS.LABELS_KEY, labels_key),
+        ]
+        adata_manager = AnnDataManager(
+            fields=anndata_fields, setup_method_args=setup_method_args
         )
+        adata_manager.register_fields(adata, **kwargs)
+        cls.register_manager(adata_manager)

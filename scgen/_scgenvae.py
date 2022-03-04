@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scvi import _CONSTANTS
+from scvi import REGISTRY_KEYS
 from scvi._compat import Literal
 from scvi.module.base import BaseModuleClass, LossRecorder, auto_move_data
 from scvi.nn import Encoder
@@ -78,7 +78,7 @@ class SCGENVAE(BaseModuleClass):
         )
 
     def _get_inference_input(self, tensors):
-        x = tensors[_CONSTANTS.X_KEY]
+        x = tensors[REGISTRY_KEYS.X_KEY]
         input_dict = dict(
             x=x,
         )
@@ -117,7 +117,7 @@ class SCGENVAE(BaseModuleClass):
         generative_outputs,
     ):
 
-        x = tensors[_CONSTANTS.X_KEY]
+        x = tensors[REGISTRY_KEYS.X_KEY]
         qz_m = inference_outputs["qz_m"]
         qz_v = inference_outputs["qz_v"]
         p = generative_outputs["px"]

@@ -31,7 +31,7 @@ import scgen  # noqa
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = "3.0"  # Nicer param docs
+needs_sphinx = "4.3"  # Nicer param docs
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -96,9 +96,9 @@ intersphinx_mapping = dict(
 
 
 # General information about the project.
-project = u"scGen"
-copyright = u"2021, Theis Lab"
-author = u"Mohammad Lotfollahi"
+project = "scGen"
+copyright = "2021, Theis Lab"
+author = "Mohammad Lotfollahi"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
