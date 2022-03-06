@@ -7,7 +7,7 @@ import torch
 from adjustText import adjust_text
 from anndata import AnnData
 from matplotlib import pyplot
-from scipy import sparse, stats
+from scipy import stats
 from scvi import REGISTRY_KEYS
 from scvi.data import AnnDataManager
 from scvi.data.fields import CategoricalObsField, LayerField
@@ -161,7 +161,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         stim_pred = delta + latent_cd
         predicted_cells = (
-            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().np()
+            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().numpy()
         )
 
         predicted_adata = AnnData(
@@ -196,7 +196,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             px = generative_outputs["px"].cpu()
             decoded.append(px)
 
-        return torch.cat(decoded).np()
+        return torch.cat(decoded).numpy()
 
     @torch.no_grad()
     def batch_removal(self, adata: Optional[AnnData] = None) -> AnnData:
@@ -274,7 +274,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             corrected = AnnData(
                 self.module.generative(torch.Tensor(all_shared_ann.X))["px"]
                 .cpu()
-                .np(),
+                .numpy(),
                 obs=all_shared_ann.obs,
             )
             corrected.var_names = adata.var_names.tolist()
@@ -303,7 +303,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             corrected = AnnData(
                 self.module.generative(torch.Tensor(all_corrected_data.X))["px"]
                 .cpu()
-                .np(),
+                .numpy(),
                 obs=all_corrected_data.obs,
             )
             corrected.var_names = adata.var_names.tolist()
