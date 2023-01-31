@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from scvi import REGISTRY_KEYS
 from scvi._compat import Literal
-from scvi.module.base import BaseModuleClass, LossRecorder, auto_move_data
+from scvi.module.base import BaseModuleClass, LossOutput, auto_move_data
 from scvi.nn import Encoder
 from torch.distributions import Normal
 from torch.distributions import kl_divergence as kl
@@ -128,7 +128,7 @@ class SCGENVAE(BaseModuleClass):
         ).sum(dim=1)
         rl = self.get_reconstruction_loss(p, x)
         loss = (0.5 * rl + 0.5 * (kld * self.kl_weight)).mean()
-        return LossRecorder(loss, rl, kld)
+        return LossOutput(loss=loss, reconstruction_loss=rl, kl_local=kld)
 
     @torch.no_grad()
     def sample(
