@@ -1,10 +1,10 @@
-import scvi
 import scanpy as sc
+import scvi
+
 from scgen import SCGEN
 
 
 def test_scgen():
-
     adata = scvi.data.synthetic_iid()
     SCGEN.setup_anndata(
         adata,
