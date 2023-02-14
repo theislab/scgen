@@ -5,7 +5,7 @@ import pandas as pd
 import scanpy as sc
 import torch
 from adjustText import adjust_text
-from anndata import AnnData
+from anndata import AnnData, concat
 from matplotlib import pyplot
 from scipy import stats
 from scvi import REGISTRY_KEYS
@@ -265,9 +265,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 batch_list[study].X = delta + batch_list[study].X
                 temp_cell[batch_ind[study]].X = batch_list[study].X
             shared_ct.append(temp_cell)
-        all_shared_ann = AnnData.concatenate(
-            *shared_ct, batch_key="concat_batch", index_unique=None
-        )
+        all_shared_ann = concat(shared_ct, label="concat_batch", index_unique=None)
         if "concat_batch" in all_shared_ann.obs.columns:
             del all_shared_ann.obs["concat_batch"]
         if len(not_shared_ct) < 1:

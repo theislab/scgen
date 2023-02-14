@@ -60,7 +60,6 @@ def balancer(
     adata,
     cell_type_key,
 ):
-
     """
     Makes cell type population equal.
 
