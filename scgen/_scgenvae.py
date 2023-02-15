@@ -117,7 +117,6 @@ class SCGENVAE(BaseModuleClass):
         inference_outputs,
         generative_outputs,
     ):
-
         x = tensors[REGISTRY_KEYS.X_KEY]
         qz_m = inference_outputs["qz_m"]
         qz_v = inference_outputs["qz_v"]
@@ -157,7 +156,10 @@ class SCGENVAE(BaseModuleClass):
             tensor with shape (n_cells, n_genes, n_samples)
         """
         inference_kwargs = dict(n_samples=n_samples)
-        inference_outputs, generative_outputs, = self.forward(
+        (
+            inference_outputs,
+            generative_outputs,
+        ) = self.forward(
             tensors,
             inference_kwargs=inference_kwargs,
             compute_loss=False,

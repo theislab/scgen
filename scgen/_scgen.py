@@ -55,7 +55,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         dropout_rate: float = 0.2,
         **model_kwargs,
     ):
-        super(SCGEN, self).__init__(adata)
+        super().__init__(adata)
 
         self.module = SCGENVAE(
             n_input=self.summary_stats.n_vars,
@@ -719,8 +719,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         stim = adata[adata.obs[condition_key] == stim_key, :]
         all_latent_cd = self.get_latent_representation(cd.X)
         all_latent_stim = self.get_latent_representation(stim.X)
-        dot_cd = np.zeros((len(all_latent_cd)))
-        dot_sal = np.zeros((len(all_latent_stim)))
+        dot_cd = np.zeros(len(all_latent_cd))
+        dot_sal = np.zeros(len(all_latent_stim))
         for ind, vec in enumerate(all_latent_cd):
             dot_cd[ind] = np.dot(delta, vec)
         for ind, vec in enumerate(all_latent_stim):

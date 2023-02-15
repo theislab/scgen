@@ -35,9 +35,12 @@ def extractor(
     ```python
     import scgen
     import anndata
+
     train_data = anndata.read("./data/train.h5ad")
     test_data = anndata.read("./data/test.h5ad")
-    train_data_extracted_list = extractor(train_data, "CD4T", "conditions", "cell_type", "control", "stimulated")
+    train_data_extracted_list = extractor(
+        train_data, "CD4T", "conditions", "cell_type", "control", "stimulated"
+    )
     ```
     """
     cell_with_both_condition = data[data.obs[cell_type_key] == cell_type]
@@ -60,7 +63,6 @@ def balancer(
     adata,
     cell_type_key,
 ):
-
     """
     Makes cell type population equal.
 
@@ -79,6 +81,7 @@ def balancer(
     ```python
     import scgen
     import anndata
+
     train_data = anndata.read("./train_kang.h5ad")
     train_ctrl = train_data[train_data.obs["condition"] == "control", :]
     train_ctrl = balancer(train_ctrl, "conditions", "cell_type")
