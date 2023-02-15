@@ -1,7 +1,8 @@
+from typing import Literal
+
 import numpy as np
 import torch
 from scvi import REGISTRY_KEYS
-from scvi._compat import Literal
 from scvi.module.base import BaseModuleClass, LossOutput, auto_move_data
 from scvi.nn import Encoder
 from torch.distributions import Normal
