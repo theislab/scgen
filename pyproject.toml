@@ -33,7 +33,6 @@ version = "2.1.1"
 adjustText = "*"
 anndata = ">=0.7.5"
 black = {version = ">=20.8b1", optional = true}
-codecov = {version = ">=2.0.8", optional = true}
 flake8 = {version = ">=3.7.7", optional = true}
 importlib-metadata = {version = "^1.0", python = "<3.8"}
 ipython = {version = ">=7.1.1", optional = true}
@@ -62,7 +61,7 @@ sphinx-material = {version = "*", optional = true}
 typing_extensions = {version = "*", python = "<3.8"}
 
 [tool.poetry.extras]
-dev = ["black", "pytest", "flake8", "codecov", "loompy", "jupyter", "nbformat", "nbconvert", "pre-commit", "isort"]
+dev = ["black", "pytest", "flake8", "loompy", "jupyter", "nbformat", "nbconvert", "pre-commit", "isort"]
 docs = [
   "sphinx",
   "scanpydoc",
@@ -79,8 +78,7 @@ tutorials = ["leidenalg", "python-igraph", "loompy", "scikit-misc"]
 [tool.poetry.dev-dependencies]
 
 [build-system]
-build-backend = "poetry.masonry.api"
 requires = [
-  "poetry>=1.0",
-  "setuptools", # keep it here or "pip install -e" would fail
+  "poetry-core>=1.0.0",
 ]
+build-backend = "poetry.core.masonry.api"
