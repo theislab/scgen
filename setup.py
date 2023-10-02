@@ -5,4 +5,4 @@
 import setuptools
 
 if __name__ == "__main__":
-    setuptools.setup(name="scgen")
+    setuptools.setup(name="scgen", packages=["scgen"])
