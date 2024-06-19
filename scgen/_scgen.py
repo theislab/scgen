@@ -284,7 +284,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 adata_raw = AnnData(X=adata.raw.X, var=adata.raw.var)
                 adata_raw.obs_names = adata.obs_names
                 corrected.raw = adata_raw
-            corrected.obsm["latent"] = all_shared_ann[corrected.obs_names,:].X
+            corrected.obsm["latent"] = all_shared_ann[corrected.obs_names, :].X
             corrected.obsm["corrected_latent"] = self.get_latent_representation(
                 corrected
             )
@@ -314,7 +314,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 adata_raw = AnnData(X=adata.raw.X, var=adata.raw.var)
                 adata_raw.obs_names = adata.obs_names
                 corrected.raw = adata_raw
-            corrected.obsm["latent"] = all_corrected_data[corrected.obs_names,:].X
+            corrected.obsm["latent"] = all_corrected_data[corrected.obs_names, :].X
             corrected.obsm["corrected_latent"] = self.get_latent_representation(
                 corrected
             )
@@ -447,7 +447,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 x=x,
                 y=y,
                 arrowprops=dict(arrowstyle="->", color="grey", lw=0.5),
-                force_points=(0.0, 0.0),
+                force_static=(0.0, 0.0),
             )
         if legend:
             pyplot.legend(loc="center left", bbox_to_anchor=(1, 0.5))

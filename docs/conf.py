@@ -46,7 +46,6 @@ extensions = [
     "sphinx.ext.autosummary",
     "scanpydoc.elegant_typehints",
     "scanpydoc.definition_list_typed_field",
-    "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
 ]
 
@@ -75,6 +74,7 @@ napoleon_custom_sections = [("Params", "Parameters")]
 todo_include_todos = False
 numpydoc_show_class_members = False
 annotate_defaults = True
+autosummary_generate_imported = True
 # The master toctree document.
 master_doc = "index"
 
