@@ -46,6 +46,8 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     >>> adata.obsm["X_scgen"] = vae.get_latent_representation()
     """
 
+    _module_cls = SCGENVAE
+
     def __init__(
         self,
         adata: AnnData,
@@ -57,14 +59,24 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     ):
         super().__init__(adata)
 
-        self.module = SCGENVAE(
-            n_input=self.summary_stats.n_vars,
-            n_hidden=n_hidden,
-            n_latent=n_latent,
-            n_layers=n_layers,
-            dropout_rate=dropout_rate,
-            **model_kwargs,
-        )
+        self._module_kwargs = {
+            "n_hidden": n_hidden,
+            "n_latent": n_latent,
+            "n_layers": n_layers,
+            "dropout_rate": dropout_rate,
+            **model_kwargs
+        }
+        if self._module_init_on_train:
+            self.module = None
+        else:
+            self.module = SCGENVAE(
+                n_input=self.summary_stats.n_vars,
+                n_hidden=n_hidden,
+                n_latent=n_latent,
+                n_layers=n_layers,
+                dropout_rate=dropout_rate,
+                **model_kwargs,
+            )
         self._model_summary_string = (
             "SCGEN Model with the following params: \nn_hidden: {}, n_latent: {}, n_layers: {}, dropout_rate: "
             "{}"

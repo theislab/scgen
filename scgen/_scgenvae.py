@@ -45,6 +45,7 @@ class SCGENVAE(BaseModuleClass):
         use_batch_norm: Literal["encoder", "decoder", "none", "both"] = "both",
         use_layer_norm: Literal["encoder", "decoder", "none", "both"] = "none",
         kl_weight: float = 0.00005,
+        **kwargs # needed when initilaized with a datamodule
     ):
         super().__init__()
         self.n_layers = n_layers
